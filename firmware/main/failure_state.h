@@ -20,5 +20,8 @@ void ClearLastFailureState();
 void RecordFailureState(UpdateTrigger trigger, FailureCategory category, const char* detail);
 void WriteFailureReportToSdCard(UpdateTrigger trigger, FailureCategory category, const char* detail);
 void ClearFailureReportFromSdCard();
+bool IsDeveloperModeEnabled();
+esp_err_t SetDeveloperModeEnabled(bool enabled);
+esp_err_t ToggleDeveloperMode(bool* enabled_after_toggle);
 const char* UpdateTriggerToString(UpdateTrigger trigger);
 const char* FailureCategoryToString(FailureCategory category);

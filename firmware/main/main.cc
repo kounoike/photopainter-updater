@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <sys/stat.h>
 #include "axp_prot.h"
 #include "button_bsp.h"
 #include "display_update.h"
@@ -20,8 +21,25 @@ namespace {
 
 constexpr const char* kTag = "fw_main";
 constexpr gpio_num_t kBootWakeupPin = GPIO_NUM_0;
+constexpr char kDebugSleepBypassPath[] = "/sdcard/debug.txt";
+
+bool ShouldBypassDeepSleep() {
+    struct stat st = {};
+    bool file_bypass = stat(kDebugSleepBypassPath, &st) == 0;
+    bool developer_mode = IsDeveloperModeEnabled();
+    ESP_LOGI(kTag, "Deep sleep bypass file %s: %s, developer mode: %s", kDebugSleepBypassPath,
+             file_bypass ? "present" : "absent", developer_mode ? "enabled" : "disabled");
+    return file_bypass || developer_mode;
+}
 
 [[noreturn]] void EnterDeepSleep(const char* reason) {
+    if (ShouldBypassDeepSleep()) {
+        ESP_LOGW(kTag, "Skipping deep sleep because %s exists", kDebugSleepBypassPath);
+        for (;;) {
+            vTaskDelay(portMAX_DELAY);
+        }
+    }
+
     ESP_LOGI(kTag, "Entering deep sleep: %s", reason == nullptr ? "" : reason);
     ESP_ERROR_CHECK_WITHOUT_ABORT(esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL));
     ESP_ERROR_CHECK_WITHOUT_ABORT(rtc_gpio_pullup_en(kBootWakeupPin));

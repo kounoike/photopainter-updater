@@ -21,6 +21,8 @@ SD カードのルートに `config.txt` を配置します。
 - `image_url` は単一の `http://...` URL です。
 - 取得画像は 24-bit BMP を前提にしています。
 - 画像サイズは e-paper の表示範囲内である必要があります。
+- `debug.txt` を同じ SD カードルートに空ファイルで置くと、開発用に deep sleep を抑止できます。
+- BOOT 長押しで NVS 上の開発モードを切り替えできます。開発モード中は deep sleep と ACT LED をまとめて無効化します。
 
 ## 動作
 

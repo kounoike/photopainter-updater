@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #include "button_bsp.h"
 #include "config.h"
@@ -29,7 +30,9 @@ constexpr int kWifiFailedBit = BIT1;
 constexpr gpio_num_t kBootWakeupPin = GPIO_NUM_0;
 constexpr int kWifiTimeoutMs = 30000;
 constexpr uint8_t kActivityLedPin = LED_PIN_Green;
+constexpr TickType_t kActivityLedBlinkInterval = pdMS_TO_TICKS(500);
 constexpr TickType_t kActivityLedIdlePollInterval = pdMS_TO_TICKS(50);
+constexpr char kDebugSleepBypassPath[] = "/sdcard/debug.txt";
 
 StaticQueue_t s_queue_storage;
 uint8_t s_queue_buffer[sizeof(UpdateTrigger)];
@@ -60,6 +63,15 @@ void ReleasePendingSlot() {
     portEXIT_CRITICAL(&s_update_lock);
 }
 
+bool ShouldBypassDeepSleep() {
+    struct stat st = {};
+    bool file_bypass = stat(kDebugSleepBypassPath, &st) == 0;
+    bool developer_mode = IsDeveloperModeEnabled();
+    ESP_LOGI(kTag, "Deep sleep bypass file %s: %s, developer mode: %s", kDebugSleepBypassPath,
+             file_bypass ? "present" : "absent", developer_mode ? "enabled" : "disabled");
+    return file_bypass || developer_mode;
+}
+
 void SetActivityLedLevel(bool on) {
     if (!s_activity_led_initialized) {
         return;
@@ -72,15 +84,20 @@ void StopActivityLedLocked() {
 }
 
 void StartActivityLed(UpdateTrigger trigger) {
+    if (IsDeveloperModeEnabled()) {
+        ESP_LOGW(kTag, "Developer mode active, skipping activity LED enable");
+        return;
+    }
     portENTER_CRITICAL(&s_activity_led_lock);
     s_activity_led_owner = trigger;
     s_activity_led_blinking = true;
     portEXIT_CRITICAL(&s_activity_led_lock);
-    ESP_LOGI(kTag, "Activity LED turned on for trigger=%s on GPIO %u", UpdateTriggerToString(trigger),
+    ESP_LOGI(kTag, "Activity LED blinking started for trigger=%s on GPIO %u", UpdateTriggerToString(trigger),
              static_cast<unsigned>(kActivityLedPin));
 }
 
 void ActivityLedTask(void* arg) {
+    bool led_on = false;
     for (;;) {
         bool blinking = false;
         portENTER_CRITICAL(&s_activity_led_lock);
@@ -88,17 +105,28 @@ void ActivityLedTask(void* arg) {
         portEXIT_CRITICAL(&s_activity_led_lock);
 
         if (!blinking) {
-            SetActivityLedLevel(false);
+            if (led_on) {
+                SetActivityLedLevel(false);
+                led_on = false;
+            }
             vTaskDelay(kActivityLedIdlePollInterval);
             continue;
         }
 
-        SetActivityLedLevel(true);
-        vTaskDelay(kActivityLedIdlePollInterval);
+        led_on = !led_on;
+        SetActivityLedLevel(led_on);
+        vTaskDelay(kActivityLedBlinkInterval);
     }
 }
 
 [[noreturn]] void EnterDeepSleep(const char* reason) {
+    if (ShouldBypassDeepSleep()) {
+        ESP_LOGW(kTag, "Skipping deep sleep because %s exists", kDebugSleepBypassPath);
+        for (;;) {
+            vTaskDelay(portMAX_DELAY);
+        }
+    }
+
     ESP_LOGI(kTag, "Entering deep sleep: %s", reason == nullptr ? "" : reason);
     ESP_ERROR_CHECK_WITHOUT_ABORT(esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL));
     ESP_ERROR_CHECK_WITHOUT_ABORT(rtc_gpio_pullup_en(kBootWakeupPin));
@@ -217,6 +245,7 @@ esp_err_t ConnectWifi(const FirmwareConfig& config, char* error_detail, size_t e
 esp_err_t RunUpdate(UpdateTrigger trigger) {
     char detail[160] = {};
     FirmwareConfig config = {};
+    ESP_LOGI(kTag, "Update job started: trigger=%s", UpdateTriggerToString(trigger));
     StartActivityLed(trigger);
 
     esp_err_t err = LoadConfigFromSdCard(kConfigPath, &config, detail, sizeof(detail));
@@ -230,18 +259,21 @@ esp_err_t RunUpdate(UpdateTrigger trigger) {
         HandleFailure(trigger, FailureCategory::kWifiError, detail);
         return err;
     }
+    ESP_LOGI(kTag, "WiFi connected, starting HTTP download for trigger=%s", UpdateTriggerToString(trigger));
 
     err = DownloadImageToSdCard(config.image_url, kImageCachePath, detail, sizeof(detail));
     if (err != ESP_OK) {
         HandleFailure(trigger, FailureCategory::kHttpError, detail);
         return err;
     }
+    ESP_LOGI(kTag, "HTTP download completed, starting BMP render");
 
     err = RenderBmpFromSdCard(kImageCachePath, detail, sizeof(detail));
     if (err != ESP_OK) {
         HandleFailure(trigger, FailureCategory::kImageError, detail);
         return err;
     }
+    ESP_LOGI(kTag, "BMP render completed");
 
     ClearLastFailureState();
     StopActivityLed();
@@ -263,7 +295,18 @@ void UpdateWorkerTask(void* arg) {
 
 void BootButtonTask(void* arg) {
     for (;;) {
-        EventBits_t bits = xEventGroupWaitBits(boot_groups, set_bit_button(0), pdTRUE, pdFALSE, portMAX_DELAY);
+        EventBits_t bits =
+            xEventGroupWaitBits(boot_groups, set_bit_button(0) | set_bit_button(1), pdTRUE, pdFALSE, portMAX_DELAY);
+        if (bits & set_bit_button(1)) {
+            bool enabled = false;
+            esp_err_t err = ToggleDeveloperMode(&enabled);
+            if (err != ESP_OK) {
+                ESP_LOGE(kTag, "Failed to toggle developer mode: %s", esp_err_to_name(err));
+            } else {
+                StopActivityLed();
+                ESP_LOGW(kTag, "Developer mode %s via BOOT long press", enabled ? "enabled" : "disabled");
+            }
+        }
         if (bits & set_bit_button(0)) {
             esp_err_t err = EnqueueUpdate(UpdateTrigger::kBootButton);
             if (err != ESP_OK) {
@@ -276,6 +319,11 @@ void BootButtonTask(void* arg) {
 }  // namespace
 
 esp_err_t InitializeActivityLedControl() {
+    if (IsDeveloperModeEnabled()) {
+        ESP_LOGW(kTag, "Developer mode active, skipping activity LED initialization");
+        return ESP_OK;
+    }
+
     if (s_activity_led_task != nullptr) {
         StopActivityLed();
         return ESP_OK;
@@ -338,7 +386,7 @@ void StopActivityLed() {
 
     SetActivityLedLevel(false);
     if (was_blinking) {
-        ESP_LOGI(kTag, "Activity LED turned off for trigger=%s", UpdateTriggerToString(owner));
+        ESP_LOGI(kTag, "Activity LED blinking stopped for trigger=%s", UpdateTriggerToString(owner));
     }
 }
 

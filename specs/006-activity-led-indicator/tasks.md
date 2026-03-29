@@ -101,7 +101,7 @@
 
 - [X] T018 [P] `docs/firmware-http-epaper.md` に ACT LED 点滅の運用説明を追記する
 - [X] T019 `specs/006-activity-led-indicator/plan.md`、`spec.md`、`tasks.md` と `firmware/` 実装の整合性を確認する
-- [ ] T020 `specs/006-activity-led-indicator/quickstart.md` に従って正常系 2 本、失敗系 4 本、待機状態 1 本の ACT LED 手動確認を実施する
+- [X] T020 `specs/006-activity-led-indicator/quickstart.md` に従って正常系 2 本、失敗系 4 本、待機状態 1 本の ACT LED 手動確認を実施する
 
 ---
 

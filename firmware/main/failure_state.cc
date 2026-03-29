@@ -12,6 +12,7 @@ namespace {
 constexpr const char* kTag = "fw_failure";
 constexpr const char* kNamespace = "firmware";
 constexpr const char* kFailureReportPath = "/sdcard/last_error.txt";
+constexpr const char* kDeveloperModeKey = "developer_mode";
 
 void SaveString(nvs_handle_t handle, const char* key, const char* value) {
     if (value == nullptr) {
@@ -94,6 +95,49 @@ void ClearFailureReportFromSdCard() {
     if (remove(kFailureReportPath) != 0) {
         ESP_LOGW(kTag, "Failed to remove %s", kFailureReportPath);
     }
+}
+
+bool IsDeveloperModeEnabled() {
+    nvs_handle_t handle = 0;
+    if (nvs_open(kNamespace, NVS_READWRITE, &handle) != ESP_OK) {
+        return false;
+    }
+
+    uint8_t enabled = 0;
+    esp_err_t err = nvs_get_u8(handle, kDeveloperModeKey, &enabled);
+    nvs_close(handle);
+    if (err == ESP_ERR_NVS_NOT_FOUND) {
+        return false;
+    }
+    return err == ESP_OK && enabled != 0;
+}
+
+esp_err_t SetDeveloperModeEnabled(bool enabled) {
+    nvs_handle_t handle = 0;
+    esp_err_t err = nvs_open(kNamespace, NVS_READWRITE, &handle);
+    if (err != ESP_OK) {
+        return err;
+    }
+
+    err = nvs_set_u8(handle, kDeveloperModeKey, enabled ? 1 : 0);
+    if (err == ESP_OK) {
+        err = nvs_commit(handle);
+    }
+    nvs_close(handle);
+
+    if (err == ESP_OK) {
+        ESP_LOGW(kTag, "Developer mode %s", enabled ? "enabled" : "disabled");
+    }
+    return err;
+}
+
+esp_err_t ToggleDeveloperMode(bool* enabled_after_toggle) {
+    bool enabled = !IsDeveloperModeEnabled();
+    esp_err_t err = SetDeveloperModeEnabled(enabled);
+    if (err == ESP_OK && enabled_after_toggle != nullptr) {
+        *enabled_after_toggle = enabled;
+    }
+    return err;
 }
 
 const char* UpdateTriggerToString(UpdateTrigger trigger) {
