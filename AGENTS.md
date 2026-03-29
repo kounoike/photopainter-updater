@@ -40,6 +40,11 @@ Phase transition commit policy:
 * `clarify` と `analyze` は commit 前提の対象外とし、未 commit 状態でも実行してよい
 * `specify` `clarify` `plan` `tasks` `implement` の各 phase が完了したら、特段の問題がない限りその phase の成果物を自動で commit すること
 * `analyze` は指摘だけなら commit しない。analyze の指摘に基づく remediation を反映して成果物を更新した場合のみ、その更新内容を自動で commit してよい
+* `analyze` で HIGH または MEDIUM の指摘が出た場合は、直せる範囲のものを自動で remediation すること
+* `analyze` の remediation では、spec / plan / tasks など成果物の整合修正を優先し、分からないことや判断が分岐することだけをユーザーへ確認すること
+* `analyze` の指摘が LOW のみで、成果物更新が不要なら remediation は必須ではない
+* 各 phase 完了後、次の phase に進むための前提が満たされており、ユーザー確認が必須の事項や明示的な停止条件がない場合は、ユーザーの追加指示を待たずに次の phase へ自動で進んでよい
+* 自動進行を止めるのは、未 commit 前提、判断分岐、BLOCKER、スコープ外変更、テスト失敗、git 異常、またはユーザーが明示的に停止した場合だけとする
 * `plan` を始める前に、`specify` の成果物が commit 済みであること
 * `tasks` を始める前に、`plan` の成果物が commit 済みであること
 * `implement` を始める前に、`tasks` までの成果物が commit 済みであること
@@ -108,6 +113,8 @@ Use slash commands:
 - ローカルファイルシステム上の任意ディレクトリ。既定値は `server/contents/` (012-fix-run-access-path)
 - Rust stable + 参照用 Python 3 スクリプト + `axum`、Tokio、Rust 標準ライブラリのファイルアクセス、画像変換ライブラリ、`ref/convert.py` を参照したディザリング方針 (013-image-dither-rotate)
 - ローカルファイル (`server/contents/image.png` 入力、配信時に生成される 24bit BMP 出力) (013-image-dither-rotate)
+- Rust stable + `axum`、Tokio、Rust 標準ライブラリの時刻/ソケット/標準出力 (014-access-logs)
+- N/A（永続保存なし、標準出力ログのみ） (014-access-logs)
 
 ## Recent Changes
 - 002-add-run-script: Added Bash (POSIX shell) / Python 3 (実行環境) + Python 標準の HTTP 配信機能
