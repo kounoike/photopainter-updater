@@ -2,9 +2,11 @@
 
 `firmware/` は `xiaozhi-esp32/` を参照して作る専用ファームウェアです。`xiaozhi-esp32/` 自体は書き換えず、`firmware/` 側から必要な component を参照します。
 
+このプロジェクトの build target は `esp32s3` 固定です。`esp32` など他 target は対象外です。
+
 ## Merged Image の作成
 
-このリポジトリでは devcontainer 環境を前提にします。devcontainer で起動したシェルから、次のスクリプトを実行してください。
+このリポジトリでは devcontainer 環境を前提にします。devcontainer で起動したシェルから、次のスクリプトを実行してください。`esp32s3` の target 設定と merged image 生成までまとめて処理します。
 
 ```bash
 ./scripts/build-merged-image.sh
@@ -68,3 +70,15 @@ cd server
 ```
 
 既定では `http://127.0.0.1:8000/` と `http://127.0.0.1:8000/image.bmp` の両方で同じ `image.bmp` を返します。`image.bmp` が未配置のときは `404 Not Found` を返します。
+
+## 直接 build する場合
+
+通常は `./scripts/build-merged-image.sh` を使ってください。`idf.py` を直接使う場合も target は `esp32s3` 前提です。
+
+```bash
+idf.py -C firmware set-target esp32s3
+idf.py -C firmware build
+idf.py -C firmware flash monitor
+```
+
+誤って別 target の `sdkconfig` を作った疑いがある場合は、`idf.py -C firmware fullclean` の後に `set-target esp32s3` からやり直してください。
