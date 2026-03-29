@@ -1,6 +1,6 @@
 # Data Model: SDカード設定 HTTP e-paper 更新ファーム
 
-## Entity: 設定 JSON (`config.json`)
+## Entity: 設定 JSON (`config.txt`)
 
 - Purpose: 起動時および手動更新時に使う外部設定ファイル。
 - Fields:
@@ -50,7 +50,7 @@
 
 ## Relationships
 
-- `config.json` `drives` 更新ジョブ
+- `config.txt` `drives` 更新ジョブ
 - 更新ジョブ `fetches` 表示画像
 - 更新ジョブ `produces` 失敗状態
 - 表示画像が妥当な場合のみ 更新ジョブ `updates` e-paper 表示

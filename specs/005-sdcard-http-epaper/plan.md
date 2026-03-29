@@ -7,18 +7,18 @@
 
 ## Summary
 
-`xiaozhi-esp32` を参照元として活用しつつ、`firmware/` 配下に SDカードルートの `config.json` を読んで WiFi 接続し、起動時と BOOT ボタン押下時に単一の画像 URL から HTTP 取得を行い、e-paper を更新する専用ファームウェアを作る。失敗時はリトライ継続や対話機能へフォールバックせず、原因を判断できる状態を残して更新処理を終了し、そのままシャットダウンする。
+`xiaozhi-esp32` を参照元として活用しつつ、`firmware/` 配下に SDカードルートの `config.txt` を読んで WiFi 接続し、起動時と BOOT ボタン押下時に単一の画像 URL から HTTP 取得を行い、e-paper を更新する専用ファームウェアを作る。失敗時はリトライ継続や対話機能へフォールバックせず、原因を判断できる状態を残して更新処理を終了し、そのままシャットダウンする。
 
 ## Technical Context
 
 **Language/Version**: C/C++（既存 `xiaozhi-esp32` / ESP-IDF ベース）、Markdown（設計文書）  
 **Primary Dependencies**: `firmware/` 配下の新規実装、`xiaozhi-esp32/main/`、`components/sdcard_bsp`、`components/button_bsp`、`components/epaper_port`、既存ネットワーク/HTTP 関連部品  
-**Storage**: SDカード上の `config.json`、必要に応じた既存 NVS 設定領域  
+**Storage**: SDカード上の `config.txt`、必要に応じた既存 NVS 設定領域  
 **Testing**: 手動実機確認、設定ファイル差し替え確認、起動時更新確認、BOOT ボタン更新確認、失敗時シャットダウン確認  
 **Target Platform**: SDカード、WiFi、BOOT ボタン、e-paper を備えた ESP32 系デバイス  
 **Project Type**: 既存ファームウェア派生の単機能専用ファームウェア  
 **Performance Goals**: 正常系では起動後 60 秒以内に画像更新を完了し、BOOT ボタン更新でも 60 秒以内に表示更新結果を確認できること  
-**Constraints**: `config.json` は SDカードルート固定、画像取得先は単一 URL、失敗時は更新処理終了後にシャットダウン、実装コードは `firmware/` 配下に置き、`xiaozhi-esp32/` は参照専用で書き換えない、HTTP 以外の取得方式や複数画像管理には拡張しない  
+**Constraints**: `config.txt` は SDカードルート固定で中身は JSON、画像取得先は単一 URL、失敗時は更新処理終了後にシャットダウン、実装コードは `firmware/` 配下に置き、`xiaozhi-esp32/` は参照専用で書き換えない、HTTP 以外の取得方式や複数画像管理には拡張しない  
 **Scale/Scope**: 単一デバイス向けの起動時更新と手動再更新を初期スコープとし、定期更新・クラウド対話・複数画像配信は扱わない
 
 ## Constitution Check
@@ -67,7 +67,7 @@ firmware/
 └── main/
     ├── CMakeLists.txt          # main component 定義
     ├── main.cc                 # 起動入口
-    ├── config.*                # config.json 読込と必須項目検証
+    ├── config.*                # config.txt 読込と必須項目検証
     ├── update_job.*            # 起動時/BOOT 更新の直列制御
     ├── display_update.*        # HTTP 取得と e-paper 更新
     └── failure_state.*         # 失敗分類とシャットダウン制御
@@ -100,12 +100,12 @@ specs/005-sdcard-http-epaper/
 
 ## Phase 0: Research Outcome
 
-Phase 0 では、`config.json` を SDカードルートの単一設定ファイルとすること、画像取得は単一 URL に限定すること、失敗時は更新処理終了後にシャットダウンすること、実装は `firmware/` 配下に置いて `xiaozhi-esp32/` は書き換えないこと、既存の `sdcard_bsp` / `button_bsp` / `epaper_port` を参照候補とすることを確定した。`Technical Context` に `NEEDS CLARIFICATION` は残っていない。
+Phase 0 では、`config.txt` を SDカードルートの単一設定ファイルとし、中身は JSON として解釈すること、画像取得は単一 URL に限定すること、失敗時は更新処理終了後にシャットダウンすること、実装は `firmware/` 配下に置いて `xiaozhi-esp32/` は書き換えないこと、既存の `sdcard_bsp` / `button_bsp` / `epaper_port` を参照候補とすることを確定した。`Technical Context` に `NEEDS CLARIFICATION` は残っていない。
 
 ## Phase 1: Design Outcome
 
 - `data-model.md` で、設定ファイル、更新ジョブ、表示画像、失敗状態の関係を定義する
-- `contracts/config-and-update-contract.md` で、`config.json` の必須項目と更新ジョブの振る舞い契約を定義する
+- `contracts/config-and-update-contract.md` で、`config.txt` の必須項目と更新ジョブの振る舞い契約を定義する
 - `quickstart.md` で、正常系と失敗系の手動検証手順を定義する
 - 実装では、`firmware/` 側に起動時更新、BOOT ボタン更新、失敗時シャットダウンの一貫した制御フローを組み立てる
 

@@ -1,8 +1,8 @@
 # Research: SDカード設定 HTTP e-paper 更新ファーム
 
-## Decision 1: 設定は SDカードルートの `config.json` に固定する
+## Decision 1: 設定は SDカードルートの `config.txt` に固定する
 
-- Decision: 設定ファイル名は SDカードルートの `config.json` に固定する。
+- Decision: 設定ファイル名は SDカードルートの `config.txt` に固定し、中身は JSON として解釈する。
 - Rationale: clarify で確定済みであり、利用者向け説明、実装の探索ロジック、手動運用を最も単純にできるため。
 - Alternatives considered:
   - `settings.json`: 意味は通るが、既存コードや利用手順の説明上で優位性がない。
@@ -10,7 +10,7 @@
 
 ## Decision 2: 画像取得先は単一 URL に限定する
 
-- Decision: `config.json` は単一の画像 URL のみを持ち、毎回その 1 枚を取得する。
+- Decision: `config.txt` は単一の画像 URL のみを持ち、毎回その 1 枚を取得する。
 - Rationale: 今回の目的は確実な起動時更新と手動更新であり、複数画像管理や選択ロジックは scope を超えるため。
 - Alternatives considered:
   - 画像 URL 配列: JSON 仕様と表示ルールが膨らむ。

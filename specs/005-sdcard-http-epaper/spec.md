@@ -13,22 +13,22 @@
 
 - Q: 設定 JSON の画像取得先は単一 URL と複数候補のどちらにするか → A: JSON は単一の画像 URL だけを持ち、毎回その 1 枚を取得する
 - Q: 更新失敗時のデバイス挙動はどうするか → A: 更新失敗時はそのまま終了してシャットダウンする
-- Q: SDカード上の設定ファイル名は何に固定するか → A: SDカードルートの `config.json` に固定する
+- Q: SDカード上の設定ファイル名は何に固定するか → A: SDカードルートの `config.txt` に固定する
 - Q: 実装コードはどこに置き、`xiaozhi-esp32/` をどう扱うか → A: 実装コードは `firmware/` 配下に置き、`xiaozhi-esp32/` は参照専用で書き換えない
 
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - 起動時に最新画像を表示できる (Priority: P1)
 
-利用者は電源投入後、SDカードルートの `config.json` に置かれた設定情報をもとにデバイスが WiFi に接続し、設定 JSON に記載された単一の画像 URL から画像を取得して e-paper 表示を更新できる。
+利用者は電源投入後、SDカードルートの `config.txt` に置かれた設定情報をもとにデバイスが WiFi に接続し、設定 JSON に記載された単一の画像 URL から画像を取得して e-paper 表示を更新できる。
 
 **Why this priority**: この機能が成立しなければ、本命ファームウェアとしての基本価値である「設定済み画像の自動取得と表示」が実現できないため。
 
-**Independent Test**: SDカードルートに正しい `config.json` を置いた状態で起動し、追加操作なしで画像取得と e-paper 更新が完了することを確認する。
+**Independent Test**: SDカードルートに正しい `config.txt` を置いた状態で起動し、追加操作なしで画像取得と e-paper 更新が完了することを確認する。
 
 **Acceptance Scenarios**:
 
-1. **Given** SDカードのルートに有効な `config.json` があり、WiFi と画像 URL が利用可能な状態で、 **When** デバイスが起動する, **Then** デバイスは設定を読み込み、WiFi 接続後に画像を取得して e-paper 表示を更新する。
+1. **Given** SDカードのルートに有効な `config.txt` があり、WiFi と画像 URL が利用可能な状態で、 **When** デバイスが起動する, **Then** デバイスは設定を読み込み、WiFi 接続後に画像を取得して e-paper 表示を更新する。
 2. **Given** 起動時の画像取得が成功した状態で, **When** 表示更新が完了する, **Then** 利用者は取得した画像が e-paper に反映されたことを確認できる。
 
 ---
@@ -74,7 +74,7 @@
 ### Functional Requirements
 
 - **FR-001**: System MUST `xiaozhi-esp32` を参照元として活用しつつ、画像取得と e-paper 更新を主目的とした専用ファームウェアを `firmware/` 配下に提供する。
-- **FR-002**: System MUST 起動時に SDカードのルートにある `config.json` を読み込み、WiFi 接続情報と単一の画像取得先 URL を取得する。
+- **FR-002**: System MUST 起動時に SDカードのルートにある `config.txt` を読み込み、WiFi 接続情報と単一の画像取得先 URL を取得する。
 - **FR-003**: System MUST 設定 JSON に基づいて WiFi へ接続し、画像取得に必要な通信準備を完了しなければならない。
 - **FR-004**: System MUST 起動時に設定済み URL へ HTTP でアクセスし、取得した画像で e-paper 表示を更新しなければならない。
 - **FR-005**: Users MUST be able to BOOT ボタンを押すことで、設定済み URL からの画像再取得と e-paper 再更新を手動で実行できる。
@@ -82,11 +82,11 @@
 - **FR-007**: System MUST 設定 JSON の欠落、不正形式、必須項目不足を検出し、更新失敗として扱わなければならない。
 - **FR-008**: System MUST WiFi 接続失敗、HTTP 応答失敗、画像不正時に、更新処理を終了してシャットダウンしなければならない。
 - **FR-009**: System MUST 失敗時に、利用者または開発者が設定不備・接続不良・取得失敗を切り分けられる状態を残した上で、更新処理を終了しシャットダウンしなければならない。
-- **FR-010**: System MUST 利用者が SDカード上の `config.json` を差し替えるだけで、WiFi 接続先や単一の画像取得先を変更できるようにしなければならない。
+- **FR-010**: System MUST 利用者が SDカード上の `config.txt` を差し替えるだけで、WiFi 接続先や単一の画像取得先を変更できるようにしなければならない。
 
 ### Key Entities *(include if feature involves data)*
 
-- **設定 JSON (`config.json`)**: SDカードのルートに置かれる設定ファイル。WiFi の SSID、パスワード、単一の画像取得 URL を保持する。
+- **設定 JSON (`config.txt`)**: SDカードのルートに置かれる設定ファイル。中身は JSON として解釈し、WiFi の SSID、パスワード、単一の画像取得 URL を保持する。
 - **更新ジョブ**: 起動時または BOOT ボタン押下時に発生する、設定読込、WiFi 接続、HTTP 取得、e-paper 更新までの一連処理。
 - **表示画像**: HTTP で取得され、e-paper に反映される対象画像。取得成功時のみ表示更新に使われる。
 - **失敗状態**: 設定不備、WiFi 接続失敗、HTTP 失敗、画像不正などを区別し、シャットダウン前に判断可能にするための状態情報。
@@ -97,7 +97,7 @@
 
 - `firmware/` 配下への専用ファームウェア実装。
 - `xiaozhi-esp32/` を参照元として調査し、その内容を設計へ反映すること。
-- SDカード上の `config.json` 読込、WiFi 接続、HTTP 画像取得、e-paper 更新、BOOT ボタン再更新の実装。
+- SDカード上の `config.txt` 読込、WiFi 接続、HTTP 画像取得、e-paper 更新、BOOT ボタン再更新の実装。
 - 失敗時の安全な振る舞いと切り分けしやすい失敗状態の整備。
 - 必要な設定例や利用手順などの関連文書更新。
 
@@ -114,16 +114,16 @@
 
 ### Measurable Outcomes
 
-- **SC-001**: 正しい `config.json` と利用可能なネットワーク環境がある場合、起動後 60 秒以内に画像取得と e-paper 表示更新が完了する。
+- **SC-001**: 正しい `config.txt` と利用可能なネットワーク環境がある場合、起動後 60 秒以内に画像取得と e-paper 表示更新が完了する。
 - **SC-002**: 利用者が BOOT ボタンを押した場合、90% 以上の試行で 60 秒以内に表示更新結果を確認できる。
 - **SC-003**: 設定不備、WiFi 接続失敗、HTTP 取得失敗の各ケースで、デバイスが失敗理由を判断できる形で更新処理を終了し、シャットダウンする。
-- **SC-004**: 利用者は SDカード上の `config.json` を差し替えるだけで、再書き込みなしに WiFi 接続先と単一の画像取得先を変更できる。
+- **SC-004**: 利用者は SDカード上の `config.txt` を差し替えるだけで、再書き込みなしに WiFi 接続先と単一の画像取得先を変更できる。
 
 ## Assumptions
 
 - 対象デバイスは SDカード、WiFi、e-paper、BOOT ボタンを利用できるハードウェア構成を備えている。
 - `xiaozhi-esp32/` は実装参考用の同梱コードとして扱い、派生実装は `firmware/` 配下に新設する前提とする。
-- `config.json` はデバイス起動前に利用者が SDカードのルートへ配置する運用とする。
+- `config.txt` はデバイス起動前に利用者が SDカードのルートへ配置する運用とする。
 - 画像取得先 URL は LAN 内または通常の HTTP 到達範囲にあり、認証なしで取得できる前提とする。
 - 起動時と BOOT ボタン押下時の都度更新を初期スコープとし、定期更新は対象外とする。
 - e-paper に適した画像形式への前処理は取得先またはファームウェア側で解決可能な前提だが、仕様上は「表示可能な画像を扱うこと」を要求する。
@@ -131,6 +131,6 @@
 
 ## Documentation Impact
 
-- `specs/005-sdcard-http-epaper/contracts/config-and-update-contract.md` に、専用ファームウェア用の `config.json` 仕様を維持更新する必要がある。
+- `specs/005-sdcard-http-epaper/contracts/config-and-update-contract.md` に、専用ファームウェア用の `config.txt` 仕様を維持更新する必要がある。
 - `specs/005-sdcard-http-epaper/quickstart.md` に、SDカードへの設定配置方法、起動時更新、BOOT ボタン更新、失敗時確認の手順を維持更新する必要がある。
-- 利用者向け文書として `docs/firmware-http-epaper.md` を作成または更新し、`config.json` の配置方法と運用手順を説明できる状態にする必要がある。
+- 利用者向け文書として `docs/firmware-http-epaper.md` を作成または更新し、`config.txt` の配置方法と運用手順を説明できる状態にする必要がある。
