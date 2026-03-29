@@ -1,0 +1,33 @@
+# Research: ACT LED アクティビティ表示
+
+## Decision 1: LED 制御は `xiaozhi-esp32/components/led_bsp` を第一候補にしつつ、実機の LED/GPIO 確認を前提にする
+
+- Decision: `firmware/` から `led_bsp` を参照 component として取り込む。ただし `waveshare-s3-PhotoPainter/config.h` の `BUILTIN_LED_GPIO` は `GPIO_NUM_NC` なので、実機で使う活動表示 LED と GPIO を確認した上で採用する。
+- Rationale: 既存 LED 制御 API を流用できれば実装は単純になる一方、PhotoPainter 参照設定では built-in LED が未定義のため、ハードウェア前提を確認せずに断定できない。
+- Alternatives considered:
+  - `driver/gpio` で `firmware/` に独自 LED 制御を新設する
+    - 却下理由: 既存部品との責務重複が増え、将来の board 差し替えでも整合を崩しやすい。
+
+## Decision 2: 点滅の開始/停止は更新ジョブのライフサイクルに同期させる
+
+- Decision: 起動時更新と BOOT ボタン更新の両方で、キュー投入後に実行された単一更新ジョブに対して点滅を開始し、正常完了または失敗確定時に停止する。
+- Rationale: 進行中表示は更新ジョブの直列実行制御と一致している必要があり、SD 読込、Wi-Fi 接続、HTTP 取得、表示更新などの待ち時間を自然に含められる。
+- Alternatives considered:
+  - SD 読込、HTTP 取得、表示更新ごとに個別制御する
+    - 却下理由: 状態遷移が増え、失敗経路で消灯漏れを起こしやすい。
+
+## Decision 3: 点滅周期は目視で活動中と判断しやすい既定の単一パターンを採用する
+
+- Decision: `led_bsp` の既存 flicker API が持つ速度区分のうち 1 つを既定パターンとして固定し、更新ジョブ中はその単一パターンを維持する。
+- Rationale: 利用者要件は厳密な周期ではなく「動いていることが分かる」ことなので、既存実装の範囲で十分満たせる。
+- Alternatives considered:
+  - 新しい PWM ベースの細かな点滅周期制御を導入する
+    - 却下理由: 要件に対して過剰であり、ESP-IDF の追加制御面を増やすだけになる。
+
+## Decision 4: 待機状態と終了状態では LED を消灯する
+
+- Decision: 成功後と失敗後のどちらでも点滅を停止し、待機状態では活動中に見える LED 状態を残さない。
+- Rationale: 進行中と停止済みを見分けることがこの機能の主目的であり、停止後に光り続けると意味が失われる。
+- Alternatives considered:
+  - 成功時だけ常時点灯に切り替える
+    - 却下理由: 更新済み表示という別意味を持ち込み、仕様範囲を広げる。
