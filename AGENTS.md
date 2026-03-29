@@ -62,3 +62,10 @@ Use slash commands:
 * /speckit.implement
 
 ---
+
+## Active Technologies
+- Bash (POSIX shell) / Python 3 (実行環境) + Python 標準の HTTP 配信機能 (002-add-run-script)
+- files (`server/contents/`) (002-add-run-script)
+
+## Recent Changes
+- 002-add-run-script: Added Bash (POSIX shell) / Python 3 (実行環境) + Python 標準の HTTP 配信機能
