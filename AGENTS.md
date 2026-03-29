@@ -101,6 +101,8 @@ Use slash commands:
 - devcontainer 設定ファイル、Git 管理外の永続認証キャッシュ領域、`.devcontainer/.env` (011-improve-devcontainer)
 - Bash (POSIX shell) + Rust stable + `server/run.sh`、`cargo run --release`、既存 Rust HTTP サーバ (`axum` / Tokio) (012-fix-run-access-path)
 - ローカルファイルシステム上の任意ディレクトリ。既定値は `server/contents/` (012-fix-run-access-path)
+- Rust stable + 参照用 Python 3 スクリプト + `axum`、Tokio、Rust 標準ライブラリのファイルアクセス、画像変換ライブラリ、`ref/convert.py` を参照したディザリング方針 (013-image-dither-rotate)
+- ローカルファイル (`server/contents/image.png` 入力、配信時に生成される 24bit BMP 出力) (013-image-dither-rotate)
 
 ## Recent Changes
 - 002-add-run-script: Added Bash (POSIX shell) / Python 3 (実行環境) + Python 標準の HTTP 配信機能
