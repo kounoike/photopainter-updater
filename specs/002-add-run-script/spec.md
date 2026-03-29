@@ -51,7 +51,8 @@
 - **FR-002**: System MUST `server/contents/` をHTTPで配信できる
 - **FR-003**: Users MUST be able to 配信を停止できる
 - **FR-004**: System MUST 起動失敗時に理由が分かる出力を行う
-- **FR-005**: System MUST 追加の設定なしで実行できる
+- **FR-005**: System MUST `server/contents/` と `.gitignore` を用意する
+- **FR-006**: System MUST 追加の設定なしで実行できる
 
 ## Scope Boundaries *(mandatory)*
 
@@ -69,16 +70,15 @@
 
 ### Measurable Outcomes
 
-- **SC-001**: スクリプト実行から10秒以内に配信が開始される
-- **SC-002**: 初回利用で追加設定なしに配信を開始できる
-- **SC-003**: 代表ファイルへアクセスし内容確認ができる
-- **SC-004**: 起動失敗時に利用者が原因を把握できる
+- **SC-001**: 初回利用で追加設定なしに配信を開始できる
+- **SC-002**: 代表ファイルへアクセスし内容確認ができる
+- **SC-003**: 起動失敗時に利用者が原因を把握できる
 
 ## Assumptions
 
 - 利用者はローカル端末でシェルスクリプトを実行できる
 - 配信はローカル検証用途であり外部公開は想定しない
-- `server/contents/` はリポジトリ内に存在する前提
+- `server/contents/` は本機能で新規作成する
 
 ## Documentation Impact
 

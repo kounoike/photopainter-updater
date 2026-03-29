@@ -16,7 +16,7 @@
 
 **Purpose**: 最小構成の準備
 
-- [ ] T001 `server/` と `server/contents/` ディレクトリを作成する
+- [ ] T001 `server/` と `server/contents/` を作成し `server/contents/.gitignore` を追加する
 
 ---
 
