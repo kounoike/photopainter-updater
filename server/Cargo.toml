@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 axum = "0.8"
+image = { version = "0.25", default-features = false, features = ["bmp", "png"] }
 tokio = { version = "1", features = ["fs", "macros", "rt-multi-thread"] }
 
 [dev-dependencies]
