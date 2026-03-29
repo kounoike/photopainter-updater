@@ -34,6 +34,15 @@ Rules:
 * Each phase must produce artifacts (spec/plan/tasks/etc.)
 * commit & merge only after successful implementation and testing
 
+Phase transition commit policy:
+
+* `plan` を始める前に、`specify` の成果物が commit 済みであること
+* `tasks` を始める前に、`plan` の成果物が commit 済みであること
+* `implement` を始める前に、`tasks` までの成果物が commit 済みであること
+* 各 phase の開始時に、そこまでの成果物が未 commit の場合は、次の phase へ進む前に必ずユーザーへ続行可否を確認すること
+* ユーザーが明示的に続行を許可しない限り、未 commit 状態で次 phase へ進んではならない
+* commit を行う場合は、その phase の成果物を優先してまとめ、無関係な変更を巻き込まないこと
+
 ---
 
 # Codex notes
