@@ -21,7 +21,7 @@
 
 **Purpose**: 独自形式追加の対象箇所と確認導線を揃える
 
-- [ ] T001 `server/src/main.rs`、`firmware/main/display_update.cc`、`firmware/main/update_job.cc` の現行 BMP 経路と SD 保存依存箇所を整理する
+- [ ] T001 `server/src/main.rs`、`firmware/main/display_update.cc`、`firmware/main/update_job.cc` の現行 BMP 経路、SD 保存依存箇所、`image_url` 末尾判定箇所を整理する
 - [ ] T002 `specs/015-custom-transfer-format/quickstart.md` に BMP 維持確認、`/image.bin` 確認、保存なし更新確認の観点を反映する
 
 ---
@@ -43,22 +43,22 @@
 
 ## Phase 3: User Story 1 - 保存なしで表示更新したい (Priority: P1)
 
-**Goal**: firmware が `/image.bin` を使って SD カード保存なしに更新できるようにする
+**Goal**: firmware が `image_url` 末尾 `.bin` のときだけ独自形式経路を使って SD カード保存なしに更新できるようにする
 
-**Independent Test**: firmware が `/image.bin` を使う状態で更新を実行し、中間 BMP ファイルなしで表示更新が完了することを確認する
+**Independent Test**: firmware が `.bin` で終わる `image_url` を使う状態で更新を実行し、中間 BMP ファイルなしで表示更新が完了することを確認する
 
 ### Verification for User Story 1
 
 - [ ] T007 [US1] `/image.bin` の成功応答と payload 長検証テストを `server/src/main.rs` に追加する
 - [ ] T008 [US1] 独自形式のヘッダ検証と payload 完了判定テストを `firmware/main/display_update.cc` に追加する
-- [ ] T009 [US1] 保存なし更新確認手順を `specs/015-custom-transfer-format/quickstart.md` に反映する
+- [ ] T009 [US1] `.bin` 末尾 URL での保存なし更新確認手順を `specs/015-custom-transfer-format/quickstart.md` に反映する
 
 ### Implementation for User Story 1
 
 - [ ] T010 [US1] `/image.bin` 応答を生成する処理を `server/src/main.rs` に実装する
 - [ ] T011 [US1] 独自形式を受信して RAM 上で検証する処理を `firmware/main/display_update.cc` と `firmware/main/display_update.h` に実装する
 - [ ] T012 [US1] 検証済み payload を直接表示バッファへ反映する処理を `firmware/main/display_update.cc` に実装する
-- [ ] T013 [US1] `firmware/main/update_job.cc` で `/image.bin` 利用時に SD カード保存経路を通さない更新フローへ切り替える
+- [ ] T013 [US1] `firmware/main/update_job.cc` で `image_url` 末尾が `.bin` のときだけ SD カード保存経路を通さない更新フローへ切り替える
 
 **Checkpoint**: User Story 1 が単独で検証可能であること
 
@@ -66,21 +66,21 @@
 
 ## Phase 4: User Story 2 - 既存の BMP クライアントを壊したくない (Priority: P2)
 
-**Goal**: `/` と `/image.bmp` の BMP 互換を維持したまま `/image.bin` を追加する
+**Goal**: `image_url` 末尾判定による経路選択を追加しつつ `/` と `/image.bmp` の BMP 互換を維持する
 
-**Independent Test**: `/` と `/image.bmp` が従来どおり BMP を返し、`/image.bin` だけが独自形式を返すことを確認する
+**Independent Test**: `image_url` が `.bin` 以外なら BMP 経路、`.bin` なら独自形式経路を使うことを確認し、加えて `/` と `/image.bmp` が従来どおり BMP を返すことを確認する
 
 ### Verification for User Story 2
 
 - [ ] T014 [US2] `/`、`/image.bmp`、`/image.bin` の route 切り分けテストを `server/src/main.rs` に追加する
 - [ ] T015 [US2] BMP 経路の Content-Type と body 維持テストを `server/src/main.rs` に追加する
-- [ ] T016 [US2] 既存 BMP 経路維持手順を `specs/015-custom-transfer-format/quickstart.md` に反映する
+- [ ] T016 [US2] `image_url` 末尾判定と既存 BMP 経路維持手順を `specs/015-custom-transfer-format/quickstart.md` に反映する
 
 ### Implementation for User Story 2
 
 - [ ] T017 [US2] `server/src/main.rs` で `/` と `/image.bmp` の既存 BMP 応答を維持したまま `/image.bin` route を統合する
 - [ ] T018 [US2] `server/run.sh` に `/image.bin` の案内を追加しつつ BMP 取得先維持を明記する
-- [ ] T019 [US2] `specs/015-custom-transfer-format/contracts/image-bin-transfer-contract.md` に BMP 互換経路との差分を反映する
+- [ ] T019 [US2] `firmware/main/update_job.cc` と `firmware/main/config.cc` に `image_url` 末尾 `.bin` 判定による経路選択を実装し、`specs/015-custom-transfer-format/contracts/image-bin-transfer-contract.md` にも反映する
 
 **Checkpoint**: User Story 1 と 2 が独立検証可能であること
 

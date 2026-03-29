@@ -15,11 +15,11 @@
 
 **Why this priority**: 中間保存を前提にした汎用画像形式の受け渡しをやめられれば、更新時間短縮、書き込み負荷削減、SD カード依存の低減につながるため。
 
-**Independent Test**: firmware が独自形式の取得先を使う状態で画像更新を実行し、SD カード上に中間画像ファイルを作らずに表示更新が完了することを確認する。
+**Independent Test**: firmware の `config.txt` に `.bin` で終わる `image_url` を設定して画像更新を実行し、SD カード上に中間画像ファイルを作らずに表示更新が完了することを確認する。
 
 **Acceptance Scenarios**:
 
-1. **Given** firmware が独自形式の取得先を使う状態, **When** 利用者が更新を実行する, **Then** デバイスは SD カード上の中間画像ファイル保存を必須とせずに表示更新を完了できる。
+1. **Given** firmware の `image_url` が `.bin` で終わる状態, **When** 利用者が更新を実行する, **Then** デバイスは独自形式経路を選び、SD カード上の中間画像ファイル保存を必須とせずに表示更新を完了できる。
 2. **Given** 独自形式を使う更新経路が有効な状態, **When** 更新処理が正常完了する, **Then** 利用者は従来と同等の最終表示結果を確認できる。
 
 ---
@@ -30,12 +30,12 @@
 
 **Why this priority**: firmware 向け最適化のために既存の HTTP 取得互換性を壊すと、現在の利用方法や検証手順が崩れるため。
 
-**Independent Test**: 既存の `/` と `/image.bmp` へアクセスし、変更前と同じ種類の応答が返ることを確認した上で、`/image.bin` のみが独自形式を返すことを確認する。
+**Independent Test**: firmware の `image_url` に `.bin` 以外で終わる URL を設定した場合は BMP 経路を使うことを確認し、加えて既存の `/` と `/image.bmp` へアクセスして変更前と同じ種類の応答が返ることを確認する。
 
 **Acceptance Scenarios**:
 
 1. **Given** HTTP サーバが新機能を持つ状態, **When** 利用者が `/` または `/image.bmp` にアクセスする, **Then** サーバは従来どおり BMP 応答を返す。
-2. **Given** HTTP サーバが新機能を持つ状態, **When** firmware 向けに `/image.bin` へアクセスする, **Then** サーバは BMP ではない独自形式の応答を返す。
+2. **Given** firmware の `image_url` が `.bin` で終わる状態, **When** firmware 向けにその URL へアクセスする, **Then** サーバは BMP ではない独自形式の応答を返す。
 
 ---
 
@@ -72,7 +72,7 @@
 - **FR-006**: System MUST 独自形式に、firmware が受信途中の妥当性確認と完了判定を行うための識別情報を含めなければならない。
 - **FR-007**: System MUST 独自形式の取得失敗、途中中断、不正内容時に、安全に更新を中止し、成功扱いにしない振る舞いを提供しなければならない。
 - **FR-008**: System MUST 運用者または開発者が、独自形式経路の失敗を通信、入力画像、形式不整合の観点で切り分けられるようにしなければならない。
-- **FR-009**: Users MUST be able to firmware 側で独自形式経路を使うか、既存 BMP 経路を使うかを明確に判断できなければならない。
+- **FR-009**: Users MUST be able to firmware 側で `config.txt` の `image_url` 末尾が `.bin` なら独自形式、それ以外なら BMP 経路を使うと明確に判断できなければならない。
 - **FR-010**: System MUST 今回の範囲では新しい画像編集 UI、複数画像管理、追加の汎用画像取得先変更を要求してはならない。
 
 ### Key Entities *(include if feature involves data)*
@@ -112,6 +112,7 @@
 
 - 対象 firmware は現在 HTTP 取得後に SD カード上の BMP を介して表示更新しており、この中間保存をなくす価値がある。
 - 独自形式は firmware 向け最適化のために導入し、既存の人手確認や汎用クライアント確認は BMP 経路を継続利用する。
+- firmware は `config.txt` の `image_url` 文字列末尾だけで経路を選び、`.bin` 以外は既存 BMP 経路として扱う前提とする。
 - 独自形式の詳細は planning で詰めるが、少なくとも順次受信処理と完了判定ができる契約を持つ前提とする。
 - 既存の入力画像は引き続き単一画像を前提とし、複数画像配信や追加 UI は今回対象外とする。
 

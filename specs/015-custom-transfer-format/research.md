@@ -18,10 +18,10 @@
   - JSON ヘッダを前置する: 人には読みやすいが、firmware の解析処理が増え、固定長ヘッダより複雑になる。
   - ヘッダなしで raw bytes のみ送る: route の取り違えやバージョン不整合を安全に検出しにくい。
 
-## Decision 3: `/` と `/image.bmp` は既存 BMP 応答を維持し、firmware が独自形式を使うかは `image_url` の値で選ぶ
+## Decision 3: `/` と `/image.bmp` は既存 BMP 応答を維持し、firmware は `image_url` 末尾が `.bin` かどうかで経路を選ぶ
 
-- Decision: server は `/` と `/image.bmp` を変更せず、独自形式は `/image.bin` 追加のみとする。firmware がどちらを使うかは既存 `config.txt` の `image_url` で切り替える。
-- Rationale: 現在の `config.txt` は `http://` の URL を 1 つ保持できるため、新しい設定キーを増やさなくても独自形式経路へ移行できる。BMP 経路を維持することで、人手検証や既存クライアントの互換性も残せる。
+- Decision: server は `/` と `/image.bmp` を変更せず、独自形式は `/image.bin` 追加のみとする。firmware は既存 `config.txt` の `image_url` 文字列末尾が `.bin` なら独自形式経路、それ以外なら BMP 経路を使う。
+- Rationale: 現在の `config.txt` は `http://` の URL を 1 つ保持できるため、新しい設定キーを増やさなくても独自形式経路へ移行できる。末尾判定なら設定追加なしで経路選択が明確になり、BMP 経路を維持することで人手検証や既存クライアントの互換性も残せる。
 - Alternatives considered:
   - `Accept` ヘッダで同一路由を分岐する: server/firmware 両方の条件分岐が増え、切り分けも難しくなる。
   - `/image.bmp` を独自形式に置き換える: 既存互換を壊すため不採用。

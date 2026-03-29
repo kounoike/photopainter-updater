@@ -45,6 +45,9 @@
 
 - Purpose:
   - firmware が 1 回の更新要求を処理した結果
+- Route selection:
+  - `image_url` の文字列末尾が `.bin` なら `binary_epaper` を使う
+  - それ以外なら BMP 互換経路を使う
 - States:
   - `started`
   - `http_connected`

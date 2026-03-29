@@ -7,7 +7,7 @@
 
 ## Summary
 
-既存の Rust HTTP サーバは `/` と `/image.bmp` で変換済み BMP を返し、firmware はそれを `download.bmp` として SD カードへ保存してから `GUI_ReadBmp_RGB_6Color` で描画している。今回の feature では BMP 互換経路を維持したまま `/image.bin` を追加し、server が e-paper 向けの 4bit packed frame buffer と最小ヘッダを返し、firmware はそれを SD カードへ保存せずに受信後そのまま表示バッファへ反映できる構成を採る。
+既存の Rust HTTP サーバは `/` と `/image.bmp` で変換済み BMP を返し、firmware はそれを `download.bmp` として SD カードへ保存してから `GUI_ReadBmp_RGB_6Color` で描画している。今回の feature では BMP 互換経路を維持したまま `/image.bin` を追加し、server が e-paper 向けの 4bit packed frame buffer と最小ヘッダを返し、firmware は `config.txt` の `image_url` 末尾が `.bin` のときだけ独自形式経路を選び、それ以外は既存 BMP 経路を使う構成を採る。
 
 ## Technical Context
 
@@ -18,7 +18,7 @@
 **Target Platform**: ローカル LAN 上の HTTP サーバ、PhotoPainter firmware を動かす ESP32 + e-paper  
 **Project Type**: server + firmware の転送契約追加  
 **Performance Goals**: 既存 BMP 経路より不要なファイル I/O を減らし、1 回の更新で保存なしに表示更新を完了できること  
-**Constraints**: `/` と `/image.bmp` の既存互換維持、`firmware/` 配下のみ変更、LAN/ローカル優先、表示サイズは `800x480`、e-paper 色値は既存 6 色 index に合わせる  
+**Constraints**: `/` と `/image.bmp` の既存互換維持、`config.txt` の `image_url` 末尾 `.bin` 判定で経路を切り替える、`firmware/` 配下のみ変更、LAN/ローカル優先、表示サイズは `800x480`、e-paper 色値は既存 6 色 index に合わせる  
 **Scale/Scope**: 単一サーバと少数デバイスのローカル運用。対象は単一画像の HTTP 配信と 1 台の e-paper 描画経路
 
 ## Constitution Check

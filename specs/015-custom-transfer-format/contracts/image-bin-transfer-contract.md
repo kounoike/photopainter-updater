@@ -8,6 +8,9 @@
 
 - Route:
   - `GET /image.bin`
+- Firmware selection rule:
+  - `config.txt` の `image_url` 末尾が `.bin` のときだけ、この contract を使う
+  - `image_url` 末尾が `.bin` 以外のときは BMP 互換経路を使う
 - Existing compatibility:
   - `GET /`
   - `GET /image.bmp`
