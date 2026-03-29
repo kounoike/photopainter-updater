@@ -1,13 +1,17 @@
 use std::env;
+use std::fmt;
 use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use axum::Router;
 use axum::body::Body;
-use axum::extract::State;
+use axum::extract::{ConnectInfo, Request, State};
 use axum::http::header::{CONTENT_TYPE, HeaderValue};
-use axum::http::{Response, StatusCode};
-use axum::routing::get;
+use axum::http::{Method, Response, StatusCode};
+use axum::routing::{any, get};
 use image::codecs::bmp::BmpEncoder;
 use image::{ExtendedColorType, ImageBuffer, ImageReader, Rgb, RgbImage};
 
@@ -18,6 +22,7 @@ const SATURATION_BIAS: f32 = 0.29;
 const VALUE_SCALE: f32 = 1.02;
 const VALUE_SATURATION_SCALE: f32 = 0.14;
 const VALUE_BIAS: f32 = 0.15;
+#[cfg(test)]
 const SATURATION_TOLERANCE: u8 = 6;
 const REFERENCE_PALETTE: [[u8; 3]; 7] = [
     [0, 0, 0],
@@ -29,9 +34,56 @@ const REFERENCE_PALETTE: [[u8; 3]; 7] = [
     [0, 255, 0],
 ];
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 struct AppState {
     content_dir: PathBuf,
+    logger: Arc<dyn AccessLogger>,
+    request_counter: Arc<AtomicU64>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct AccessLogEntry {
+    request_id: u64,
+    timestamp: String,
+    remote: String,
+    method: Method,
+    path: String,
+    status: StatusCode,
+    outcome: LogOutcome,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum LogOutcome {
+    Success,
+    InputMissing,
+    TransformFailed,
+    NotFound,
+    InternalError,
+}
+
+impl fmt::Display for LogOutcome {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Success => write!(f, "success"),
+            Self::InputMissing => write!(f, "input-missing"),
+            Self::TransformFailed => write!(f, "transform-failed"),
+            Self::NotFound => write!(f, "not-found"),
+            Self::InternalError => write!(f, "internal-error"),
+        }
+    }
+}
+
+trait AccessLogger: Send + Sync {
+    fn record(&self, entry: &AccessLogEntry);
+}
+
+#[derive(Debug)]
+struct StdoutAccessLogger;
+
+impl AccessLogger for StdoutAccessLogger {
+    fn record(&self, entry: &AccessLogEntry) {
+        println!("{}", format_access_log_line(entry));
+    }
 }
 
 #[derive(Debug)]
@@ -112,20 +164,50 @@ fn build_app(state: AppState) -> Router {
     Router::new()
         .route("/", get(serve_image))
         .route("/image.bmp", get(serve_image))
+        .fallback(any(serve_not_found))
         .with_state(state)
 }
 
-async fn serve_image(State(state): State<AppState>) -> Response<Body> {
+async fn serve_image(State(state): State<AppState>, request: Request) -> Response<Body> {
+    let method = request.method().clone();
+    let path = request.uri().path().to_string();
+    let remote = extract_remote_addr(&request);
     let input_path = input_image_path_from_dir(&state.content_dir);
     let image = match load_input_image(&input_path) {
         Ok(image) => image,
-        Err(err) => return err.into_response(),
+        Err(err) => {
+            let outcome = image_load_error_outcome(&err);
+            let response = err.into_response();
+            log_request(&state, method, path, remote, response.status(), outcome);
+            return response;
+        }
     };
 
-    match render_bmp_response(&image) {
-        Ok(bytes) => bmp_response(bytes),
-        Err(err) => err.into_response(),
-    }
+    let (response, outcome) = match render_bmp_response(&image) {
+        Ok(bytes) => (bmp_response(bytes), LogOutcome::Success),
+        Err(err) => {
+            let outcome = transform_error_outcome(&err);
+            (err.into_response(), outcome)
+        }
+    };
+    log_request(&state, method, path, remote, response.status(), outcome);
+    response
+}
+
+async fn serve_not_found(State(state): State<AppState>, request: Request) -> Response<Body> {
+    let method = request.method().clone();
+    let path = request.uri().path().to_string();
+    let remote = extract_remote_addr(&request);
+    let response = text_response(StatusCode::NOT_FOUND, "route not found\n");
+    log_request(
+        &state,
+        method,
+        path,
+        remote,
+        response.status(),
+        LogOutcome::NotFound,
+    );
+    response
 }
 
 fn load_input_image(path: &Path) -> Result<RgbImage, ImageLoadError> {
@@ -149,6 +231,70 @@ fn render_bmp_response(input: &RgbImage) -> Result<Vec<u8>, TransformError> {
     let dithered = apply_reference_dither(&saturated);
     let rotated = rotate_right_90(&dithered);
     encode_bmp_24(&rotated).map_err(TransformError::Encode)
+}
+
+fn image_load_error_outcome(error: &ImageLoadError) -> LogOutcome {
+    match error {
+        ImageLoadError::Missing(_) => LogOutcome::InputMissing,
+        ImageLoadError::Decode(_, _) => LogOutcome::TransformFailed,
+        ImageLoadError::Io(_, _) => LogOutcome::InternalError,
+    }
+}
+
+fn transform_error_outcome(error: &TransformError) -> LogOutcome {
+    match error {
+        TransformError::Encode(_) => LogOutcome::InternalError,
+    }
+}
+
+fn log_request(
+    state: &AppState,
+    method: Method,
+    path: String,
+    remote: String,
+    status: StatusCode,
+    outcome: LogOutcome,
+) {
+    let entry = AccessLogEntry {
+        request_id: state.request_counter.fetch_add(1, Ordering::Relaxed) + 1,
+        timestamp: current_timestamp(),
+        remote,
+        method,
+        path,
+        status,
+        outcome,
+    };
+    state.logger.record(&entry);
+}
+
+fn extract_remote_addr(request: &Request) -> String {
+    if let Some(remote) = request.extensions().get::<ConnectInfo<SocketAddr>>() {
+        return remote.0.to_string();
+    }
+    if let Some(remote) = request.extensions().get::<SocketAddr>() {
+        return remote.to_string();
+    }
+    "-".to_string()
+}
+
+fn current_timestamp() -> String {
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default();
+    format!("{}.{:03}", now.as_secs(), now.subsec_millis())
+}
+
+fn format_access_log_line(entry: &AccessLogEntry) -> String {
+    format!(
+        "request_id={} timestamp={} remote={} method={} path={} status={} outcome={}",
+        entry.request_id,
+        entry.timestamp,
+        entry.remote,
+        entry.method,
+        entry.path,
+        entry.status.as_u16(),
+        entry.outcome
+    )
 }
 
 fn encode_bmp_24(image: &RgbImage) -> Result<Vec<u8>, image::ImageError> {
@@ -351,6 +497,7 @@ fn startup_messages(content_dir: &Path, port: u16) -> Vec<String> {
         format!("Listen: http://0.0.0.0:{port}/ and http://0.0.0.0:{port}/image.bmp"),
         format!("Local:  http://127.0.0.1:{port}/ and http://127.0.0.1:{port}/image.bmp"),
         format!("LAN:    use this host's IP address with port {port} from other devices"),
+        "Access logs: one line per request is written to stdout".to_string(),
         "Stop: Ctrl+C".to_string(),
     ]
 }
@@ -360,14 +507,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let port = read_port().map_err(std::io::Error::other)?;
     let address = SocketAddr::from(([0, 0, 0, 0], port));
     let content_dir = read_content_dir();
-    let state = AppState { content_dir };
+    let state = AppState {
+        content_dir,
+        logger: Arc::new(StdoutAccessLogger),
+        request_counter: Arc::new(AtomicU64::new(0)),
+    };
     let listener = tokio::net::TcpListener::bind(address).await?;
 
     for line in startup_messages(&state.content_dir, port) {
         println!("{line}");
     }
 
-    axum::serve(listener, build_app(state)).await?;
+    axum::serve(
+        listener,
+        build_app(state).into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .await?;
     Ok(())
 }
 
@@ -378,6 +533,7 @@ mod tests {
     use axum::http::Request;
     use image::ImageFormat;
     use std::ffi::OsString;
+    use std::sync::Mutex;
     use tower::ServiceExt;
 
     const SATURATION_COORDS: &[(u32, u32)] = &[
@@ -390,6 +546,20 @@ mod tests {
         (12, 28),
         (20, 28),
     ];
+
+    #[derive(Debug, Default)]
+    struct TestAccessLogger {
+        entries: Mutex<Vec<AccessLogEntry>>,
+    }
+
+    impl AccessLogger for TestAccessLogger {
+        fn record(&self, entry: &AccessLogEntry) {
+            self.entries
+                .lock()
+                .expect("lock test logger")
+                .push(entry.clone());
+        }
+    }
 
     fn temp_path(prefix: &str) -> PathBuf {
         let unique = format!(
@@ -432,6 +602,18 @@ mod tests {
         dir
     }
 
+    fn test_state(content_dir: PathBuf) -> (AppState, Arc<TestAccessLogger>) {
+        let logger = Arc::new(TestAccessLogger::default());
+        (
+            AppState {
+                content_dir,
+                logger: logger.clone(),
+                request_counter: Arc::new(AtomicU64::new(0)),
+            },
+            logger,
+        )
+    }
+
     fn cleanup_dir(path: &Path) {
         let _ = std::fs::remove_dir_all(path);
     }
@@ -457,6 +639,19 @@ mod tests {
         to_bytes(response.into_body(), usize::MAX)
             .await
             .expect("read response body")
+    }
+
+    fn logged_entries(logger: &Arc<TestAccessLogger>) -> Vec<AccessLogEntry> {
+        logger.entries.lock().expect("lock logger entries").clone()
+    }
+
+    fn request_with_remote(uri: &str, remote: SocketAddr) -> Request<Body> {
+        let mut request = Request::builder()
+            .uri(uri)
+            .body(Body::empty())
+            .expect("build request");
+        request.extensions_mut().insert(remote);
+        request
     }
 
     struct EnvGuard {
@@ -508,6 +703,7 @@ mod tests {
                 .iter()
                 .any(|line| line.contains("/tmp/example/image.png"))
         );
+        assert!(messages.iter().any(|line| line.contains("Access logs")));
     }
 
     #[test]
@@ -541,22 +737,22 @@ mod tests {
                 (0, 1, [64, 64, 255]),
             ],
         );
-        let router = build_app(AppState {
-            content_dir: dir.clone(),
-        });
+        let (state, logger) = test_state(dir.clone());
+        let router = build_app(state);
 
         let root = router
             .clone()
-            .oneshot(Request::builder().uri("/").body(Body::empty()).unwrap())
+            .oneshot(request_with_remote(
+                "/",
+                "192.168.0.10:40123".parse().expect("remote addr"),
+            ))
             .await
             .expect("root response");
         let image = router
-            .oneshot(
-                Request::builder()
-                    .uri("/image.bmp")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
+            .oneshot(request_with_remote(
+                "/image.bmp",
+                "192.168.0.11:40124".parse().expect("remote addr"),
+            ))
             .await
             .expect("image response");
 
@@ -578,7 +774,42 @@ mod tests {
         assert_eq!(&root_body[..2], b"BM");
         assert_eq!(&root_body[28..30], &[24, 0]);
 
+        let entries = logged_entries(&logger);
+        assert_eq!(entries.len(), 2);
+        assert_eq!(entries[0].path, "/");
+        assert_eq!(entries[0].status, StatusCode::OK);
+        assert_eq!(entries[0].outcome, LogOutcome::Success);
+        assert_eq!(entries[0].remote, "192.168.0.10:40123");
+        assert_eq!(entries[1].path, "/image.bmp");
+        assert_eq!(entries[1].status, StatusCode::OK);
+        assert_eq!(entries[1].outcome, LogOutcome::Success);
+        assert_eq!(entries[1].remote, "192.168.0.11:40124");
+
         cleanup_dir(&dir);
+    }
+
+    #[test]
+    fn access_log_format_is_single_line_and_contains_required_fields() {
+        let entry = AccessLogEntry {
+            request_id: 7,
+            timestamp: "123.456".to_string(),
+            remote: "192.168.0.20:5000".to_string(),
+            method: Method::GET,
+            path: "/image.bmp".to_string(),
+            status: StatusCode::OK,
+            outcome: LogOutcome::Success,
+        };
+
+        let line = format_access_log_line(&entry);
+
+        assert!(!line.contains('\n'));
+        assert!(line.contains("request_id=7"));
+        assert!(line.contains("timestamp=123.456"));
+        assert!(line.contains("remote=192.168.0.20:5000"));
+        assert!(line.contains("method=GET"));
+        assert!(line.contains("path=/image.bmp"));
+        assert!(line.contains("status=200"));
+        assert!(line.contains("outcome=success"));
     }
 
     #[test]
@@ -674,22 +905,22 @@ mod tests {
     async fn missing_image_returns_not_found_for_both_routes() {
         let missing_dir = temp_path("missing-content");
         std::fs::create_dir_all(&missing_dir).expect("create missing dir");
-        let router = build_app(AppState {
-            content_dir: missing_dir.clone(),
-        });
+        let (state, logger) = test_state(missing_dir.clone());
+        let router = build_app(state);
 
         let root = router
             .clone()
-            .oneshot(Request::builder().uri("/").body(Body::empty()).unwrap())
+            .oneshot(request_with_remote(
+                "/",
+                "192.168.0.30:41000".parse().expect("remote addr"),
+            ))
             .await
             .expect("root response");
         let image = router
-            .oneshot(
-                Request::builder()
-                    .uri("/image.bmp")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
+            .oneshot(request_with_remote(
+                "/image.bmp",
+                "192.168.0.31:41001".parse().expect("remote addr"),
+            ))
             .await
             .expect("image response");
 
@@ -708,6 +939,13 @@ mod tests {
         assert!(root_text.contains("image.png is not configured"));
         assert_eq!(root_text, image_text);
 
+        let entries = logged_entries(&logger);
+        assert_eq!(entries.len(), 2);
+        assert_eq!(entries[0].status, StatusCode::NOT_FOUND);
+        assert_eq!(entries[0].outcome, LogOutcome::InputMissing);
+        assert_eq!(entries[1].status, StatusCode::NOT_FOUND);
+        assert_eq!(entries[1].outcome, LogOutcome::InputMissing);
+
         cleanup_dir(&missing_dir);
     }
 
@@ -716,22 +954,22 @@ mod tests {
         let dir = temp_path("invalid-content");
         std::fs::create_dir_all(&dir).expect("create invalid dir");
         std::fs::write(input_image_path_from_dir(&dir), b"not-a-valid-png").expect("write invalid");
-        let router = build_app(AppState {
-            content_dir: dir.clone(),
-        });
+        let (state, logger) = test_state(dir.clone());
+        let router = build_app(state);
 
         let root = router
             .clone()
-            .oneshot(Request::builder().uri("/").body(Body::empty()).unwrap())
+            .oneshot(request_with_remote(
+                "/",
+                "192.168.0.40:42000".parse().expect("remote addr"),
+            ))
             .await
             .expect("root response");
         let image = router
-            .oneshot(
-                Request::builder()
-                    .uri("/image.bmp")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
+            .oneshot(request_with_remote(
+                "/image.bmp",
+                "192.168.0.41:42001".parse().expect("remote addr"),
+            ))
             .await
             .expect("image response");
 
@@ -745,15 +983,21 @@ mod tests {
         assert!(root_text.contains("failed to decode image.png"));
         assert_eq!(root_text, image_text);
 
+        let entries = logged_entries(&logger);
+        assert_eq!(entries.len(), 2);
+        assert_eq!(entries[0].status, StatusCode::UNPROCESSABLE_ENTITY);
+        assert_eq!(entries[0].outcome, LogOutcome::TransformFailed);
+        assert_eq!(entries[1].status, StatusCode::UNPROCESSABLE_ENTITY);
+        assert_eq!(entries[1].outcome, LogOutcome::TransformFailed);
+
         cleanup_dir(&dir);
     }
 
     #[tokio::test]
     async fn replacing_input_image_changes_next_fetch_result() {
         let dir = create_content_dir("replace-image", &[(0, 0, [255, 0, 0])]);
-        let router = build_app(AppState {
-            content_dir: dir.clone(),
-        });
+        let (state, logger) = test_state(dir.clone());
+        let router = build_app(state);
 
         let first = router
             .clone()
@@ -776,6 +1020,39 @@ mod tests {
         let second_body = response_body(second).await;
 
         assert_ne!(first_body, second_body);
+        let entries = logged_entries(&logger);
+        assert_eq!(entries.len(), 2);
+        assert_ne!(entries[0].request_id, entries[1].request_id);
+        assert_eq!(entries[0].path, "/");
+        assert_eq!(entries[1].path, "/");
+
+        cleanup_dir(&dir);
+    }
+
+    #[tokio::test]
+    async fn unknown_path_is_logged_and_returns_not_found() {
+        let dir = create_content_dir("unknown-path", &[(0, 0, [255, 0, 0])]);
+        let (state, logger) = test_state(dir.clone());
+        let router = build_app(state);
+
+        let response = router
+            .oneshot(request_with_remote(
+                "/unknown",
+                "192.168.0.50:43000".parse().expect("remote addr"),
+            ))
+            .await
+            .expect("unknown path response");
+
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+        let text = String::from_utf8(response_body(response).await.to_vec()).expect("utf8 body");
+        assert!(text.contains("route not found"));
+
+        let entries = logged_entries(&logger);
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].path, "/unknown");
+        assert_eq!(entries[0].status, StatusCode::NOT_FOUND);
+        assert_eq!(entries[0].outcome, LogOutcome::NotFound);
+        assert_eq!(entries[0].remote, "192.168.0.50:43000");
 
         cleanup_dir(&dir);
     }
