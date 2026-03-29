@@ -44,7 +44,8 @@
         "saoudrizwan.claude-dev",
         "alfredoperez.speckit-companion",
         "espressif.esp-idf-extension",
-        "ms-vscode.cmake-tools"
+        "ms-vscode.cmake-tools",
+        "mhutchie.git-graph"
       ],
       "settings": {
         "idf.espIdfPath": "/opt/esp/idf",
