@@ -45,28 +45,29 @@ void SetErrorDetail(char* buffer, size_t buffer_size, const char* message) {
     snprintf(buffer, buffer_size, "%s", message);
 }
 
-[[noreturn]] void HoldForDevelopment(const char* reason) {
-    for (;;) {
-        ESP_LOGW(kTag, "Development hold active: %s", reason == nullptr ? "" : reason);
-        vTaskDelay(pdMS_TO_TICKS(5000));
-    }
-}
-
 void ReleasePendingSlot() {
     portENTER_CRITICAL(&s_update_lock);
     s_update_pending = false;
     portEXIT_CRITICAL(&s_update_lock);
 }
 
-void ShutdownAfterFailure() {
-    ESP_LOGW(kTag, "Failure shutdown is disabled in the current development build");
+[[noreturn]] void EnterDeepSleep(const char* reason) {
+    ESP_LOGI(kTag, "Entering deep sleep: %s", reason == nullptr ? "" : reason);
+    ESP_ERROR_CHECK_WITHOUT_ABORT(esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL));
+    ESP_ERROR_CHECK_WITHOUT_ABORT(rtc_gpio_pullup_en(kBootWakeupPin));
+    ESP_ERROR_CHECK_WITHOUT_ABORT(rtc_gpio_pulldown_dis(kBootWakeupPin));
+    ESP_ERROR_CHECK_WITHOUT_ABORT(esp_sleep_enable_ext0_wakeup(kBootWakeupPin, 0));
+    vTaskDelay(pdMS_TO_TICKS(500));
+    esp_deep_sleep_start();
+    for (;;) {
+        vTaskDelay(portMAX_DELAY);
+    }
 }
 
 void HandleFailure(UpdateTrigger trigger, FailureCategory category, const char* detail) {
     RecordFailureState(trigger, category, detail);
     ReleasePendingSlot();
-    ShutdownAfterFailure();
-    HoldForDevelopment(detail);
+    EnterDeepSleep(detail);
 }
 
 void WifiEventHandler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {
@@ -195,7 +196,8 @@ esp_err_t RunUpdate(UpdateTrigger trigger) {
 
     ClearLastFailureState();
     ESP_LOGI(kTag, "Update finished successfully for trigger=%s", UpdateTriggerToString(trigger));
-    return ESP_OK;
+    ReleasePendingSlot();
+    EnterDeepSleep("update finished successfully");
 }
 
 void UpdateWorkerTask(void* arg) {
@@ -205,10 +207,7 @@ void UpdateWorkerTask(void* arg) {
             continue;
         }
 
-        esp_err_t err = RunUpdate(trigger);
-        if (err == ESP_OK) {
-            ReleasePendingSlot();
-        }
+        RunUpdate(trigger);
     }
 }
 

@@ -120,6 +120,7 @@ esp_err_t DownloadImageToSdCard(const char* url, const char* output_path, char* 
     config.disable_auto_redirect = false;
 
     esp_http_client_handle_t client = esp_http_client_init(&config);
+    esp_http_client_set_header(client, "Connection", "close");
     esp_err_t err = esp_http_client_perform(client);
     int status_code = esp_http_client_get_status_code(client);
     esp_http_client_cleanup(client);

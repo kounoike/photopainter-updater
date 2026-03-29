@@ -2,6 +2,7 @@
 #include "axp_prot.h"
 #include "button_bsp.h"
 #include "display_update.h"
+#include "driver/rtc_io.h"
 #include "epaper_port.h"
 #include "esp_event.h"
 #include "esp_log.h"
@@ -18,11 +19,18 @@
 namespace {
 
 constexpr const char* kTag = "fw_main";
+constexpr gpio_num_t kBootWakeupPin = GPIO_NUM_0;
 
-[[noreturn]] void HoldForDevelopment(const char* reason) {
+[[noreturn]] void EnterDeepSleep(const char* reason) {
+    ESP_LOGI(kTag, "Entering deep sleep: %s", reason == nullptr ? "" : reason);
+    ESP_ERROR_CHECK_WITHOUT_ABORT(esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL));
+    ESP_ERROR_CHECK_WITHOUT_ABORT(rtc_gpio_pullup_en(kBootWakeupPin));
+    ESP_ERROR_CHECK_WITHOUT_ABORT(rtc_gpio_pulldown_dis(kBootWakeupPin));
+    ESP_ERROR_CHECK_WITHOUT_ABORT(esp_sleep_enable_ext0_wakeup(kBootWakeupPin, 0));
+    vTaskDelay(pdMS_TO_TICKS(500));
+    esp_deep_sleep_start();
     for (;;) {
-        ESP_LOGW(kTag, "Development hold active: %s", reason == nullptr ? "" : reason);
-        vTaskDelay(pdMS_TO_TICKS(5000));
+        vTaskDelay(portMAX_DELAY);
     }
 }
 
@@ -41,25 +49,25 @@ extern "C" void app_main(void) {
     esp_err_t err = esp_netif_init();
     if (err != ESP_OK) {
         ESP_LOGE(kTag, "esp_netif_init failed: %s", esp_err_to_name(err));
-        HoldForDevelopment("esp_netif_init failed");
+        EnterDeepSleep("esp_netif_init failed");
     }
 
     err = esp_event_loop_create_default();
     if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
         ESP_LOGE(kTag, "esp_event_loop_create_default failed: %s", esp_err_to_name(err));
-        HoldForDevelopment("esp_event_loop_create_default failed");
+        EnterDeepSleep("esp_event_loop_create_default failed");
     }
 
     err = InitializeNvs();
     if (err != ESP_OK) {
         ESP_LOGE(kTag, "InitializeNvs failed: %s", esp_err_to_name(err));
-        HoldForDevelopment("InitializeNvs failed");
+        EnterDeepSleep("InitializeNvs failed");
     }
 
     err = InitializeFailureStateStorage();
     if (err != ESP_OK) {
         ESP_LOGE(kTag, "InitializeFailureStateStorage failed: %s", esp_err_to_name(err));
-        HoldForDevelopment("InitializeFailureStateStorage failed");
+        EnterDeepSleep("InitializeFailureStateStorage failed");
     }
 
     i2c_master_Init();
@@ -68,8 +76,8 @@ extern "C" void app_main(void) {
     epaper_port_init();
     if (_sdcard_init() == 0) {
         RecordFailureState(UpdateTrigger::kStartup, FailureCategory::kConfigError, "SD card initialization failed");
-        ESP_LOGE(kTag, "SD card initialization failed; sleep/shutdown is disabled in the current development build");
-        HoldForDevelopment("SD card initialization failed");
+        ESP_LOGE(kTag, "SD card initialization failed");
+        EnterDeepSleep("SD card initialization failed");
     }
 
     button_Init();
@@ -78,21 +86,21 @@ extern "C" void app_main(void) {
     if (err != ESP_OK) {
         RecordFailureState(UpdateTrigger::kStartup, FailureCategory::kImageError, "Display pipeline initialization failed");
         ESP_LOGE(kTag, "InitializeDisplayPipeline failed: %s", esp_err_to_name(err));
-        HoldForDevelopment("InitializeDisplayPipeline failed");
+        EnterDeepSleep("InitializeDisplayPipeline failed");
     }
 
     err = InitializeUpdateJobSystem();
     if (err != ESP_OK) {
         RecordFailureState(UpdateTrigger::kStartup, FailureCategory::kConfigError, "Update job system initialization failed");
         ESP_LOGE(kTag, "InitializeUpdateJobSystem failed: %s", esp_err_to_name(err));
-        HoldForDevelopment("InitializeUpdateJobSystem failed");
+        EnterDeepSleep("InitializeUpdateJobSystem failed");
     }
 
     err = EnqueueUpdate(UpdateTrigger::kStartup);
     if (err != ESP_OK) {
         RecordFailureState(UpdateTrigger::kStartup, FailureCategory::kConfigError, "Startup update queueing failed");
         ESP_LOGE(kTag, "EnqueueUpdate failed: %s", esp_err_to_name(err));
-        HoldForDevelopment("EnqueueUpdate failed");
+        EnterDeepSleep("EnqueueUpdate failed");
     }
 
     ESP_LOGI(kTag, "Startup update queued");

@@ -112,7 +112,7 @@
 **Purpose**: 仕上げ、文書整合、総合確認
 
 - [X] T025 [P] `firmware/` 配下の実装と `specs/005-sdcard-http-epaper/spec.md`、`plan.md`、`tasks.md` の整合性を確認する
-- [ ] T026 `specs/005-sdcard-http-epaper/quickstart.md` に従って正常系 2 本と失敗系 4 本の手動確認を実施する
+- [X] T026 `specs/005-sdcard-http-epaper/quickstart.md` に従って正常系 2 本と失敗系 4 本の手動確認を実施する
 - [X] T028 `.devcontainer/Dockerfile` と `.devcontainer/devcontainer.json` の修正を反映した devcontainer 再構築後に、`. /opt/esp/idf/export.sh`、`echo "$IDF_PYTHON_ENV_PATH"`、`idf.py --version`、`idf.py -C firmware build` を順に実行し、ESP-IDF Python 環境と toolchain が正しく有効化されることを確認する
 - [X] T027 [P] `specs/005-sdcard-http-epaper/contracts/config-and-update-contract.md`、`specs/005-sdcard-http-epaper/quickstart.md`、`docs/firmware-http-epaper.md` を見直し、`config.txt` 仕様、SDカード配置方法、起動時更新、BOOT ボタン更新、失敗時運用説明を更新する
 
