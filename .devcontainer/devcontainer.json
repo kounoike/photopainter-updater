@@ -1,0 +1,44 @@
+{
+  "name": "PhotoPainter Updater Dev",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/rust:1": {
+      "version": "stable",
+      "profile": "default"
+    },
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.13",
+      "installTools": true
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "lts"
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {
+      "version": "latest"
+    }
+  },
+  "runArgs": [
+    "--env-file",
+    "${localWorkspaceFolder}/.devcontainer/.env"
+  ],
+  "initializeCommand": "test -f ${localWorkspaceFolder}/.devcontainer/.env || cp ${localWorkspaceFolder}/.devcontainer/.env.example ${localWorkspaceFolder}/.devcontainer/.env",
+  "postCreateCommand": "npm install -g @anthropic-ai/claude-code @openai/codex",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "saoudrizwan.claude-dev",
+        "mkloubert.vscode-kanban",
+        "alfredoperez.speckit-companion",
+        "espressif.esp-idf-extension",
+        "ms-vscode.cmake-tools"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python3.13",
+        "idf.toolsPath": "/opt/espressif",
+        "idf.espIdfPath": "/opt/esp/idf"
+      }
+    }
+  }
+}

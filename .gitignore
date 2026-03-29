@@ -1,0 +1,2 @@
+# Secrets - never commit actual API keys or tokens
+.devcontainer/.env
