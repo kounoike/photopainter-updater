@@ -41,7 +41,7 @@ SD カードのルートに `config.txt` を配置します。
 
 ## ビルド
 
-このリポジトリの devcontainer は ESP-IDF v5.5.1 を `/opt/esp/idf` に入れる前提です。devcontainer を再ビルドした後、`firmware/` をプロジェクトルートとして扱います。
+このリポジトリの devcontainer は ESP-IDF v5.5.1 を `/opt/esp/idf` に入れる前提です。`codex` と `claude` は image build 時点で同梱され、認証状態は `~/.codex` と `~/.claude` の named volume に保持されます。devcontainer を再ビルドした後も、その認証状態を保ったまま `firmware/` をプロジェクトルートとして扱えます。
 
 ```bash
 idf.py -C firmware set-target esp32s3

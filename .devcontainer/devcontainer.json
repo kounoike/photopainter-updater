@@ -25,19 +25,19 @@
       "version": "3.13",
       "installTools": true
     },
-    "ghcr.io/devcontainers/features/node:1": {
-      "version": "lts"
-    },
     "ghcr.io/devcontainers/features/github-cli:1": {
       "version": "latest"
     }
   },
+  "mounts": [
+    "source=${localWorkspaceFolderBasename}-codex-config,target=/home/vscode/.codex,type=volume",
+    "source=${localWorkspaceFolderBasename}-claude-config,target=/home/vscode/.claude,type=volume"
+  ],
   "runArgs": [
     "--env-file",
     "${localWorkspaceFolder}/.devcontainer/.env"
   ],
   // "initializeCommand": "test -f ${localWorkspaceFolder}/.devcontainer/.env || cp ${localWorkspaceFolder}/.devcontainer/.env.example ${localWorkspaceFolder}/.devcontainer/.env",
-  "postCreateCommand": "npm install -g @anthropic-ai/claude-code @openai/codex",
   "customizations": {
     "vscode": {
       "extensions": [
