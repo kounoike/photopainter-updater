@@ -88,6 +88,8 @@ Use slash commands:
 - N/A（文書調査のみ） (009-rust-http-stack)
 - Rust stable + `axum`、Tokio、Rust 標準ライブラリのファイルアクセス (010-http-bmp-server)
 - ローカルファイル (`server/contents/image.bmp`) (010-http-bmp-server)
+- Dockerfile syntax、devcontainer.json、Bash、Node.js LTS ベースの開発 CLI + Dev Containers 構成、ESP-IDF v5.5.1、GitHub CLI、`@openai/codex`、`@anthropic-ai/claude-code` (011-improve-devcontainer)
+- devcontainer 設定ファイル、Git 管理外の永続認証キャッシュ領域、`.devcontainer/.env` (011-improve-devcontainer)
 
 ## Recent Changes
 - 002-add-run-script: Added Bash (POSIX shell) / Python 3 (実行環境) + Python 標準の HTTP 配信機能

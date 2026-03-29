@@ -20,6 +20,29 @@
 ./scripts/build-merged-image.sh --skip-build
 ```
 
+## Devcontainer の認証キャッシュ
+
+このリポジトリの devcontainer は `codex` と `claude` を image build 時点で含みます。初回接続時に CLI の追加インストール待ちは不要です。
+
+- `codex` の認証保存先: `/home/vscode/.codex`
+- `claude` の認証保存先: `/home/vscode/.claude`
+- どちらも devcontainer named volume に mount されるので、rebuild/recreate 後も認証状態を再利用できます。
+
+初回利用手順:
+
+1. devcontainer を build/create する。
+2. 接続後に `codex` と `claude` を起動する。
+3. 必要なら通常手順でログインする。
+4. 以後は devcontainer を rebuild/recreate しても同じ認証状態を使う。
+
+意図的に認証キャッシュを初期化したい場合は、devcontainer を停止したうえで host 側から次を実行します。
+
+```bash
+docker volume rm photopainter-updater-codex-config photopainter-updater-claude-config
+```
+
+次回接続時は `codex` と `claude` の初回認証からやり直します。API key を `.devcontainer/.env` で渡す運用を使う場合は、volume を消しても環境変数ログインは引き続き有効です。
+
 ## 書き込み
 
 書き込みには [ESP Launchpad](https://espressif.github.io/esp-launchpad/) を使います。ESP Launchpad の DIY モードでは、ローカルにある pre-built firmware image を選んで flash address を指定して書き込めます。
