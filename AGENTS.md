@@ -86,6 +86,8 @@ Use slash commands:
 - Python 3 系、Rust stable、Go stable の比較調査 + FastAPI、axum、Go 標準 `net/http`、`ref/convert.py`、将来候補としての画像処理ライブラリ連携、監視基盤連携、コンテナ配布前提 (008-http-server-stack)
 - Rust stable 系候補の比較調査 + `axum`、`actix-web`、`warp`、Tokio stack、`ref/convert.py` を参照した画像前処理要件 (009-rust-http-stack)
 - N/A（文書調査のみ） (009-rust-http-stack)
+- Rust stable + `axum`、Tokio、Rust 標準ライブラリのファイルアクセス (010-http-bmp-server)
+- ローカルファイル (`server/contents/image.bmp`) (010-http-bmp-server)
 
 ## Recent Changes
 - 002-add-run-script: Added Bash (POSIX shell) / Python 3 (実行環境) + Python 標準の HTTP 配信機能
