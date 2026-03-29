@@ -17,6 +17,7 @@ idf_component_register(
         esp_netif
         esp_wifi
         i2c_bsp
+        led_bsp
         json
         nvs_flash
         sdcard_bsp)
