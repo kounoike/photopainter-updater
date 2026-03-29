@@ -71,6 +71,7 @@ if lan_ip=$(detect_lan_ip); then
 else
   echo "LAN:   このホストの LAN IP を使って http://<host-ip>:${port}/ へアクセスしてください"
 fi
+echo "Access logs: each request is written as one line to stdout"
 echo "Stop: Ctrl+C"
 
 cd "${script_dir}"

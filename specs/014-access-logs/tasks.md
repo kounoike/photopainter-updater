@@ -21,8 +21,8 @@
 
 **Purpose**: アクセスログ追加に必要な観測対象と確認導線を揃える
 
-- [ ] T001 `server/src/main.rs` の既存リクエスト処理とレスポンス生成箇所を整理し、アクセスログ追加位置を決める
-- [ ] T002 `specs/014-access-logs/quickstart.md` に正常系・失敗系・未定義 path のログ確認観点を反映する
+- [x] T001 `server/src/main.rs` の既存リクエスト処理とレスポンス生成箇所を整理し、アクセスログ追加位置を決める
+- [x] T002 `specs/014-access-logs/quickstart.md` に正常系・失敗系・未定義 path のログ確認観点を反映する
 
 ---
 
@@ -32,10 +32,10 @@
 
 **CRITICAL**: この phase 完了まで user story 実装を開始しない
 
-- [ ] T003 `server/src/main.rs` にアクセスログ行と応答結果情報を表す共通構造を追加する
-- [ ] T004 `server/src/main.rs` に時刻・アクセス元・method・path・status を整形する共通ログヘルパーを追加する
-- [ ] T005 `specs/014-access-logs/contracts/access-log-output-contract.md` と `specs/014-access-logs/research.md` の用語を実装用語へ揃える
-- [ ] T006 Allowed Scope / Forbidden Scope の境界を `specs/014-access-logs/plan.md` と `specs/014-access-logs/tasks.md` で確認する
+- [x] T003 `server/src/main.rs` にアクセスログ行と応答結果情報を表す共通構造を追加する
+- [x] T004 `server/src/main.rs` に時刻・アクセス元・method・path・status を整形する共通ログヘルパーを追加する
+- [x] T005 `specs/014-access-logs/contracts/access-log-output-contract.md` と `specs/014-access-logs/research.md` の用語を実装用語へ揃える
+- [x] T006 Allowed Scope / Forbidden Scope の境界を `specs/014-access-logs/plan.md` と `specs/014-access-logs/tasks.md` で確認する
 
 **Checkpoint**: すべての route が同じ形式でアクセスログを出せる土台が揃っていること
 
@@ -49,15 +49,15 @@
 
 ### Verification for User Story 1
 
-- [ ] T007 [US1] `/` と `/image.bmp` のアクセスログ出力テストを `server/src/main.rs` に追加する
-- [ ] T008 [US1] 1 リクエスト 1 行のログ形式テストを `server/src/main.rs` に追加する
-- [ ] T009 [US1] 正常系ログ確認手順を `specs/014-access-logs/quickstart.md` に反映する
+- [x] T007 [US1] `/` と `/image.bmp` のアクセスログ出力テストを `server/src/main.rs` に追加する
+- [x] T008 [US1] 1 リクエスト 1 行のログ形式テストを `server/src/main.rs` に追加する
+- [x] T009 [US1] 正常系ログ確認手順を `specs/014-access-logs/quickstart.md` に反映する
 
 ### Implementation for User Story 1
 
-- [ ] T010 [US1] 正常系レスポンスでアクセスログを出力する処理を `server/src/main.rs` に実装する
-- [ ] T011 [US1] `/` と `/image.bmp` の両 route が同じログ形式を使うよう `server/src/main.rs` を更新する
-- [ ] T012 [US1] `server/run.sh` にアクセスログ確認前提の起動案内を反映する
+- [x] T010 [US1] 正常系レスポンスでアクセスログを出力する処理を `server/src/main.rs` に実装する
+- [x] T011 [US1] `/` と `/image.bmp` の両 route が同じログ形式を使うよう `server/src/main.rs` を更新する
+- [x] T012 [US1] `server/run.sh` にアクセスログ確認前提の起動案内を反映する
 
 **Checkpoint**: User Story 1 が単独で検証可能であること
 
@@ -71,15 +71,15 @@
 
 ### Verification for User Story 2
 
-- [ ] T013 [US2] 正常系と入力画像未配置のログ結果テストを `server/src/main.rs` に追加する
-- [ ] T014 [US2] 変換不能入力時のログ結果テストを `server/src/main.rs` に追加する
-- [ ] T015 [US2] 失敗系ログ確認手順を `specs/014-access-logs/quickstart.md` に反映する
+- [x] T013 [US2] 正常系と入力画像未配置のログ結果テストを `server/src/main.rs` に追加する
+- [x] T014 [US2] 変換不能入力時のログ結果テストを `server/src/main.rs` に追加する
+- [x] T015 [US2] 失敗系ログ確認手順を `specs/014-access-logs/quickstart.md` に反映する
 
 ### Implementation for User Story 2
 
-- [ ] T016 [US2] 正常系と失敗系で status を含むアクセスログを出力する処理を `server/src/main.rs` に実装する
-- [ ] T017 [US2] 失敗種別が分かる応答結果情報を `server/src/main.rs` に追加する
-- [ ] T018 [US2] 失敗系ログの期待内容を `specs/014-access-logs/contracts/access-log-output-contract.md` に反映する
+- [x] T016 [US2] 正常系と失敗系で status を含むアクセスログを出力する処理を `server/src/main.rs` に実装する
+- [x] T017 [US2] 失敗種別が分かる応答結果情報を `server/src/main.rs` に追加する
+- [x] T018 [US2] 失敗系ログの期待内容を `specs/014-access-logs/contracts/access-log-output-contract.md` に反映する
 
 **Checkpoint**: User Story 2 が User Story 1 を壊さず独立検証可能であること
 
@@ -93,16 +93,16 @@
 
 ### Verification for User Story 3
 
-- [ ] T019 [US3] 未定義 path のアクセスログテストを `server/src/main.rs` に追加する
-- [ ] T020 [US3] 複数回アクセス時のログ識別テストを `server/src/main.rs` に追加する
-- [ ] T021 [US3] 取得可能な場合にアクセス元情報がログへ含まれることを確認するテストを `server/src/main.rs` に追加する
-- [ ] T022 [US3] 未定義 path と複数回アクセス、アクセス元情報の確認手順を `specs/014-access-logs/quickstart.md` に反映する
+- [x] T019 [US3] 未定義 path のアクセスログテストを `server/src/main.rs` に追加する
+- [x] T020 [US3] 複数回アクセス時のログ識別テストを `server/src/main.rs` に追加する
+- [x] T021 [US3] 取得可能な場合にアクセス元情報がログへ含まれることを確認するテストを `server/src/main.rs` に追加する
+- [x] T022 [US3] 未定義 path と複数回アクセス、アクセス元情報の確認手順を `specs/014-access-logs/quickstart.md` に反映する
 
 ### Implementation for User Story 3
 
-- [ ] T023 [US3] 未定義 path でもアクセスログを出力する処理を `server/src/main.rs` に実装する
-- [ ] T024 [US3] 複数回アクセスを識別しやすい時刻付きログ出力を `server/src/main.rs` に実装する
-- [ ] T025 [US3] アクセス元情報の出力とフォールバックを `server/src/main.rs` に実装する
+- [x] T023 [US3] 未定義 path でもアクセスログを出力する処理を `server/src/main.rs` に実装する
+- [x] T024 [US3] 複数回アクセスを識別しやすい時刻付きログ出力を `server/src/main.rs` に実装する
+- [x] T025 [US3] アクセス元情報の出力とフォールバックを `server/src/main.rs` に実装する
 
 **Checkpoint**: すべての user story が独立検証可能であること
 
@@ -112,10 +112,10 @@
 
 **Purpose**: 通し確認と成果物整合を取る
 
-- [ ] T026 `/` と `/image.bmp` の body / Content-Type / 失敗応答がログ追加後も従来どおりであることを確認するテストを `server/src/main.rs` に追加する
-- [ ] T027 `specs/014-access-logs/research.md`、`specs/014-access-logs/plan.md`、`specs/014-access-logs/contracts/access-log-output-contract.md` の記述差分を解消する
-- [ ] T028 `specs/014-access-logs/quickstart.md` の通し手順を実行し、確認結果を反映する
-- [ ] T029 `server/src/main.rs` のアクセスログ実装について不要な重複を整理する
+- [x] T026 `/` と `/image.bmp` の body / Content-Type / 失敗応答がログ追加後も従来どおりであることを確認するテストを `server/src/main.rs` に追加する
+- [x] T027 `specs/014-access-logs/research.md`、`specs/014-access-logs/plan.md`、`specs/014-access-logs/contracts/access-log-output-contract.md` の記述差分を解消する
+- [x] T028 `specs/014-access-logs/quickstart.md` の通し手順を実行し、確認結果を反映する
+- [x] T029 `server/src/main.rs` のアクセスログ実装について不要な重複を整理する
 
 ---
 

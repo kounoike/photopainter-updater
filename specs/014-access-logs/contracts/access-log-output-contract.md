@@ -16,11 +16,13 @@ HTTP サーバが各リクエストで出力するアクセスログの最小契
 
 ## Required Fields
 
+- `request_id`: 複数回アクセスを区別しやすくする識別子
 - `timestamp`: リクエスト発生タイミングが分かる情報
-- `remote`: 取得可能な場合のアクセス元情報
+- `remote`: 取得可能な場合のアクセス元情報。取得できない場合はフォールバック値を出してもよい
 - `method`: HTTP method
 - `path`: アクセス対象 path
 - `status`: 応答ステータス
+- `outcome`: 成功または失敗種別が分かる結果情報
 
 ## Success Case
 
