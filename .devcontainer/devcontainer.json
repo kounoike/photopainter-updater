@@ -37,7 +37,8 @@
       "settings": {
         "python.defaultInterpreterPath": "/usr/local/bin/python3.13",
         "idf.toolsPath": "/opt/espressif",
-        "idf.espIdfPath": "/opt/esp/idf"
+        "idf.espIdfPath": "/opt/esp/idf",
+        "task.allowAutomaticTasks": "on"
       }
     }
   }

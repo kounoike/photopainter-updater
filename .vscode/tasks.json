@@ -1,0 +1,27 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Open Cline",
+      "type": "shell",
+      "command": "code --command saoudrizwan.claude-dev.SidebarProvider.focus",
+      "runOptions": {
+        "runOn": "folderOpen"
+      },
+      "presentation": {
+        "reveal": "never"
+      }
+    },
+    {
+      "label": "Open Kanban Board",
+      "type": "shell",
+      "command": "code --command vscode-kanban.openBoard",
+      "runOptions": {
+        "runOn": "folderOpen"
+      },
+      "presentation": {
+        "reveal": "never"
+      }
+    }
+  ]
+}
