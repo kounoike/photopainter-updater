@@ -2,6 +2,8 @@
 
 Auto-generated from all feature plans. Last updated: [DATE]
 
+この文書は日本語で記述する。固有名詞、コード識別子、ライブラリ名のみ原文維持可。
+
 ## Active Technologies
 
 [EXTRACTED FROM ALL PLAN.MD FILES]
