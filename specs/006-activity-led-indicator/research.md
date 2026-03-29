@@ -1,9 +1,9 @@
 # Research: ACT LED アクティビティ表示
 
-## Decision 1: LED 制御は `xiaozhi-esp32/components/led_bsp` を第一候補にしつつ、実機の LED/GPIO 確認を前提にする
+## Decision 1: LED 制御は `xiaozhi-esp32/components/led_bsp` を第一候補にし、`LED_PIN_Green (GPIO42)` を活動表示に使う
 
-- Decision: `firmware/` から `led_bsp` を参照 component として取り込む。ただし `waveshare-s3-PhotoPainter/config.h` の `BUILTIN_LED_GPIO` は `GPIO_NUM_NC` なので、実機で使う活動表示 LED と GPIO を確認した上で採用する。
-- Rationale: 既存 LED 制御 API を流用できれば実装は単純になる一方、PhotoPainter 参照設定では built-in LED が未定義のため、ハードウェア前提を確認せずに断定できない。
+- Decision: `firmware/` から `led_bsp` を参照 component として取り込み、`led_bsp.h` が定義する `LED_PIN_Green (GPIO42)` を ACT LED に採用する。`waveshare-s3-PhotoPainter/config.h` の `BUILTIN_LED_GPIO` は `GPIO_NUM_NC` のままなので、汎用 board macro は使わず `led_bsp` 側の既存定義をそのまま参照する。
+- Rationale: `xiaozhi-esp32` では Green LED が通常の状態表示に使われており、PhotoPainter 参照実装とも整合する。`firmware/` からは参照 component として利用するだけなので、Forbidden Scope に触れずに同じハードウェア前提を共有できる。
 - Alternatives considered:
   - `driver/gpio` で `firmware/` に独自 LED 制御を新設する
     - 却下理由: 既存部品との責務重複が増え、将来の board 差し替えでも整合を崩しやすい。
@@ -16,10 +16,10 @@
   - SD 読込、HTTP 取得、表示更新ごとに個別制御する
     - 却下理由: 状態遷移が増え、失敗経路で消灯漏れを起こしやすい。
 
-## Decision 3: 点滅周期は目視で活動中と判断しやすい既定の単一パターンを採用する
+## Decision 3: 点滅周期は 500ms 間隔の既定単一パターンを採用する
 
-- Decision: `led_bsp` の既存 flicker API が持つ速度区分のうち 1 つを既定パターンとして固定し、更新ジョブ中はその単一パターンを維持する。
-- Rationale: 利用者要件は厳密な周期ではなく「動いていることが分かる」ことなので、既存実装の範囲で十分満たせる。
+- Decision: 更新ジョブ中は Green LED を 500ms ごとに反転させる単一パターンを維持する。
+- Rationale: 500ms の on/off は視認しやすく、Wi-Fi 接続や e-paper 更新のような待機時間でも「処理中」であることを十分に示せる。追加 PWM や複数パターンは不要。
 - Alternatives considered:
   - 新しい PWM ベースの細かな点滅周期制御を導入する
     - 却下理由: 要件に対して過剰であり、ESP-IDF の追加制御面を増やすだけになる。

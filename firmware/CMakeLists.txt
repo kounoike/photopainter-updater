@@ -4,6 +4,7 @@ set(EXTRA_COMPONENT_DIRS
     "${CMAKE_CURRENT_LIST_DIR}/../xiaozhi-esp32/components/i2c_bsp"
     "${CMAKE_CURRENT_LIST_DIR}/../xiaozhi-esp32/components/axpPower"
     "${CMAKE_CURRENT_LIST_DIR}/../xiaozhi-esp32/components/ListLib"
+    "${CMAKE_CURRENT_LIST_DIR}/../xiaozhi-esp32/components/led_bsp"
     "${CMAKE_CURRENT_LIST_DIR}/../xiaozhi-esp32/components/sdcard_bsp"
     "${CMAKE_CURRENT_LIST_DIR}/../xiaozhi-esp32/components/button_bsp"
     "${CMAKE_CURRENT_LIST_DIR}/../xiaozhi-esp32/components/epaper_port"

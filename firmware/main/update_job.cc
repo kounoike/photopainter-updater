@@ -6,6 +6,7 @@
 #include "button_bsp.h"
 #include "config.h"
 #include "display_update.h"
+#include "driver/gpio.h"
 #include "driver/rtc_io.h"
 #include "esp_event.h"
 #include "esp_log.h"
@@ -15,6 +16,7 @@
 #include "freertos/event_groups.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
+#include "led_bsp.h"
 #include "sdcard_bsp.h"
 
 namespace {
@@ -26,12 +28,19 @@ constexpr int kWifiConnectedBit = BIT0;
 constexpr int kWifiFailedBit = BIT1;
 constexpr gpio_num_t kBootWakeupPin = GPIO_NUM_0;
 constexpr int kWifiTimeoutMs = 30000;
+constexpr uint8_t kActivityLedPin = LED_PIN_Green;
+constexpr TickType_t kActivityLedIdlePollInterval = pdMS_TO_TICKS(50);
 
 StaticQueue_t s_queue_storage;
 uint8_t s_queue_buffer[sizeof(UpdateTrigger)];
 QueueHandle_t s_update_queue = nullptr;
 portMUX_TYPE s_update_lock = portMUX_INITIALIZER_UNLOCKED;
 bool s_update_pending = false;
+TaskHandle_t s_activity_led_task = nullptr;
+portMUX_TYPE s_activity_led_lock = portMUX_INITIALIZER_UNLOCKED;
+bool s_activity_led_blinking = false;
+bool s_activity_led_initialized = false;
+UpdateTrigger s_activity_led_owner = UpdateTrigger::kStartup;
 bool s_wifi_initialized = false;
 EventGroupHandle_t s_wifi_event_group = nullptr;
 int s_wifi_retry_count = 0;
@@ -51,6 +60,44 @@ void ReleasePendingSlot() {
     portEXIT_CRITICAL(&s_update_lock);
 }
 
+void SetActivityLedLevel(bool on) {
+    if (!s_activity_led_initialized) {
+        return;
+    }
+    gpio_set_level(static_cast<gpio_num_t>(kActivityLedPin), on ? LED_ON : LED_OFF);
+}
+
+void StopActivityLedLocked() {
+    s_activity_led_blinking = false;
+}
+
+void StartActivityLed(UpdateTrigger trigger) {
+    portENTER_CRITICAL(&s_activity_led_lock);
+    s_activity_led_owner = trigger;
+    s_activity_led_blinking = true;
+    portEXIT_CRITICAL(&s_activity_led_lock);
+    ESP_LOGI(kTag, "Activity LED turned on for trigger=%s on GPIO %u", UpdateTriggerToString(trigger),
+             static_cast<unsigned>(kActivityLedPin));
+}
+
+void ActivityLedTask(void* arg) {
+    for (;;) {
+        bool blinking = false;
+        portENTER_CRITICAL(&s_activity_led_lock);
+        blinking = s_activity_led_blinking;
+        portEXIT_CRITICAL(&s_activity_led_lock);
+
+        if (!blinking) {
+            SetActivityLedLevel(false);
+            vTaskDelay(kActivityLedIdlePollInterval);
+            continue;
+        }
+
+        SetActivityLedLevel(true);
+        vTaskDelay(kActivityLedIdlePollInterval);
+    }
+}
+
 [[noreturn]] void EnterDeepSleep(const char* reason) {
     ESP_LOGI(kTag, "Entering deep sleep: %s", reason == nullptr ? "" : reason);
     ESP_ERROR_CHECK_WITHOUT_ABORT(esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL));
@@ -66,6 +113,7 @@ void ReleasePendingSlot() {
 
 void HandleFailure(UpdateTrigger trigger, FailureCategory category, const char* detail) {
     RecordFailureState(trigger, category, detail);
+    StopActivityLed();
     ReleasePendingSlot();
     EnterDeepSleep(detail);
 }
@@ -169,6 +217,7 @@ esp_err_t ConnectWifi(const FirmwareConfig& config, char* error_detail, size_t e
 esp_err_t RunUpdate(UpdateTrigger trigger) {
     char detail[160] = {};
     FirmwareConfig config = {};
+    StartActivityLed(trigger);
 
     esp_err_t err = LoadConfigFromSdCard(kConfigPath, &config, detail, sizeof(detail));
     if (err != ESP_OK) {
@@ -195,6 +244,7 @@ esp_err_t RunUpdate(UpdateTrigger trigger) {
     }
 
     ClearLastFailureState();
+    StopActivityLed();
     ESP_LOGI(kTag, "Update finished successfully for trigger=%s", UpdateTriggerToString(trigger));
     ReleasePendingSlot();
     EnterDeepSleep("update finished successfully");
@@ -225,6 +275,37 @@ void BootButtonTask(void* arg) {
 
 }  // namespace
 
+esp_err_t InitializeActivityLedControl() {
+    if (s_activity_led_task != nullptr) {
+        StopActivityLed();
+        return ESP_OK;
+    }
+
+    gpio_config_t gpio_conf = {};
+    gpio_conf.intr_type = GPIO_INTR_DISABLE;
+    gpio_conf.mode = GPIO_MODE_OUTPUT;
+    gpio_conf.pin_bit_mask = (1ULL << kActivityLedPin);
+    gpio_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    gpio_conf.pull_up_en = GPIO_PULLUP_ENABLE;
+    esp_err_t gpio_err = gpio_config(&gpio_conf);
+    if (gpio_err != ESP_OK) {
+        return gpio_err;
+    }
+
+    s_activity_led_initialized = true;
+    SetActivityLedLevel(false);
+
+    BaseType_t task_created = xTaskCreate(ActivityLedTask, "fw_activity_led", 4096, nullptr, 3, &s_activity_led_task);
+    if (task_created != pdPASS) {
+        s_activity_led_initialized = false;
+        s_activity_led_task = nullptr;
+        return ESP_ERR_NO_MEM;
+    }
+
+    ESP_LOGI(kTag, "Activity LED control initialized on green LED GPIO %u", static_cast<unsigned>(kActivityLedPin));
+    return ESP_OK;
+}
+
 esp_err_t InitializeUpdateJobSystem() {
     if (s_update_queue == nullptr) {
         s_update_queue = xQueueCreateStatic(1, sizeof(UpdateTrigger), s_queue_buffer, &s_queue_storage);
@@ -244,6 +325,21 @@ esp_err_t InitializeUpdateJobSystem() {
     }
 
     return ESP_OK;
+}
+
+void StopActivityLed() {
+    bool was_blinking = false;
+    UpdateTrigger owner = UpdateTrigger::kStartup;
+    portENTER_CRITICAL(&s_activity_led_lock);
+    was_blinking = s_activity_led_blinking;
+    owner = s_activity_led_owner;
+    StopActivityLedLocked();
+    portEXIT_CRITICAL(&s_activity_led_lock);
+
+    SetActivityLedLevel(false);
+    if (was_blinking) {
+        ESP_LOGI(kTag, "Activity LED turned off for trigger=%s", UpdateTriggerToString(owner));
+    }
 }
 
 esp_err_t EnqueueUpdate(UpdateTrigger trigger) {

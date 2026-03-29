@@ -7,18 +7,18 @@
 
 ## Summary
 
-`firmware/` の起動時更新と BOOT ボタン更新に対して、進行中だけ活動表示 LED を点滅させる。既存の `xiaozhi-esp32` 参照実装に含まれる `led_bsp` を第一候補として流用しつつ、実機で利用可能な LED/GPIO を確認した上で、更新ジョブの開始と終了に同期した単純な点滅制御を `firmware/` 側へ統合する。正常完了と失敗終了のどちらでも点滅は停止し、待機状態で誤って進行中に見えないことを重視する。
+`firmware/` の起動時更新と BOOT ボタン更新に対して、進行中だけ活動表示 LED を点滅させる。既存の `xiaozhi-esp32` 参照実装に含まれる `led_bsp` を流用し、Green LED (`GPIO42`) を ACT LED として採用した上で、更新ジョブの開始と終了に同期した 500ms 点滅制御を `firmware/` 側へ統合する。正常完了と失敗終了のどちらでも点滅は停止し、待機状態で誤って進行中に見えないことを重視する。
 
 ## Technical Context
 
 **Language/Version**: C/C++ on ESP-IDF v5.5.x  
-**Primary Dependencies**: `firmware/` 配下の更新ジョブ実装、`xiaozhi-esp32/components/led_bsp`、既存 `button_bsp`、`sdcard_bsp`、`epaper_port`、実機 LED/GPIO 確認結果  
+**Primary Dependencies**: `firmware/` 配下の更新ジョブ実装、`xiaozhi-esp32/components/led_bsp`、既存 `button_bsp`、`sdcard_bsp`、`epaper_port`、Green LED (`GPIO42`) の参照実装定義  
 **Storage**: N/A  
 **Testing**: 実機手動確認、既存更新フロー上での LED 観察  
 **Target Platform**: Waveshare ESP32-S3-PhotoPainter  
 **Project Type**: firmware + hardware integration  
 **Performance Goals**: 更新ジョブ開始後すぐに LED 点滅へ入り、進行中は継続し、終了後は速やかに停止する  
-**Constraints**: `firmware/` 側だけを変更する、`xiaozhi-esp32/` は参照専用、既存の更新・sleep・設定仕様は変更しない、LAN 内の単機能運用を維持する、LED 点滅は単一パターンで十分に視認可能であること  
+**Constraints**: `firmware/` 側だけを変更する、`xiaozhi-esp32/` は参照専用、既存の更新・sleep・設定仕様は変更しない、LAN 内の単機能運用を維持する、ACT LED は Green (`GPIO42`) を使い、点滅は 500ms 間隔の単一パターンで十分に視認可能であること  
 **Scale/Scope**: 単一デバイス上の ACT LED 状態表示追加のみ
 
 ## Constitution Check

@@ -82,6 +82,12 @@ extern "C" void app_main(void) {
 
     button_Init();
 
+    err = InitializeActivityLedControl();
+    if (err != ESP_OK) {
+        ESP_LOGW(kTag, "InitializeActivityLedControl failed: %s", esp_err_to_name(err));
+    }
+    StopActivityLed();
+
     err = InitializeDisplayPipeline();
     if (err != ESP_OK) {
         RecordFailureState(UpdateTrigger::kStartup, FailureCategory::kImageError, "Display pipeline initialization failed");
