@@ -38,11 +38,14 @@ Phase transition commit policy:
 
 * commit 前提は「前の step の最後」ではなく「次の step の開始条件」として扱うこと
 * `clarify` と `analyze` は commit 前提の対象外とし、未 commit 状態でも実行してよい
+* `specify` `clarify` `plan` `tasks` `implement` の各 phase が完了したら、特段の問題がない限りその phase の成果物を自動で commit すること
+* `analyze` は指摘だけなら commit しない。analyze の指摘に基づく remediation を反映して成果物を更新した場合のみ、その更新内容を自動で commit してよい
 * `plan` を始める前に、`specify` の成果物が commit 済みであること
 * `tasks` を始める前に、`plan` の成果物が commit 済みであること
 * `implement` を始める前に、`tasks` までの成果物が commit 済みであること
 * 上記の commit 前提がある phase (`plan` `tasks` `implement`) の開始時に、そこまでの成果物が未 commit の場合は、次の phase へ進む前に必ずユーザーへ続行可否を確認すること
 * ユーザーが明示的に続行を許可しない限り、未 commit 状態で次 phase へ進んではならない
+* ただし、自動 commit の前に無関係な変更が混在している、commit 対象が曖昧、必要なテストが未実施または失敗、git lock / conflict などの異常がある場合は、先にユーザーへ確認すること
 * commit を行う場合は、その phase の成果物を優先してまとめ、無関係な変更を巻き込まないこと
 
 ---
