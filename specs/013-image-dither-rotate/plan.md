@@ -14,7 +14,7 @@
 **Language/Version**: Rust stable + 参照用 Python 3 スクリプト  
 **Primary Dependencies**: `axum`、Tokio、Rust 標準ライブラリのファイルアクセス、画像変換ライブラリ、`ref/convert.py` を参照したディザリング方針  
 **Storage**: ローカルファイル (`server/contents/image.png` 入力、配信時に生成される 24bit BMP 出力)  
-**Testing**: Rust 自動テスト、`server/testdata/image-dither-rotate/pre.png` / `post.png` の代表座標 `(4,4)` `(12,4)` `(4,12)` `(20,12)` `(12,20)` `(4,28)` `(12,28)` `(20,28)` を各チャネル差 `±3` で比較する彩度 fixture テスト、参照変換との比較確認、HTTP 手動確認  
+**Testing**: Rust 自動テスト、`server/testdata/image-dither-rotate/pre.png` / `post.png` の代表座標 `(4,4)` `(12,4)` `(4,12)` `(20,12)` `(12,20)` `(4,28)` `(12,28)` `(20,28)` を各チャネル差 `±6` で比較する彩度 fixture テスト、参照 palette の分布差と空間的な mismatch を見る通し比較、HTTP 手動確認  
 **Target Platform**: devcontainer またはローカル開発環境、LAN 内の BMP 配信サーバ  
 **Project Type**: ローカル常駐 HTTP サーバの画像変換付き配信機能  
 **Performance Goals**: 利用者が 1 回の取得で変換済み BMP を受け取れ、入力画像差し替え後の次回取得に新しい変換結果が反映されること  

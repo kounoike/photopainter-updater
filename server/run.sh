@@ -10,7 +10,7 @@ usage() {
 Usage: server/run.sh [CONTENT_DIR]
 
 CONTENT_DIR:
-  Optional directory containing image.bmp to serve.
+  Optional directory containing image.png to transform and serve as image.bmp.
   If omitted, server/contents is used.
 EOF
 }
@@ -64,7 +64,7 @@ if [[ ! "${port}" =~ ^[0-9]+$ ]]; then
   exit 1
 fi
 
-echo "Starting Rust HTTP BMP server with contents in ${contents_dir}"
+echo "Starting Rust HTTP BMP server on 0.0.0.0:${port} with input image in ${contents_dir}"
 echo "Local: http://127.0.0.1:${port}/ and http://127.0.0.1:${port}/image.bmp"
 if lan_ip=$(detect_lan_ip); then
   echo "LAN:   http://${lan_ip}:${port}/ and http://${lan_ip}:${port}/image.bmp"

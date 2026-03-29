@@ -34,7 +34,7 @@
 - Conditions:
   - `image.png` が未配置
 - Response:
-  - Status: 成功以外の失敗ステータス
+  - Status: `404 Not Found`
   - Content-Type: `text/plain; charset=utf-8`
   - Body: 入力画像未配置と判別できる短い説明文
 
@@ -44,7 +44,7 @@
 - Conditions:
   - `image.png` は存在するが変換処理に失敗する
 - Response:
-  - Status: 成功以外の失敗ステータス
+  - Status: `422 Unprocessable Entity`
   - Content-Type: `text/plain; charset=utf-8`
   - Body: 変換失敗と判別できる短い説明文
 

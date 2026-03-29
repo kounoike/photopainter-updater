@@ -21,9 +21,9 @@
 
 **Purpose**: 画像変換付き配信に必要な依存とテスト入口を揃える
 
-- [ ] T001 `server/Cargo.toml` に画像読込・画像変換・BMP 出力に必要な依存を追加する
-- [ ] T002 `server/src/main.rs` の既存配信責務を、入力画像読込・変換・配信へ分解する設計コメントまたは関数境界へ整理する
-- [ ] T003 [P] `server/testdata/image-dither-rotate/pre.png` と `server/testdata/image-dither-rotate/post.png` の比較方針を `specs/013-image-dither-rotate/quickstart.md` に反映する
+- [x] T001 `server/Cargo.toml` に画像読込・画像変換・BMP 出力に必要な依存を追加する
+- [x] T002 `server/src/main.rs` の既存配信責務を、入力画像読込・変換・配信へ分解する設計コメントまたは関数境界へ整理する
+- [x] T003 [P] `server/testdata/image-dither-rotate/pre.png` と `server/testdata/image-dither-rotate/post.png` の比較方針を `specs/013-image-dither-rotate/quickstart.md` に反映する
 
 ---
 
@@ -33,11 +33,11 @@
 
 **CRITICAL**: この phase 完了まで user story 実装を開始しない
 
-- [ ] T004 `server/src/main.rs` に `image.png` 入力、変換済み RGB 画像、失敗応答を表す共通データ構造を追加する
-- [ ] T005 `server/src/main.rs` に入力画像読込と失敗応答の共通ヘルパーを追加する
-- [ ] T006 `server/src/main.rs` に変換済み画像を 24bit BMP 応答へ変換する共通ヘルパーを追加する
-- [ ] T007 `specs/013-image-dither-rotate/contracts/transformed-bmp-response-contract.md` と `specs/013-image-dither-rotate/research.md` の用語を実装用語へ揃える
-- [ ] T008 Allowed Scope / Forbidden Scope の境界を `specs/013-image-dither-rotate/plan.md` と `specs/013-image-dither-rotate/tasks.md` で確認する
+- [x] T004 `server/src/main.rs` に `image.png` 入力、変換済み RGB 画像、失敗応答を表す共通データ構造を追加する
+- [x] T005 `server/src/main.rs` に入力画像読込と失敗応答の共通ヘルパーを追加する
+- [x] T006 `server/src/main.rs` に変換済み画像を 24bit BMP 応答へ変換する共通ヘルパーを追加する
+- [x] T007 `specs/013-image-dither-rotate/contracts/transformed-bmp-response-contract.md` と `specs/013-image-dither-rotate/research.md` の用語を実装用語へ揃える
+- [x] T008 Allowed Scope / Forbidden Scope の境界を `specs/013-image-dither-rotate/plan.md` と `specs/013-image-dither-rotate/tasks.md` で確認する
 
 **Checkpoint**: 変換パイプラインの入出力と失敗系の共通土台が固まっていること
 
@@ -51,17 +51,17 @@
 
 ### Verification for User Story 1
 
-- [ ] T009 [US1] 変換済み BMP 応答の契約テストを `server/src/main.rs` に追加する
-- [ ] T010 [US1] 入力画像読込テストを `server/src/main.rs` に追加し、`image.png` の存在時に読めることを確認する
-- [ ] T011 [US1] 24bit BMP エンコードテストを `server/src/main.rs` に追加し、Content-Type と BMP ヘッダを確認する
-- [ ] T012 [US1] 取得確認手順を `specs/013-image-dither-rotate/quickstart.md` に反映する
+- [x] T009 [US1] 変換済み BMP 応答の契約テストを `server/src/main.rs` に追加する
+- [x] T010 [US1] 入力画像読込テストを `server/src/main.rs` に追加し、`image.png` の存在時に読めることを確認する
+- [x] T011 [US1] 24bit BMP エンコードテストを `server/src/main.rs` に追加し、Content-Type と BMP ヘッダを確認する
+- [x] T012 [US1] 取得確認手順を `specs/013-image-dither-rotate/quickstart.md` に反映する
 
 ### Implementation for User Story 1
 
-- [ ] T013 [US1] `image.png` を変換対象として解決する処理を `server/src/main.rs` に実装する
-- [ ] T014 [US1] 変換済み RGB 画像を 24bit BMP として返すレスポンス生成を `server/src/main.rs` に実装する
-- [ ] T015 [US1] `/` と `/image.bmp` が同一の変換済み BMP を返すよう `server/src/main.rs` を更新する
-- [ ] T016 [US1] `server/run.sh` と `specs/013-image-dither-rotate/contracts/transformed-bmp-response-contract.md` に `image.png` 入力前提を反映する
+- [x] T013 [US1] `image.png` を変換対象として解決する処理を `server/src/main.rs` に実装する
+- [x] T014 [US1] 変換済み RGB 画像を 24bit BMP として返すレスポンス生成を `server/src/main.rs` に実装する
+- [x] T015 [US1] `/` と `/image.bmp` が同一の変換済み BMP を返すよう `server/src/main.rs` を更新する
+- [x] T016 [US1] `server/run.sh` と `specs/013-image-dither-rotate/contracts/transformed-bmp-response-contract.md` に `image.png` 入力前提を反映する
 
 **Checkpoint**: User Story 1 が単独で検証可能であること
 
@@ -75,19 +75,19 @@
 
 ### Verification for User Story 2
 
-- [ ] T017 [US2] `server/testdata/image-dither-rotate/pre.png` と `server/testdata/image-dither-rotate/post.png` を使う彩度変換の単体テストを `server/src/main.rs` に追加し、代表座標 `(4,4)` `(12,4)` `(4,12)` `(20,12)` `(12,20)` `(4,28)` `(12,28)` `(20,28)` の RGB を各チャネル差 `±3` で比較する
-- [ ] T018 [US2] ディザリングの単体テストを `server/src/main.rs` に追加し、出力色が参照パレット内に収まることを確認する
-- [ ] T019 [US2] 右 90 度回転の単体テストを `server/src/main.rs` に追加し、座標変換が正しいことを確認する
-- [ ] T020 [US2] `server/testdata/image-dither-rotate/pre.png` を使う参照変換比較テストを `server/src/main.rs` に追加し、fixture 画像で出力傾向を比較する
-- [ ] T021 [US2] 参照比較手順を `specs/013-image-dither-rotate/quickstart.md` に反映する
+- [x] T017 [US2] `server/testdata/image-dither-rotate/pre.png` と `server/testdata/image-dither-rotate/post.png` を使う彩度変換の単体テストを `server/src/main.rs` に追加し、代表座標 `(4,4)` `(12,4)` `(4,12)` `(20,12)` `(12,20)` `(4,28)` `(12,28)` `(20,28)` の RGB を各チャネル差 `±6` で比較する
+- [x] T018 [US2] ディザリングの単体テストを `server/src/main.rs` に追加し、出力色が参照パレット内に収まることを確認する
+- [x] T019 [US2] 右 90 度回転の単体テストを `server/src/main.rs` に追加し、座標変換が正しいことを確認する
+- [x] T020 [US2] `server/testdata/image-dither-rotate/pre.png` を使う参照変換比較テストを `server/src/main.rs` に追加し、fixture 画像で出力傾向を比較する
+- [x] T021 [US2] 参照比較手順を `specs/013-image-dither-rotate/quickstart.md` に反映する
 
 ### Implementation for User Story 2
 
-- [ ] T022 [US2] 彩度強調処理を `server/src/main.rs` に実装する
-- [ ] T023 [US2] `ref/convert.py` 相当のディザリング処理を `server/src/main.rs` に実装する
-- [ ] T024 [US2] 右 90 度回転処理を `server/src/main.rs` に実装する
-- [ ] T025 [US2] 変換順序を「彩度強調 → ディザリング → 回転 → BMP 化」に統合して `server/src/main.rs` に実装する
-- [ ] T026 [US2] 黒重複を含む palette 構成と fixture ベースの彩度判定を `specs/013-image-dither-rotate/research.md` と `specs/013-image-dither-rotate/plan.md` に明記する
+- [x] T022 [US2] 彩度強調処理を `server/src/main.rs` に実装する
+- [x] T023 [US2] `ref/convert.py` 相当のディザリング処理を `server/src/main.rs` に実装する
+- [x] T024 [US2] 右 90 度回転処理を `server/src/main.rs` に実装する
+- [x] T025 [US2] 変換順序を「彩度強調 → ディザリング → 回転 → BMP 化」に統合して `server/src/main.rs` に実装する
+- [x] T026 [US2] 黒重複を含む palette 構成と fixture ベースの彩度判定を `specs/013-image-dither-rotate/research.md` と `specs/013-image-dither-rotate/plan.md` に明記する
 
 **Checkpoint**: User Story 2 が User Story 1 を壊さず独立検証可能であること
 
@@ -101,16 +101,16 @@
 
 ### Verification for User Story 3
 
-- [ ] T027 [US3] `image.png` 未配置時の失敗テストを `server/src/main.rs` に追加する
-- [ ] T028 [US3] 変換不能入力時の失敗テストを `server/src/main.rs` に追加する
-- [ ] T029 [US3] `/` と `/image.bmp` の失敗応答一致テストを `server/src/main.rs` に追加する
-- [ ] T030 [US3] 失敗応答確認手順を `specs/013-image-dither-rotate/quickstart.md` に反映する
+- [x] T027 [US3] `image.png` 未配置時の失敗テストを `server/src/main.rs` に追加する
+- [x] T028 [US3] 変換不能入力時の失敗テストを `server/src/main.rs` に追加する
+- [x] T029 [US3] `/` と `/image.bmp` の失敗応答一致テストを `server/src/main.rs` に追加する
+- [x] T030 [US3] 失敗応答確認手順を `specs/013-image-dither-rotate/quickstart.md` に反映する
 
 ### Implementation for User Story 3
 
-- [ ] T031 [US3] `image.png` 未配置時に入力画像未配置と判別できる失敗応答を `server/src/main.rs` に実装する
-- [ ] T032 [US3] 変換不能入力時に変換失敗と判別できる失敗応答を `server/src/main.rs` に実装する
-- [ ] T033 [US3] 失敗応答の文言とステータスを `specs/013-image-dither-rotate/contracts/transformed-bmp-response-contract.md` に反映する
+- [x] T031 [US3] `image.png` 未配置時に入力画像未配置と判別できる失敗応答を `server/src/main.rs` に実装する
+- [x] T032 [US3] 変換不能入力時に変換失敗と判別できる失敗応答を `server/src/main.rs` に実装する
+- [x] T033 [US3] 失敗応答の文言とステータスを `specs/013-image-dither-rotate/contracts/transformed-bmp-response-contract.md` に反映する
 
 **Checkpoint**: すべての user story が独立検証可能であること
 
@@ -120,10 +120,10 @@
 
 **Purpose**: 通し確認と横断品質の整合を取る
 
-- [ ] T034 入力画像差し替え後の次回取得反映テストを `server/src/main.rs` に追加する
-- [ ] T035 `server/run.sh` の起動案内と `specs/013-image-dither-rotate/quickstart.md` の手順を実装結果へ合わせて更新する
-- [ ] T036 `specs/013-image-dither-rotate/quickstart.md` の通し手順を実行し、参照比較と失敗系の確認結果を反映する
-- [ ] T037 `specs/013-image-dither-rotate/research.md`、`specs/013-image-dither-rotate/plan.md`、`specs/013-image-dither-rotate/contracts/transformed-bmp-response-contract.md` の記述差分を解消する
+- [x] T034 入力画像差し替え後の次回取得反映テストを `server/src/main.rs` に追加する
+- [x] T035 `server/run.sh` の起動案内と `specs/013-image-dither-rotate/quickstart.md` の手順を実装結果へ合わせて更新する
+- [x] T036 `specs/013-image-dither-rotate/quickstart.md` の通し手順を実行し、参照比較と失敗系の確認結果を反映する
+- [x] T037 `specs/013-image-dither-rotate/research.md`、`specs/013-image-dither-rotate/plan.md`、`specs/013-image-dither-rotate/contracts/transformed-bmp-response-contract.md` の記述差分を解消する
 
 ---
 

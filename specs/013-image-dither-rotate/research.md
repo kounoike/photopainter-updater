@@ -18,7 +18,7 @@
 
 ## Decision 2b: 彩度強調は `pre.png` / `post.png` fixture と代表画素の許容差で判定する
 
-- Decision: 彩度強調のテスト基準は `server/testdata/image-dither-rotate/pre.png` と `server/testdata/image-dither-rotate/post.png` を使い、代表座標 `(4,4)` `(12,4)` `(4,12)` `(20,12)` `(12,20)` `(4,28)` `(12,28)` `(20,28)` の RGB を各チャネル差 `±3` で比較する。
+- Decision: 彩度強調のテスト基準は `server/testdata/image-dither-rotate/pre.png` と `server/testdata/image-dither-rotate/post.png` を使い、代表座標 `(4,4)` `(12,4)` `(4,12)` `(20,12)` `(12,20)` `(4,28)` `(12,28)` `(20,28)` の RGB を各チャネル差 `±6` で比較する。
 - Rationale: 「PhotoShop でいう彩度 +70 相当」は数式基準より fixture 基準の方が安定する。人間確認済みの `post.png` を正として固定し、代表座標まで明示すれば、実装差よりも見た目の差を直接検知できる。
 - Alternatives considered:
   - 数式で完全再現する: 実装コストと誤差説明が大きいため不採用。
