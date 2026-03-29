@@ -81,6 +81,9 @@ Use slash commands:
 - C/C++ on ESP-IDF v5.5.x + `firmware/` 配下の更新ジョブ実装、`xiaozhi-esp32/components/led_bsp`、既存 `button_bsp`、`sdcard_bsp`、`epaper_port` (006-activity-led-indicator)
 - C/C++ on ESP-IDF v5.5.x + `firmware/main/display_update.*`、`firmware/main/update_job.cc`、`xiaozhi-esp32/components/epaper_src/GUI_BMPfile.c`、`esp_http_client`、`sdcard_bsp` (007-stream-http-render)
 - SD card (`/sdcard/config.txt`, `/sdcard/download.bmp`) と NVS の既存 failure/developer mode 領域 (007-stream-http-render)
+- Python 3 系、Rust stable、Go stable の比較調査 + 既存 `server/run.sh`、Python 標準 `http.server`、FastAPI、axum、Go 標準 `net/http` (008-http-server-stack)
+- files (`server/contents/`) を中心としたローカルファイル運用 (008-http-server-stack)
+- Python 3 系、Rust stable、Go stable の比較調査 + FastAPI、axum、Go 標準 `net/http`、`ref/convert.py`、将来候補としての画像処理ライブラリ連携、監視基盤連携、コンテナ配布前提 (008-http-server-stack)
 
 ## Recent Changes
 - 002-add-run-script: Added Bash (POSIX shell) / Python 3 (実行環境) + Python 標準の HTTP 配信機能
