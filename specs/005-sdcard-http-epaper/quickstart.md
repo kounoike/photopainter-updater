@@ -7,12 +7,12 @@ SDカードルートの `config.json` を読んで WiFi 接続し、起動時と
 ## 実装手順
 
 1. `spec.md`、`plan.md`、`research.md`、`data-model.md`、`contracts/config-and-update-contract.md` を確認する。
-2. `xiaozhi-esp32/main/main.cc` と既存モード分岐を確認し、起動時更新の入口を決める。
-3. `components/sdcard_bsp` と `components/json_bsp` を確認し、`config.json` 読込方法を整理する。
-4. `components/button_bsp` を確認し、BOOT ボタン押下で更新ジョブを開始する流れを整理する。
-5. `components/http_client_bsp` または既存 HTTP 周辺部品を確認し、単一 URL 画像取得を組み込む。
-6. `components/epaper_port` または既存 e-paper 描画経路を確認し、画像表示更新処理を実装する。
-7. 失敗時は失敗種別を判断できる状態を残して更新処理を終了し、シャットダウンする。
+2. `firmware/` を ESP-IDF プロジェクトルートとして初期化し、`xiaozhi-esp32/components/` 配下の `sdcard_bsp`、`button_bsp`、`epaper_port`、`epaper_src` を参照 component にする。
+3. `firmware/main/config.*` に `/sdcard/config.json` 読込と `wifi_ssid` / `wifi_password` / `image_url` の必須項目検証を実装する。
+4. `firmware/main/update_job.*` に起動時更新、BOOT ボタン更新、直列実行制御、WiFi 接続、失敗時 deep sleep を実装する。
+5. `firmware/main/display_update.*` に `esp_http_client` を使った BMP ダウンロード、BMP 検証、`GUI_ReadBmp_RGB_6Color()` と `epaper_port_display()` を使った描画更新を実装する。
+6. `firmware/main/failure_state.*` に失敗種別の記録と NVS への保持を実装する。
+7. 利用者向け手順を `docs/firmware-http-epaper.md` にまとめる。
 
 ## 検証手順
 
@@ -21,11 +21,11 @@ SDカードルートの `config.json` を読んで WiFi 接続し、起動時と
 3. 失敗系 1: `config.json` を欠落させ、更新処理が失敗理由を判断できる形で終了し、シャットダウンすることを確認する。
 4. 失敗系 2: WiFi 接続失敗を発生させ、更新処理が終了しシャットダウンすることを確認する。
 5. 失敗系 3: HTTP 取得失敗を発生させ、更新処理が終了しシャットダウンすることを確認する。
-6. 失敗系 4: 表示不能画像を返し、画像不正として終了しシャットダウンすることを確認する。
+6. 失敗系 4: 24-bit BMP 以外、または表示範囲外の画像を返し、画像不正として終了しシャットダウンすることを確認する。
 
 ## 完了条件
 
 - `config.json` の必須項目で起動時更新が動作する。
 - BOOT ボタン押下で再更新が動作する。
 - 更新ジョブは同時実行されない。
-- 失敗時は失敗種別を区別できる状態で終了し、シャットダウンする。
+- 失敗時は失敗種別を NVS に残した状態で終了し、シャットダウンする。

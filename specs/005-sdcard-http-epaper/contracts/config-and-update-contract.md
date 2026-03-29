@@ -1,15 +1,16 @@
-# Contract: `config.json` と更新ジョブ
+# Contract: `config.txt` と更新ジョブ
 
 ## Contract Goal
 
 専用ファームが満たすべき設定ファイル仕様と、起動時/BOOT ボタン更新の振る舞いを固定する。
 
-## `config.json` Contract
+## `config.txt` Contract
 
 ### Location
 
 - SDカードルートに固定する
-- ファイル名は `config.json` に固定する
+- ファイル名は `config.txt` に固定する
+- 中身は JSON として解釈する
 
 ### Required Fields
 
@@ -20,8 +21,9 @@
 ### Rules
 
 - JSON として正しく解釈できること
-- `image_url` は単一の URL 値であること
+- `image_url` は単一の `http://` URL 値であること
 - 必須項目欠落時は設定不備として失敗扱いにすること
+- 取得対象画像は 24-bit BMP として e-paper 表示可能であること
 
 ## Update Job Contract
 
@@ -32,10 +34,11 @@
 
 ### Success Path
 
-1. `config.json` 読込成功
+1. `config.txt` 読込成功
 2. WiFi 接続成功
 3. `image_url` から HTTP 取得成功
-4. e-paper 更新成功
+4. 取得画像を BMP として検証
+5. e-paper 更新成功
 
 ### Failure Path
 

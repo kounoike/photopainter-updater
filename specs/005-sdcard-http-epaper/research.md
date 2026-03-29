@@ -32,6 +32,13 @@
   - すべて新規実装: 既存コードベースを土台にする利点が薄れる。
   - 既存の会話系アプリ層をそのまま流用: 単機能ファームには責務が重すぎる。
 
+### 実装反映メモ
+
+- `sdcard_bsp` は `/sdcard` の mount とファイル I/O 前提を再利用する。
+- `button_bsp` は `boot_groups` の single click event を BOOT ボタン更新トリガとして再利用する。
+- `epaper_port` と `epaper_src` は `GUI_ReadBmp_RGB_6Color()` と `epaper_port_display()` の経路で再利用する。
+- `http_client_bsp` は天気取得向けの固定用途 API なのでそのままは流用せず、`firmware/` 側で `esp_http_client` を画像取得専用に包む。
+
 ## Decision 5: 検証は正常系 2 本と失敗系 4 本を最小セットにする
 
 - Decision: 検証は「起動時更新成功」「BOOT ボタン更新成功」に加え、「設定ファイル欠落」「WiFi 失敗」「HTTP 失敗」「画像不正」の失敗系を最小セットとする。

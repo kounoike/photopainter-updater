@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.specify/scripts/bash/create-new-feature.sh \"PhotoPainterの画像更新をWiFi-HTTP経由で行うファームウェア＆配信サーバ＆ComfyUIで自動生成する仕組み\" --json --short-name \"wifi-http-image-update\" \"PhotoPainter WiFi HTTP Image Update with ComfyUI Auto-Generation\")",
+      "Bash(.specify/scripts/bash/check-prerequisites.sh --json --paths-only)",
+      "Bash(git checkout:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}

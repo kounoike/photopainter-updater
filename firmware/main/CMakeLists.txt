@@ -1,0 +1,22 @@
+idf_component_register(
+    SRCS
+        "main.cc"
+        "config.cc"
+        "update_job.cc"
+        "display_update.cc"
+        "failure_state.cc"
+    INCLUDE_DIRS
+        "."
+    REQUIRES
+        axpPower
+        button_bsp
+        epaper_port
+        epaper_src
+        esp_event
+        esp_http_client
+        esp_netif
+        esp_wifi
+        i2c_bsp
+        json
+        nvs_flash
+        sdcard_bsp)

@@ -21,9 +21,9 @@
 
 **Purpose**: `firmware/` 配下の実装土台と参照境界を確定する
 
-- [ ] T001 `firmware/CMakeLists.txt`、`firmware/sdkconfig.defaults`、`firmware/main/CMakeLists.txt`、`firmware/main/main.cc` と、`firmware/main/` 配下の設定読込・更新ジョブ・表示更新・失敗制御用ファイルを置ける初期ディレクトリ構成を作成し、実装先を `firmware/` に固定する
-- [ ] T002 `specs/005-sdcard-http-epaper/plan.md` と `AGENTS.md` に沿って、`xiaozhi-esp32/` を参照専用とする実装境界を確認する
-- [ ] T003 [P] `xiaozhi-esp32/components/sdcard_bsp`、`button_bsp`、`epaper_port`、HTTP 関連部品の参照メモを `specs/005-sdcard-http-epaper/research.md` と照合する
+- [X] T001 `firmware/CMakeLists.txt`、`firmware/sdkconfig.defaults`、`firmware/main/CMakeLists.txt`、`firmware/main/main.cc` と、`firmware/main/` 配下の設定読込・更新ジョブ・表示更新・失敗制御用ファイルを置ける初期ディレクトリ構成を作成し、実装先を `firmware/` に固定する
+- [X] T002 `specs/005-sdcard-http-epaper/plan.md` と `AGENTS.md` に沿って、`xiaozhi-esp32/` を参照専用とする実装境界を確認する
+- [X] T003 [P] `xiaozhi-esp32/components/sdcard_bsp`、`button_bsp`、`epaper_port`、HTTP 関連部品の参照メモを `specs/005-sdcard-http-epaper/research.md` と照合する
 
 ---
 
@@ -33,11 +33,11 @@
 
 **CRITICAL**: この phase 完了まで user story 実装を開始しない
 
-- [ ] T004 `specs/005-sdcard-http-epaper/contracts/config-and-update-contract.md` を基に、`wifi_ssid`、`wifi_password`、`image_url` の必須項目を持つ `config.json` 読込契約を反映する設定モデルを `firmware/` 配下に実装する
-- [ ] T005 [P] `specs/005-sdcard-http-epaper/data-model.md` を基に、`firmware/` 配下に更新ジョブ状態と失敗状態の共通モデルを実装する
-- [ ] T006 [P] `firmware/` 配下に起動時更新と BOOT ボタン更新が重複しない直列実行制御を実装する
-- [ ] T007 `firmware/` 配下に失敗時シャットダウンの共通制御と失敗理由の保持経路を実装する
-- [ ] T008 `specs/005-sdcard-http-epaper/quickstart.md` に沿って、正常系/失敗系の手動確認観点を実装境界に対応づける
+- [X] T004 `specs/005-sdcard-http-epaper/contracts/config-and-update-contract.md` を基に、`wifi_ssid`、`wifi_password`、`image_url` の必須項目を持つ `config.json` 読込契約を反映する設定モデルを `firmware/` 配下に実装する
+- [X] T005 [P] `specs/005-sdcard-http-epaper/data-model.md` を基に、`firmware/` 配下に更新ジョブ状態と失敗状態の共通モデルを実装する
+- [X] T006 [P] `firmware/` 配下に起動時更新と BOOT ボタン更新が重複しない直列実行制御を実装する
+- [X] T007 `firmware/` 配下に失敗時シャットダウンの共通制御と失敗理由の保持経路を実装する
+- [X] T008 `specs/005-sdcard-http-epaper/quickstart.md` に沿って、正常系/失敗系の手動確認観点を実装境界に対応づける
 
 **Checkpoint**: 基盤完了後に user story 実装へ進む
 
@@ -51,15 +51,15 @@
 
 ### Verification for User Story 1
 
-- [ ] T009 [US1] User Story 1 の手動確認手順を `specs/005-sdcard-http-epaper/quickstart.md` に実装観点付きで具体化する
+- [X] T009 [US1] User Story 1 の手動確認手順を `specs/005-sdcard-http-epaper/quickstart.md` に実装観点付きで具体化する
 
 ### Implementation for User Story 1
 
-- [ ] T010 [P] [US1] `firmware/` 配下に SDカードルートの `config.json` を読み込み、`wifi_ssid`、`wifi_password`、`image_url` の必須項目を検証する処理を実装する
-- [ ] T011 [P] [US1] `firmware/` 配下に起動時 WiFi 接続処理と画像取得前提確認処理を実装する
-- [ ] T012 [US1] `firmware/` 配下に起動時の HTTP 画像取得処理と画像妥当性確認処理を実装する
-- [ ] T013 [US1] `firmware/` 配下に e-paper 表示更新処理を実装し、起動時更新フローへ統合する
-- [ ] T014 [US1] `firmware/` 配下に起動時更新の成功経路をまとめ、`config.json` 読込から表示更新までを一連化する
+- [X] T010 [P] [US1] `firmware/` 配下に SDカードルートの `config.json` を読み込み、`wifi_ssid`、`wifi_password`、`image_url` の必須項目を検証する処理を実装する
+- [X] T011 [P] [US1] `firmware/` 配下に起動時 WiFi 接続処理と画像取得前提確認処理を実装する
+- [X] T012 [US1] `firmware/` 配下に起動時の HTTP 画像取得処理と画像妥当性確認処理を実装する
+- [X] T013 [US1] `firmware/` 配下に e-paper 表示更新処理を実装し、起動時更新フローへ統合する
+- [X] T014 [US1] `firmware/` 配下に起動時更新の成功経路をまとめ、`config.json` 読込から表示更新までを一連化する
 
 **Checkpoint**: User Story 1 が独立して検証可能であること
 
@@ -73,14 +73,14 @@
 
 ### Verification for User Story 2
 
-- [ ] T015 [US2] User Story 2 の手動確認手順を `specs/005-sdcard-http-epaper/quickstart.md` に追記する
+- [X] T015 [US2] User Story 2 の手動確認手順を `specs/005-sdcard-http-epaper/quickstart.md` に追記する
 
 ### Implementation for User Story 2
 
-- [ ] T016 [P] [US2] `firmware/` 配下に BOOT ボタン押下の監視と更新要求発行処理を実装する
-- [ ] T017 [P] [US2] `firmware/` 配下に手動更新トリガから既存更新ジョブを再利用する処理を実装する
-- [ ] T018 [US2] `firmware/` 配下で BOOT ボタン連打時に更新ジョブが重複しない保護を追加する
-- [ ] T019 [US2] `firmware/` 配下に BOOT ボタン更新の成功経路を統合し、起動後再更新を完結させる
+- [X] T016 [P] [US2] `firmware/` 配下に BOOT ボタン押下の監視と更新要求発行処理を実装する
+- [X] T017 [P] [US2] `firmware/` 配下に手動更新トリガから既存更新ジョブを再利用する処理を実装する
+- [X] T018 [US2] `firmware/` 配下で BOOT ボタン連打時に更新ジョブが重複しない保護を追加する
+- [X] T019 [US2] `firmware/` 配下に BOOT ボタン更新の成功経路を統合し、起動後再更新を完結させる
 
 **Checkpoint**: User Story 1 と 2 が独立検証可能であること
 
@@ -94,14 +94,14 @@
 
 ### Verification for User Story 3
 
-- [ ] T020 [US3] User Story 3 の手動確認手順を `specs/005-sdcard-http-epaper/quickstart.md` に追記する
+- [X] T020 [US3] User Story 3 の手動確認手順を `specs/005-sdcard-http-epaper/quickstart.md` に追記する
 
 ### Implementation for User Story 3
 
-- [ ] T021 [P] [US3] `firmware/` 配下に `config.json` 欠落・不正形式・必須項目不足時の失敗処理を実装する
-- [ ] T022 [P] [US3] `firmware/` 配下に WiFi 接続失敗と HTTP 取得失敗時の失敗分類処理を実装する
-- [ ] T023 [P] [US3] `firmware/` 配下に画像不正時の失敗分類と更新中断処理を実装する
-- [ ] T024 [US3] `firmware/` 配下に失敗種別を残してシャットダウンする最終処理を統合する
+- [X] T021 [P] [US3] `firmware/` 配下に `config.json` 欠落・不正形式・必須項目不足時の失敗処理を実装する
+- [X] T022 [P] [US3] `firmware/` 配下に WiFi 接続失敗と HTTP 取得失敗時の失敗分類処理を実装する
+- [X] T023 [P] [US3] `firmware/` 配下に画像不正時の失敗分類と更新中断処理を実装する
+- [X] T024 [US3] `firmware/` 配下に失敗種別を残してシャットダウンする最終処理を統合する
 
 **Checkpoint**: すべての user story が独立検証可能であること
 
@@ -111,9 +111,10 @@
 
 **Purpose**: 仕上げ、文書整合、総合確認
 
-- [ ] T025 [P] `firmware/` 配下の実装と `specs/005-sdcard-http-epaper/spec.md`、`plan.md`、`tasks.md` の整合性を確認する
+- [X] T025 [P] `firmware/` 配下の実装と `specs/005-sdcard-http-epaper/spec.md`、`plan.md`、`tasks.md` の整合性を確認する
 - [ ] T026 `specs/005-sdcard-http-epaper/quickstart.md` に従って正常系 2 本と失敗系 4 本の手動確認を実施する
-- [ ] T027 [P] `specs/005-sdcard-http-epaper/contracts/config-and-update-contract.md`、`specs/005-sdcard-http-epaper/quickstart.md`、`docs/firmware-http-epaper.md` を見直し、`config.json` 仕様、SDカード配置方法、起動時更新、BOOT ボタン更新、失敗時運用説明を更新する
+- [X] T028 `.devcontainer/Dockerfile` と `.devcontainer/devcontainer.json` の修正を反映した devcontainer 再構築後に、`. /opt/esp/idf/export.sh`、`echo "$IDF_PYTHON_ENV_PATH"`、`idf.py --version`、`idf.py -C firmware build` を順に実行し、ESP-IDF Python 環境と toolchain が正しく有効化されることを確認する
+- [X] T027 [P] `specs/005-sdcard-http-epaper/contracts/config-and-update-contract.md`、`specs/005-sdcard-http-epaper/quickstart.md`、`docs/firmware-http-epaper.md` を見直し、`config.json` 仕様、SDカード配置方法、起動時更新、BOOT ボタン更新、失敗時運用説明を更新する
 
 ---
 
