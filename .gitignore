@@ -8,6 +8,13 @@
 firmware/build/
 firmware/sdkconfig
 firmware/sdkconfig.old
+target/
+debug/
+release/
+*.rlib
+*.rs.bk
+*.prof*
+.env*
 build/
 bin/
 obj/
