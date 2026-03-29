@@ -396,12 +396,17 @@ fn apply_reference_dither(image: &RgbImage) -> RgbImage {
         for x in 0..width {
             let index = y * width + x;
             let old = work[index];
-            let replacement = nearest_palette_color(old);
+            let clamped = [
+                old[0].clamp(0.0, 255.0),
+                old[1].clamp(0.0, 255.0),
+                old[2].clamp(0.0, 255.0),
+            ];
+            let replacement = nearest_palette_color(clamped);
             output.put_pixel(x as u32, y as u32, Rgb(replacement));
             let error = [
-                old[0] - replacement[0] as f32,
-                old[1] - replacement[1] as f32,
-                old[2] - replacement[2] as f32,
+                clamped[0] - replacement[0] as f32,
+                clamped[1] - replacement[1] as f32,
+                clamped[2] - replacement[2] as f32,
             ];
 
             diffuse_error(&mut work, width, height, x + 1, y, error, 7.0 / 16.0);
