@@ -36,10 +36,12 @@ Rules:
 
 Phase transition commit policy:
 
+* commit 前提は「前の step の最後」ではなく「次の step の開始条件」として扱うこと
+* `clarify` と `analyze` は commit 前提の対象外とし、未 commit 状態でも実行してよい
 * `plan` を始める前に、`specify` の成果物が commit 済みであること
 * `tasks` を始める前に、`plan` の成果物が commit 済みであること
 * `implement` を始める前に、`tasks` までの成果物が commit 済みであること
-* 各 phase の開始時に、そこまでの成果物が未 commit の場合は、次の phase へ進む前に必ずユーザーへ続行可否を確認すること
+* 上記の commit 前提がある phase (`plan` `tasks` `implement`) の開始時に、そこまでの成果物が未 commit の場合は、次の phase へ進む前に必ずユーザーへ続行可否を確認すること
 * ユーザーが明示的に続行を許可しない限り、未 commit 状態で次 phase へ進んではならない
 * commit を行う場合は、その phase の成果物を優先してまとめ、無関係な変更を巻き込まないこと
 
