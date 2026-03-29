@@ -95,13 +95,14 @@
 
 - [ ] T019 [US3] 未定義 path のアクセスログテストを `server/src/main.rs` に追加する
 - [ ] T020 [US3] 複数回アクセス時のログ識別テストを `server/src/main.rs` に追加する
-- [ ] T021 [US3] 未定義 path と複数回アクセスの確認手順を `specs/014-access-logs/quickstart.md` に反映する
+- [ ] T021 [US3] 取得可能な場合にアクセス元情報がログへ含まれることを確認するテストを `server/src/main.rs` に追加する
+- [ ] T022 [US3] 未定義 path と複数回アクセス、アクセス元情報の確認手順を `specs/014-access-logs/quickstart.md` に反映する
 
 ### Implementation for User Story 3
 
-- [ ] T022 [US3] 未定義 path でもアクセスログを出力する処理を `server/src/main.rs` に実装する
-- [ ] T023 [US3] 複数回アクセスを識別しやすい時刻付きログ出力を `server/src/main.rs` に実装する
-- [ ] T024 [US3] アクセス元情報の出力とフォールバックを `server/src/main.rs` に実装する
+- [ ] T023 [US3] 未定義 path でもアクセスログを出力する処理を `server/src/main.rs` に実装する
+- [ ] T024 [US3] 複数回アクセスを識別しやすい時刻付きログ出力を `server/src/main.rs` に実装する
+- [ ] T025 [US3] アクセス元情報の出力とフォールバックを `server/src/main.rs` に実装する
 
 **Checkpoint**: すべての user story が独立検証可能であること
 
@@ -111,9 +112,10 @@
 
 **Purpose**: 通し確認と成果物整合を取る
 
-- [ ] T025 `specs/014-access-logs/research.md`、`specs/014-access-logs/plan.md`、`specs/014-access-logs/contracts/access-log-output-contract.md` の記述差分を解消する
-- [ ] T026 `specs/014-access-logs/quickstart.md` の通し手順を実行し、確認結果を反映する
-- [ ] T027 `server/src/main.rs` のアクセスログ実装について不要な重複を整理する
+- [ ] T026 `/` と `/image.bmp` の body / Content-Type / 失敗応答がログ追加後も従来どおりであることを確認するテストを `server/src/main.rs` に追加する
+- [ ] T027 `specs/014-access-logs/research.md`、`specs/014-access-logs/plan.md`、`specs/014-access-logs/contracts/access-log-output-contract.md` の記述差分を解消する
+- [ ] T028 `specs/014-access-logs/quickstart.md` の通し手順を実行し、確認結果を反映する
+- [ ] T029 `server/src/main.rs` のアクセスログ実装について不要な重複を整理する
 
 ---
 
