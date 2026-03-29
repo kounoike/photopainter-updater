@@ -34,3 +34,14 @@
 6. flash address を `0x0` に設定して、書き込みボタンを押す。
 7. 書き込み完了後、`PWR` ボタンを長押しして、いったん電源を切る。
 8. `BOOT` ボタンは押さずに `PWR` ボタンを短く押して、通常起動する。
+
+## Local HTTP Server
+
+PhotoPainter の画像取得先として最小のローカル HTTP サーバを使う場合は、`server/contents/image.bmp` を配置してから `server/run.sh` を実行します。
+
+```bash
+cd server
+./run.sh
+```
+
+既定では `http://127.0.0.1:8000/` と `http://127.0.0.1:8000/image.bmp` の両方で同じ `image.bmp` を返します。`image.bmp` が未配置のときは `404 Not Found` を返します。
