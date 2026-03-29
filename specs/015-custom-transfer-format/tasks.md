@@ -45,13 +45,13 @@
 
 **Goal**: firmware が `image_url` 末尾 `.bin` のときだけ独自形式経路を使って SD カード保存なしに更新できるようにする
 
-**Independent Test**: firmware が `.bin` で終わる `image_url` を使う状態で更新を実行し、中間 BMP ファイルなしで表示更新が完了することを確認する
+**Independent Test**: firmware が `.bin` で終わる `image_url` を使う状態で更新を実行し、中間 BMP ファイルなしで表示更新が完了し、`/sdcard/download.bmp` が生成・更新されないことを確認する
 
 ### Verification for User Story 1
 
-- [ ] T007 [US1] `/image.bin` の成功応答と payload 長検証テストを `server/src/main.rs` に追加する
+- [ ] T007 [US1] `/image.bin` の成功応答、`Content-Type`、`Content-Length`、payload 長検証テストを `server/src/main.rs` に追加する
 - [ ] T008 [US1] 独自形式のヘッダ検証と payload 完了判定テストを `firmware/main/display_update.cc` に追加する
-- [ ] T009 [US1] `.bin` 末尾 URL での保存なし更新確認手順を `specs/015-custom-transfer-format/quickstart.md` に反映する
+- [ ] T009 [US1] `.bin` 末尾 URL での保存なし更新確認と `/sdcard/download.bmp` 未生成・未更新確認手順を `specs/015-custom-transfer-format/quickstart.md` に反映する
 
 ### Implementation for User Story 1
 
@@ -74,13 +74,14 @@
 
 - [ ] T014 [US2] `/`、`/image.bmp`、`/image.bin` の route 切り分けテストを `server/src/main.rs` に追加する
 - [ ] T015 [US2] BMP 経路の Content-Type と body 維持テストを `server/src/main.rs` に追加する
-- [ ] T016 [US2] `image_url` 末尾判定と既存 BMP 経路維持手順を `specs/015-custom-transfer-format/quickstart.md` に反映する
+- [ ] T016 [US2] `firmware/main/update_job.cc` に `image_url` 末尾が `.bin` のとき独自形式、それ以外で BMP 経路を選ぶ判定テストを追加する
+- [ ] T017 [US2] `image_url` 末尾判定と既存 BMP 経路維持手順を `specs/015-custom-transfer-format/quickstart.md` に反映する
 
 ### Implementation for User Story 2
 
-- [ ] T017 [US2] `server/src/main.rs` で `/` と `/image.bmp` の既存 BMP 応答を維持したまま `/image.bin` route を統合する
-- [ ] T018 [US2] `server/run.sh` に `/image.bin` の案内を追加しつつ BMP 取得先維持を明記する
-- [ ] T019 [US2] `firmware/main/update_job.cc` と `firmware/main/config.cc` に `image_url` 末尾 `.bin` 判定による経路選択を実装し、`specs/015-custom-transfer-format/contracts/image-bin-transfer-contract.md` にも反映する
+- [ ] T018 [US2] `server/src/main.rs` で `/` と `/image.bmp` の既存 BMP 応答を維持したまま `/image.bin` route を統合する
+- [ ] T019 [US2] `server/run.sh` に `/image.bin` の案内を追加しつつ BMP 取得先維持を明記する
+- [ ] T020 [US2] `firmware/main/update_job.cc` と `firmware/main/config.cc` に `image_url` 末尾 `.bin` 判定による経路選択を実装し、`specs/015-custom-transfer-format/contracts/image-bin-transfer-contract.md` にも反映する
 
 **Checkpoint**: User Story 1 と 2 が独立検証可能であること
 
@@ -94,16 +95,16 @@
 
 ### Verification for User Story 3
 
-- [ ] T020 [US3] `/image.bin` の空応答・不正ヘッダ・checksum 不一致テストを `server/src/main.rs` に追加する
-- [ ] T021 [US3] firmware 側の通信失敗、入力失敗、形式失敗の判定テストを `firmware/main/display_update.cc` に追加する
-- [ ] T022 [US3] 失敗系確認手順を `specs/015-custom-transfer-format/quickstart.md` に反映する
+- [ ] T021 [US3] `/image.bin` の空応答・不正ヘッダ・checksum 不一致テストを `server/src/main.rs` に追加する
+- [ ] T022 [US3] firmware 側の通信失敗、入力失敗、形式失敗の判定テストを `firmware/main/display_update.cc` に追加する
+- [ ] T023 [US3] 失敗系確認手順を `specs/015-custom-transfer-format/quickstart.md` に反映する
 
 ### Implementation for User Story 3
 
-- [ ] T023 [US3] `server/src/main.rs` で入力画像未配置や変換不能時の `/image.bin` 応答を切り分け可能な失敗にする
-- [ ] T024 [US3] `firmware/main/display_update.cc` で magic/version/length/checksum 不整合時の失敗処理を実装する
-- [ ] T025 [US3] `firmware/main/update_job.cc` で独自形式経路の失敗分類を通信、入力、形式の観点で記録する
-- [ ] T026 [US3] `specs/015-custom-transfer-format/contracts/image-bin-transfer-contract.md` に失敗応答期待値を反映する
+- [ ] T024 [US3] `server/src/main.rs` で入力画像未配置や変換不能時の `/image.bin` 応答を切り分け可能な失敗にする
+- [ ] T025 [US3] `firmware/main/display_update.cc` で magic/version/length/checksum 不整合時の失敗処理を実装する
+- [ ] T026 [US3] `firmware/main/update_job.cc` で独自形式経路の失敗分類を通信、入力、形式の観点で記録する
+- [ ] T027 [US3] `specs/015-custom-transfer-format/contracts/image-bin-transfer-contract.md` に失敗応答期待値を反映する
 
 **Checkpoint**: すべての user story が独立検証可能であること
 
@@ -113,10 +114,10 @@
 
 **Purpose**: 通し確認と成果物整合を取る
 
-- [ ] T027 同じ入力画像で BMP 経路と独自形式経路の最終表示が一致する確認を `specs/015-custom-transfer-format/quickstart.md` に反映する
-- [ ] T028 `specs/015-custom-transfer-format/research.md`、`specs/015-custom-transfer-format/plan.md`、`specs/015-custom-transfer-format/contracts/image-bin-transfer-contract.md` の記述差分を解消する
-- [ ] T029 `server/src/main.rs` と `firmware/main/display_update.cc` の重複ロジックを整理する
-- [ ] T030 `specs/015-custom-transfer-format/quickstart.md` の通し手順を実行し、確認結果を反映する
+- [ ] T028 同じ入力画像で BMP 経路と独自形式経路の最終表示が一致する確認を `specs/015-custom-transfer-format/quickstart.md` に反映する
+- [ ] T029 `specs/015-custom-transfer-format/research.md`、`specs/015-custom-transfer-format/plan.md`、`specs/015-custom-transfer-format/contracts/image-bin-transfer-contract.md` の記述差分を解消する
+- [ ] T030 `server/src/main.rs` と `firmware/main/display_update.cc` の重複ロジックを整理する
+- [ ] T031 `specs/015-custom-transfer-format/quickstart.md` の通し手順を実行し、確認結果を反映する
 
 ---
 
