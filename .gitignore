@@ -3,3 +3,24 @@
 
 # SpecKit tool cache
 .specify/presets/.cache/
+
+# ESP-IDF firmware build outputs
+firmware/build/
+firmware/sdkconfig
+firmware/sdkconfig.old
+build/
+bin/
+obj/
+out/
+*.o
+*.a
+*.so
+*.exe
+*.dll
+*.log
+*.tmp
+*.swp
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

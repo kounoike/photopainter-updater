@@ -1,7 +1,19 @@
 {
   "name": "PhotoPainter Updater Dev",
   "build": {
-    "dockerfile": "Dockerfile"
+    "dockerfile": "Dockerfile",
+    "args": {
+      "ESP_IDF_VERSION": "v5.5.1",
+      "ESP_IDF_TARGETS": "esp32,esp32s3"
+    }
+  },
+  "containerEnv": {
+    "IDF_PATH": "/opt/esp/idf",
+    "IDF_TOOLS_PATH": "/opt/esp",
+    "ESP_IDF_VERSION": "v5.5.1"
+  },
+  "remoteEnv": {
+    "PATH": "/usr/bin:/bin:${containerEnv:PATH}"
   },
   "remoteUser": "vscode",
   "features": {
@@ -24,7 +36,7 @@
     "--env-file",
     "${localWorkspaceFolder}/.devcontainer/.env"
   ],
-  "initializeCommand": "test -f ${localWorkspaceFolder}/.devcontainer/.env || cp ${localWorkspaceFolder}/.devcontainer/.env.example ${localWorkspaceFolder}/.devcontainer/.env",
+  // "initializeCommand": "test -f ${localWorkspaceFolder}/.devcontainer/.env || cp ${localWorkspaceFolder}/.devcontainer/.env.example ${localWorkspaceFolder}/.devcontainer/.env",
   "postCreateCommand": "npm install -g @anthropic-ai/claude-code @openai/codex",
   "customizations": {
     "vscode": {
@@ -35,7 +47,9 @@
         "ms-vscode.cmake-tools"
       ],
       "settings": {
-        "python.defaultInterpreterPath": "/usr/local/bin/python3.13",
+        "idf.espIdfPath": "/opt/esp/idf",
+        "idf.toolsPath": "/opt/esp",
+        "python.defaultInterpreterPath": "/usr/local/python/current/bin/python3",
         "task.allowAutomaticTasks": "on"
       }
     }
