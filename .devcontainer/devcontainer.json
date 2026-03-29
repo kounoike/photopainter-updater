@@ -30,7 +30,6 @@
     "vscode": {
       "extensions": [
         "saoudrizwan.claude-dev",
-        "mkloubert.vscode-kanban",
         "alfredoperez.speckit-companion",
         "espressif.esp-idf-extension",
         "ms-vscode.cmake-tools"
