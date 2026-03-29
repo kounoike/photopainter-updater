@@ -3,6 +3,7 @@
   "build": {
     "dockerfile": "Dockerfile"
   },
+  "remoteUser": "vscode",
   "features": {
     "ghcr.io/devcontainers/features/rust:1": {
       "version": "stable",
@@ -36,8 +37,6 @@
       ],
       "settings": {
         "python.defaultInterpreterPath": "/usr/local/bin/python3.13",
-        "idf.toolsPath": "/opt/espressif",
-        "idf.espIdfPath": "/opt/esp/idf",
         "task.allowAutomaticTasks": "on"
       }
     }
