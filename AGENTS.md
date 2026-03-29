@@ -90,6 +90,8 @@ Use slash commands:
 - ローカルファイル (`server/contents/image.bmp`) (010-http-bmp-server)
 - Dockerfile syntax、devcontainer.json、Bash、Node.js LTS ベースの開発 CLI + Dev Containers 構成、ESP-IDF v5.5.1、GitHub CLI、`@openai/codex`、`@anthropic-ai/claude-code` (011-improve-devcontainer)
 - devcontainer 設定ファイル、Git 管理外の永続認証キャッシュ領域、`.devcontainer/.env` (011-improve-devcontainer)
+- Bash (POSIX shell) + Rust stable + `server/run.sh`、`cargo run --release`、既存 Rust HTTP サーバ (`axum` / Tokio) (012-fix-run-access-path)
+- ローカルファイルシステム上の任意ディレクトリ。既定値は `server/contents/` (012-fix-run-access-path)
 
 ## Recent Changes
 - 002-add-run-script: Added Bash (POSIX shell) / Python 3 (実行環境) + Python 標準の HTTP 配信機能
