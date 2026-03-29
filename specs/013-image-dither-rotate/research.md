@@ -8,13 +8,21 @@
   - 事前バッチで BMP を生成してから配信する: 差し替え即反映と変換責務の一体化が弱くなるため不採用。
   - 新しい route を追加して変換結果だけ配信する: 既存クライアント互換性を崩すため不採用。
 
-## Decision 2: `ref/convert.py` はサイズ調整と 7 色パレット + Floyd-Steinberg を品質基準として参照する
+## Decision 2: `ref/convert.py` は黒重複を含む 7 エントリ palette と Floyd-Steinberg を品質基準として参照する
 
-- Decision: 既存参照変換の品質基準は `ref/convert.py` の量子化・ディザリング方針とし、サーバ実装側も同等の見た目を目標にする。
-- Rationale: user story 2 と FR-002 は参照変換との同等性を求めている。特に palette と dithering 方針を揃えることが出力傾向の一致に直結する。
+- Decision: 既存参照変換の品質基準は `ref/convert.py` の palette と dithering 方針とし、サーバ実装側も同等の見た目を目標にする。palette は黒重複を含む 7 エントリで、実色としては 6 色と扱う。サイズ調整は今回の必須参照範囲に含めない。
+- Rationale: user story 2 と FR-002 は参照変換との同等性を求めている。特に palette と dithering 方針を揃えることが出力傾向の一致に直結する。サイズ調整はユーザー要求に含まれず、今回の比較軸を曖昧にするため対象外とする。
 - Alternatives considered:
   - 完全に別の量子化方式を採用する: 参照との比較軸が失われるため不採用。
   - 回転や彩度補正だけを追加してディザリングを簡略化する: 表示品質の重要要件を落とすため不採用。
+
+## Decision 2b: 彩度強調は `pre.png` / `post.png` fixture と代表画素の許容差で判定する
+
+- Decision: 彩度強調のテスト基準は `server/testdata/image-dither-rotate/pre.png` と `server/testdata/image-dither-rotate/post.png` を使い、代表座標 `(4,4)` `(12,4)` `(4,12)` `(20,12)` `(12,20)` `(4,28)` `(12,28)` `(20,28)` の RGB を各チャネル差 `±3` で比較する。
+- Rationale: 「PhotoShop でいう彩度 +70 相当」は数式基準より fixture 基準の方が安定する。人間確認済みの `post.png` を正として固定し、代表座標まで明示すれば、実装差よりも見た目の差を直接検知できる。
+- Alternatives considered:
+  - 数式で完全再現する: 実装コストと誤差説明が大きいため不採用。
+  - 平均彩度のような全体指標だけで判定する: 画素単位の逸脱を見逃しやすいため不採用。
 
 ## Decision 3: 彩度強調は変換パイプラインの前段で適用し、その後にディザリングと回転を行う
 

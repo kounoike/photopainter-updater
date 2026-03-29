@@ -105,7 +105,8 @@
 
 - サーバは既存のローカル HTTP 配信機能を維持したまま画像変換を追加する。
 - 入力画像は単一の `image.png` とし、まずは 1 枚の画像を変換して配信できればよい。
-- 既存の参照変換は `ref/convert.py` の結果を品質基準として扱う。
+- 既存の参照変換は `ref/convert.py` のうち palette と dithering 方針を品質基準として扱い、サイズ調整は今回の必須範囲に含めない。
+- 彩度強調の検証は `server/testdata/image-dither-rotate/pre.png` と `server/testdata/image-dither-rotate/post.png` を基準 fixture として行い、代表座標 `(4,4)` `(12,4)` `(4,12)` `(20,12)` `(12,20)` `(4,28)` `(12,28)` `(20,28)` の RGB を各チャネル差 `±3` 以内で比較する。
 
 ## Documentation Impact
 
