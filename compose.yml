@@ -1,0 +1,40 @@
+services:
+  comfyui:
+    image: yanwk/comfyui-boot:cu128-slim
+    container_name: photopainter-comfyui
+    ports:
+      - "0.0.0.0:${COMFYUI_PORT:-18188}:8188"
+    volumes:
+      # 必須: モデル・カスタムノード・pip依存ライブラリ・生成画像
+      - ${COMFYUI_DATA_DIR:-./comfyui-data}/models:/root/ComfyUI/models
+      - ${COMFYUI_DATA_DIR:-./comfyui-data}/custom_nodes:/root/ComfyUI/custom_nodes
+      - ${COMFYUI_DATA_DIR:-./comfyui-data}/dot-local:/root/.local
+      - ${COMFYUI_DATA_DIR:-./comfyui-data}/output:/root/ComfyUI/output
+      # 推奨: ユーザー設定・入力ファイル・ダウンロードキャッシュ
+      - ${COMFYUI_DATA_DIR:-./comfyui-data}/user:/root/ComfyUI/user
+      - ${COMFYUI_DATA_DIR:-./comfyui-data}/input:/root/ComfyUI/input
+      - ${COMFYUI_DATA_DIR:-./comfyui-data}/dot-cache:/root/.cache
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - CLI_ARGS=${COMFYUI_CLI_ARGS:---fast}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8188/system_stats"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - photopainter
+
+networks:
+  photopainter:
+    driver: bridge
