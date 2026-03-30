@@ -121,6 +121,8 @@ Use slash commands:
 - server 側はローカルファイル (`image.png` 入力)、firmware 側は設定用 SD カードを維持。ただし画像更新時の中間 BMP 保存は不要にする (015-custom-transfer-format)
 - Rust stable（edition 2024） + `axum`、Tokio、`image`、`envconfig`、`tracing`、`tracing-subscriber` (018-http-server-refactor)
 - ローカルファイル（既定は `server/contents/image.png`）、永続 DB なし (018-http-server-refactor)
+- Rust stable（edition 2024）、Bash（既存起動補助） + 既存 `axum`, `envconfig`, `image`, `tokio`, `tracing` (019-dither-image-ideas)
+- ローカルファイル（`server/contents/`、`server/testdata/`、`specs/019-dither-image-ideas/` の実験記録） (019-dither-image-ideas)
 
 ## Recent Changes
 - 002-add-run-script: Added Bash (POSIX shell) / Python 3 (実行環境) + Python 標準の HTTP 配信機能
