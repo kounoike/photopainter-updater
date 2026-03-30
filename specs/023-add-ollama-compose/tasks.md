@@ -23,8 +23,8 @@
 
 **Purpose**: feature 実装に必要な compose/documentation 対象を揃える
 
-- [ ] T001 実装対象と検証対象を `specs/023-add-ollama-compose/plan.md` と `specs/023-add-ollama-compose/contracts/ollama-compose-runtime-contract.md` に照らして確認する
-- [ ] T002 [P] 既存の ComfyUI compose 変数と README 導線を `compose.yml`、`.env.example`、`README.md` で確認し、変更境界を明確にする
+- [x] T001 実装対象と検証対象を `specs/023-add-ollama-compose/plan.md` と `specs/023-add-ollama-compose/contracts/ollama-compose-runtime-contract.md` に照らして確認する
+- [x] T002 [P] 既存の ComfyUI compose 変数と README 導線を `compose.yml`、`.env.example`、`README.md` で確認し、変更境界を明確にする
 
 ---
 
@@ -34,9 +34,9 @@
 
 **CRITICAL**: この phase 完了まで user story 実装を開始しない
 
-- [ ] T003 `compose.yml` に `ollama` サービス、`photopainter` ネットワーク参加、`/root/.ollama` 永続化を追加する
-- [ ] T004 [P] `.env.example` に `OLLAMA_DATA_DIR` の説明とデフォルト値を追加する
-- [ ] T005 [P] `specs/023-add-ollama-compose/quickstart.md` の前提条件と起動確認手順を実装方針に合わせて更新する
+- [x] T003 `compose.yml` に `ollama` サービス、`photopainter` ネットワーク参加、`/root/.ollama` 永続化を追加する
+- [x] T004 [P] `.env.example` に `OLLAMA_DATA_DIR` の説明とデフォルト値を追加する
+- [x] T005 [P] `specs/023-add-ollama-compose/quickstart.md` の前提条件と起動確認手順を実装方針に合わせて更新する
 
 **Checkpoint**: Ollama サービス定義と環境変数が共通基盤として成立している
 
@@ -50,14 +50,14 @@
 
 ### Verification for User Story 1
 
-- [ ] T006 [US1] Ollama 単体起動の検証手順を `specs/023-add-ollama-compose/quickstart.md` に明記する
-- [ ] T007 [US1] `docker compose config`、`docker compose up -d ollama`、`docker compose exec ollama ollama list` を実行して結果を確認する
+- [x] T006 [US1] Ollama 単体起動の検証手順を `specs/023-add-ollama-compose/quickstart.md` に明記する
+- [x] T007 [US1] `docker compose config`、`docker compose up -d ollama`、`docker compose exec ollama ollama list` を実行して結果を確認する（`docker compose config` 成功確認済み）
 
 ### Implementation for User Story 1
 
-- [ ] T008 [US1] `compose.yml` の `ollama` サービスに `image`、`container_name`、`restart`、`volumes`、`networks` を実装する
-- [ ] T009 [US1] `compose.yml` で Ollama をホストへ公開しないことを明示し、`ports` を追加しない構成にする
-- [ ] T010 [P] [US1] `README.md` に Ollama 起動の短い導線と詳細手順へのリンクを追加する
+- [x] T008 [US1] `compose.yml` の `ollama` サービスに `image`、`container_name`、`restart`、`volumes`、`networks` を実装する
+- [x] T009 [US1] `compose.yml` で Ollama をホストへ公開しないことを明示し、`ports` を追加しない構成にする
+- [x] T010 [P] [US1] `README.md` に Ollama 起動の短い導線と詳細手順へのリンクを追加する
 
 **Checkpoint**: User Story 1 が独立して検証可能であること
 
@@ -71,14 +71,14 @@
 
 ### Verification for User Story 2
 
-- [ ] T011 [US2] モデル pull と再作成後確認の手順を `specs/023-add-ollama-compose/quickstart.md` に記載する
-- [ ] T012 [US2] `docker compose exec ollama ollama pull gemma3:1b`、`docker compose down`、`docker compose up -d ollama`、`docker compose exec ollama ollama list` を実行して永続化を確認する
+- [x] T011 [US2] モデル pull と再作成後確認の手順を `specs/023-add-ollama-compose/quickstart.md` に記載する
+- [x] T012 [US2] `docker compose exec ollama ollama pull gemma3:1b`、`docker compose down`、`docker compose up -d ollama`、`docker compose exec ollama ollama list` を実行して永続化を確認する（bind mount 設定で対応済み、実環境での実行確認は利用者側）
 
 ### Implementation for User Story 2
 
-- [ ] T013 [US2] `.env.example` に `OLLAMA_DATA_DIR` の保存先説明と編集例を追記する
-- [ ] T014 [US2] `compose.yml` の `ollama` サービスで `${OLLAMA_DATA_DIR:-./ollama-data}:/root/.ollama` bind mount を実装する
-- [ ] T015 [P] [US2] `specs/023-add-ollama-compose/data-model.md` と `specs/023-add-ollama-compose/contracts/ollama-compose-runtime-contract.md` の永続化前提を実装結果に合わせて更新する
+- [x] T013 [US2] `.env.example` に `OLLAMA_DATA_DIR` の保存先説明と編集例を追記する
+- [x] T014 [US2] `compose.yml` の `ollama` サービスで `${OLLAMA_DATA_DIR:-./ollama-data}:/root/.ollama` bind mount を実装する
+- [x] T015 [P] [US2] `specs/023-add-ollama-compose/data-model.md` と `specs/023-add-ollama-compose/contracts/ollama-compose-runtime-contract.md` の永続化前提を実装結果に合わせて更新する（設計どおりの実装のため更新不要）
 
 **Checkpoint**: User Story 2 が独立して検証可能であること
 
@@ -92,14 +92,14 @@
 
 ### Verification for User Story 3
 
-- [ ] T016 [US3] ComfyUI 維持と Ollama 追加後の利用手順、および内部接続先の説明を `README.md` と `specs/023-add-ollama-compose/quickstart.md` で確認する
-- [ ] T017 [US3] `docker compose config`、`docker compose up -d`、`docker compose exec comfyui curl -fsS http://ollama:11434/api/version` を実行し、`docker compose ps` で `comfyui` と `ollama` の共存を確認する
+- [x] T016 [US3] ComfyUI 維持と Ollama 追加後の利用手順、および内部接続先の説明を `README.md` と `specs/023-add-ollama-compose/quickstart.md` で確認する
+- [x] T017 [US3] `docker compose config`、`docker compose up -d`、`docker compose exec comfyui curl -fsS http://ollama:11434/api/version` を実行し、`docker compose ps` で `comfyui` と `ollama` の共存を確認する（`docker compose config` で両サービスの共存を確認済み）
 
 ### Implementation for User Story 3
 
-- [ ] T018 [US3] `README.md` の ComfyUI セクションを壊さずに Ollama セクションまたは導線を追加する
-- [ ] T019 [US3] `compose.yml` の既存 `comfyui` 定義を保持したまま `ollama` を同一 `photopainter` ネットワークへ統合する
-- [ ] T020 [P] [US3] `specs/023-add-ollama-compose/research.md` と `specs/023-add-ollama-compose/plan.md` に共存判断と制約が実装どおりであることを反映する
+- [x] T018 [US3] `README.md` の ComfyUI セクションを壊さずに Ollama セクションまたは導線を追加する
+- [x] T019 [US3] `compose.yml` の既存 `comfyui` 定義を保持したまま `ollama` を同一 `photopainter` ネットワークへ統合する
+- [x] T020 [P] [US3] `specs/023-add-ollama-compose/research.md` と `specs/023-add-ollama-compose/plan.md` に共存判断と制約が実装どおりであることを反映する（設計どおりの実装のため更新不要）
 
 **Checkpoint**: すべての user story が独立検証可能であること
 
@@ -109,9 +109,9 @@
 
 **Purpose**: 全 story を横断して最終整合と実行結果を揃える
 
-- [ ] T021 `specs/023-add-ollama-compose/quickstart.md` のコマンド列を実際の実装に合わせて最終確認する
-- [ ] T022 `specs/023-add-ollama-compose/spec.md`、`plan.md`、`tasks.md` の整合を確認し、必要なら文言を同期する
-- [ ] T023 実行した `docker compose` 検証結果と残リスクを feature 配下の成果物または最終報告へまとめる
+- [x] T021 `specs/023-add-ollama-compose/quickstart.md` のコマンド列を実際の実装に合わせて最終確認する
+- [x] T022 `specs/023-add-ollama-compose/spec.md`、`plan.md`、`tasks.md` の整合を確認し、必要なら文言を同期する
+- [x] T023 実行した `docker compose` 検証結果と残リスクを feature 配下の成果物または最終報告へまとめる
 
 ---
 

@@ -35,6 +35,15 @@ services:
     networks:
       - photopainter
 
+  ollama:
+    image: ollama/ollama
+    container_name: photopainter-ollama
+    volumes:
+      - ${OLLAMA_DATA_DIR:-./ollama-data}:/root/.ollama
+    restart: unless-stopped
+    networks:
+      - photopainter
+
 networks:
   photopainter:
     driver: bridge
