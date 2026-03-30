@@ -53,7 +53,7 @@ description: "機能実装のためのタスクリスト"
 
 ### Verification for User Story 1
 
-- [ ] T008 [US1] 手動確認: `docker compose up` を実行して `http://localhost:18188` にブラウザでアクセスし、ComfyUI Web UI が表示されること、`docker compose down` で正常停止することを `quickstart.md` の手順に沿って検証する（**GPU実機環境で実施**）
+- [x] T008 [US1] 手動確認: `docker compose up` を実行して `http://localhost:18188` にブラウザでアクセスし、ComfyUI Web UI が表示されること、`docker compose down` で正常停止することを `quickstart.md` の手順に沿って検証する（**GPU実機環境で実施**）
 
 **Checkpoint**: Web UI アクセス成功・正常停止が確認できること
 
@@ -73,9 +73,9 @@ description: "機能実装のためのタスクリスト"
 
 ### Verification for User Story 2
 
-- [ ] T012 [US2] 手動確認（モデル永続化）: ダミーファイルを `${COMFYUI_DATA_DIR:-./comfyui-data}/models/` に配置 → `docker compose down` → `docker compose up` → ファイルが残っていることを確認する（**GPU実機環境で実施**）
+- [x] T012 [US2] 手動確認（モデル永続化）: ダミーファイルを `${COMFYUI_DATA_DIR:-./comfyui-data}/models/` に配置 → `docker compose down` → `docker compose up` → ファイルが残っていることを確認する（**GPU実機環境で実施**）
 - [ ] T013 [US2] 手動確認（出力永続化）: ComfyUI でサンプル画像を生成 → `docker compose down` → `comfyui-data/output/` に画像ファイルが残っていることを確認する（**GPU実機環境で実施**）
-- [ ] T013b [US2] 手動確認（カスタムノード・依存ライブラリ永続化）: ComfyUI Manager でカスタムノードをインストール → `docker compose down && docker compose up` → `comfyui-data/custom_nodes/` にノードのディレクトリが残存していること、かつ `comfyui-data/dot-local/` に pip 依存ファイルが残存していることを確認する（**GPU実機環境で実施**）
+- [x] T013b [US2] 手動確認（カスタムノード・依存ライブラリ永続化）: ComfyUI Manager でカスタムノードをインストール → `docker compose down && docker compose up` → `comfyui-data/custom_nodes/` にノードのディレクトリが残存していること、かつ `comfyui-data/dot-local/` に pip 依存ファイルが残存していることを確認する（**GPU実機環境で実施**）
 
 **Checkpoint**: コンテナ再作成後もモデル・生成画像・カスタムノード・依存ライブラリが保持されること
 
@@ -94,7 +94,7 @@ description: "機能実装のためのタスクリスト"
 
 ### Verification for User Story 3
 
-- [ ] T016 [US3] 手動確認: `docker compose up` 後に `docker exec photopainter-comfyui nvidia-smi` を実行して GPU が認識されること、ComfyUI Web UI の System Stats で GPU が表示されることを確認する（**GPU実機環境で実施**）
+- [x] T016 [US3] 手動確認: `docker compose up` 後に `docker exec photopainter-comfyui nvidia-smi` を実行して GPU が認識されること、ComfyUI Web UI の System Stats で GPU が表示されることを確認する（**GPU実機環境で実施**）
 
 **Checkpoint**: `nvidia-smi` が GPU 情報を返すこと
 
