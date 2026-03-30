@@ -10,7 +10,7 @@ usage() {
 Usage: server/run.sh [CONTENT_DIR]
 
 CONTENT_DIR:
-  Optional directory containing image.png to transform and serve as image.bmp.
+  Optional directory containing image.png to transform and serve as image.bmp/image.bin.
   If omitted, server/contents is used.
 EOF
 }
@@ -64,13 +64,14 @@ if [[ ! "${port}" =~ ^[0-9]+$ ]]; then
   exit 1
 fi
 
-echo "Starting Rust HTTP BMP server on 0.0.0.0:${port} with input image in ${contents_dir}"
-echo "Local: http://127.0.0.1:${port}/ and http://127.0.0.1:${port}/image.bmp"
+echo "Starting Rust HTTP image server on 0.0.0.0:${port} with input image in ${contents_dir}"
+echo "Local: http://127.0.0.1:${port}/ , http://127.0.0.1:${port}/image.bmp , http://127.0.0.1:${port}/image.bin"
 if lan_ip=$(detect_lan_ip); then
-  echo "LAN:   http://${lan_ip}:${port}/ and http://${lan_ip}:${port}/image.bmp"
+  echo "LAN:   http://${lan_ip}:${port}/ , http://${lan_ip}:${port}/image.bmp , http://${lan_ip}:${port}/image.bin"
 else
   echo "LAN:   このホストの LAN IP を使って http://<host-ip>:${port}/ へアクセスしてください"
 fi
+echo "Routing: firmware uses binary only when image_url ends with .bin; otherwise BMP routes stay unchanged"
 echo "Access logs: each request is written as one line to stdout"
 echo "Stop: Ctrl+C"
 

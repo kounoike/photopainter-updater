@@ -31,6 +31,14 @@ bool CopyJsonString(cJSON* root, const char* key, char* destination, size_t dest
     snprintf(destination, destination_size, "%s", item->valuestring);
     return true;
 }
+
+bool HasBinSuffix(const char* value) {
+    if (value == nullptr) {
+        return false;
+    }
+    size_t length = strlen(value);
+    return length >= 4 && strcmp(value + length - 4, ".bin") == 0;
+}
 }  // namespace
 
 esp_err_t LoadConfigFromSdCard(const char* path, FirmwareConfig* out_config, char* error_detail, size_t error_detail_size) {
@@ -91,4 +99,8 @@ esp_err_t LoadConfigFromSdCard(const char* path, FirmwareConfig* out_config, cha
 
     ESP_LOGI(kTag, "Loaded config.txt JSON for SSID '%s'", out_config->wifi_ssid);
     return ESP_OK;
+}
+
+bool IsBinaryImageUrl(const char* image_url) {
+    return HasBinSuffix(image_url);
 }

@@ -23,7 +23,7 @@
 - Content meaning:
   - 固定長ヘッダの後ろに、e-paper 用 packed 4bit frame buffer payload が続く
 - Required headers:
-  - `Content-Type`: binary 独自形式であることが分かる値
+  - `Content-Type`: `application/vnd.photopainter-frame`
   - `Content-Length`: ヘッダ + payload の総バイト数
 
 ## Binary Layout
@@ -31,21 +31,21 @@
 ### Header
 
 - `magic`: 4 bytes
-  - 独自形式識別子
+  - `PPBF`
 - `version`: 1 byte
-  - 現行 contract version
+  - `1`
 - `flags`: 1 byte
-  - packing や将来拡張用
+  - 現行は `0`
 - `header_length`: 2 bytes
-  - 固定長ヘッダの長さ
+  - 固定長ヘッダの長さ。現行は `20`
 - `width`: 2 bytes
-  - 表示幅
+  - 表示幅。現行は `800`
 - `height`: 2 bytes
-  - 表示高
+  - 表示高。現行は `480`
 - `payload_length`: 4 bytes
-  - 後続 payload バイト数
+  - 後続 payload バイト数。現行は `192000`
 - `payload_checksum`: 4 bytes
-  - payload 整合性確認値
+  - payload の全 byte を `u32` wrapping sum した値
 - `reserved`: 残り bytes
   - 将来拡張用
 

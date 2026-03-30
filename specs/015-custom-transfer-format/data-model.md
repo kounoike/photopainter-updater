@@ -5,13 +5,14 @@
 - Purpose:
   - `/image.bin` 応答の先頭に付く固定長ヘッダ。payload の妥当性確認と完了判定に使う。
 - Fields:
-  - `magic`: 独自形式であることを示す識別子
-  - `version`: 形式バージョン
-  - `width`: 表示幅
-  - `height`: 表示高
-  - `payload_length`: 後続 payload の期待バイト数
-  - `payload_checksum`: payload の整合性確認値
-  - `flags`: packing や将来互換性のための予約情報
+  - `magic`: 独自形式であることを示す識別子。現行は `PPBF`
+  - `version`: 形式バージョン。現行は `1`
+  - `flags`: packing や将来互換性のための予約情報。現行は `0`
+  - `header_length`: 固定長ヘッダ長。現行は `20`
+  - `width`: 表示幅。現行は `800`
+  - `height`: 表示高。現行は `480`
+  - `payload_length`: 後続 payload の期待バイト数。現行は `192000`
+  - `payload_checksum`: payload の全 byte を `u32` wrapping sum した整合性確認値
 - Validation:
   - `magic` は期待値と一致しなければならない
   - `version` は firmware が理解できる値でなければならない
