@@ -32,12 +32,12 @@ bool CopyJsonString(cJSON* root, const char* key, char* destination, size_t dest
     return true;
 }
 
-bool HasBinSuffix(const char* value) {
+bool HasBmpSuffix(const char* value) {
     if (value == nullptr) {
         return false;
     }
     size_t length = strlen(value);
-    return length >= 4 && strcmp(value + length - 4, ".bin") == 0;
+    return length >= 4 && strcmp(value + length - 4, ".bmp") == 0;
 }
 }  // namespace
 
@@ -102,5 +102,6 @@ esp_err_t LoadConfigFromSdCard(const char* path, FirmwareConfig* out_config, cha
 }
 
 bool IsBinaryImageUrl(const char* image_url) {
-    return HasBinSuffix(image_url);
+    // Default to binary format; only use BMP path when URL explicitly ends with .bmp
+    return !HasBmpSuffix(image_url);
 }
