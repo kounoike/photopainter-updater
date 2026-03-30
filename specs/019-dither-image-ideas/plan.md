@@ -106,11 +106,16 @@ firmware/
 
 結果は実機 ePaper 表示を主判定として記録し、PC 上の BMP/Binary 出力やテスト結果は補助情報として使う。比較結果は profile、画像セット、観点、判断、次アクションの形で残す。
 
+### 5. 比較表示モード
+
+実験初期は、baseline と比較対象 profile を 1 枚の画像内で左右または上下に分割表示する比較モードを優先候補とする。同一表示条件で差分を見つけやすくするためであり、split view で有望な案のみ全画面表示でも再確認する。
+
 ## 実装対象メモ
 
 - `server/src/config.rs`: 改善 profile と実験用入力セット指定の設定追加
 - `server/src/image_pipeline/mod.rs`: パイプライン段階の整理と profile 適用入口
 - `server/src/image_pipeline/dither.rs`: 前処理とディザリング改善候補の適用点
+- `server/src/routes.rs` または `server/src/image_pipeline/`: split view 比較表示の適用点
 - `server/src/app.rs`: 起動時の実験モード表示整理
 - `server/README.md`: 実験モードの起動方法追記
 - `server/testdata/`: 固定画像セットの拡充
