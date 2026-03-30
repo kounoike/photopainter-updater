@@ -4,7 +4,7 @@
 
 ## 1. 追加改善の実装単位
 
-**Decision:** 今回の改善は既存 `color-priority` を直接変更せず、新しい写真調向け profile として追加する。
+**Decision:** 今回の改善は既存 `color-priority` を直接変更せず、新しい写真調向け profile `adaptive-photo` として追加する。
 
 **Rationale:** `019` では `color-priority + DITHER_DIFFUSION_RATE=0.8` が暫定上位候補になっており、これを基準として残したまま差分比較できる状態が必要である。既存 profile を上書きすると、どの改善が効いたか切り分けにくくなる。
 
@@ -59,3 +59,46 @@
 **Alternatives considered:**
 - 実機確認だけで進める: 回帰切り分けが遅くなる。
 - 画像全体の golden 比較だけを使う: どの色域を改善したかが見えにくい。
+
+---
+
+## 6. 実装後のローカル確認
+
+**Decision:** 実装直後の完了判定には `cargo test` を使い、青寄り、高明度低彩度、肌寄り暖色の 3 色域に対する挙動確認を自動テストで担保する。
+
+**Rationale:** この turn では実機 ePaper の撮り直しや肉眼比較までは含めず、まず `adaptive-photo` が既存の配信経路で安全に動作し、今回狙った色域に対して補正が効いていることをローカルで確認する。実機比較は follow-up として残す。
+
+**Alternatives considered:**
+- 実機比較完了まで実装完了を遅らせる: コード変更の安全性確認と実機所見の準備を同時に進めにくい。
+- 自動テストを追加しない: 青保持や局所 diffusion 制御の意図がコードから追いにくい。
+
+### ローカル確認結果
+
+- `cargo test` は通過し、`adaptive-photo` の config 解決と binary response 生成に回帰がないことを確認した
+- `server/src/image_pipeline/dither.rs` のユニットテストで、青寄り領域の青優先補正、明るい低彩度面の diffusion 抑制、肌寄り暖色の diffusion 抑制を確認した
+- 実機 ePaper での最終比較は未実施のため、`advance` / `hold` / `reject` の最終判定は follow-up とする
+
+---
+
+## 7. 判定基準と現時点の結論
+
+### 7-1. `advance` / `hold` / `reject` の基準
+
+- `advance`
+  - ローカル回帰に加え、写真調 2 系統以上の比較で既存上位候補を上回る改善が確認できる
+- `hold`
+  - ローカルでは改善意図が確認できるが、実機比較または代表画像での優位性確認が未完了である
+- `reject`
+  - ローカル回帰で既存 profile を悪化させる、または狙った色域に対する改善が確認できない
+
+### 7-2. 現時点の結論
+
+- `hold`: `adaptive-photo`
+  - ローカル自動テストでは今回狙った 3 色域への補正を確認できた
+  - ただし `image7` / `image8` を使った実機比較をまだ終えていないため、最終採用候補へは昇格させない
+
+### 7-3. 次アクション
+
+- `image7` で明るい低彩度面と肌の中間調の見え方を `color-priority + DITHER_DIFFUSION_RATE=0.8` と比較する
+- `image8` で青系の広い面と明るい背景の見え方を `color-priority + DITHER_DIFFUSION_RATE=0.8` と比較する
+- 実機比較で優位性が確認できた場合に `advance` へ更新し、既定 profile 候補として再評価する

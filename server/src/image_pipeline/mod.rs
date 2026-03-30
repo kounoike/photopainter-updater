@@ -397,6 +397,9 @@ mod tests {
                 neutral_bias: 0.0,
                 chroma_bias: 0.0,
                 hue_guard: 0.0,
+                blue_bias: 0.0,
+                highlight_guard: 0.0,
+                skin_tone_guard: 0.0,
             },
         );
 
@@ -439,6 +442,9 @@ mod tests {
             neutral_bias: 0.0,
             chroma_bias: 0.0,
             hue_guard: 0.0,
+            blue_bias: 0.0,
+            highlight_guard: 0.0,
+            skin_tone_guard: 0.0,
         };
         let from_pre = render_profile_image(&pre, options);
         let from_post = rotate_right_90(&apply_reference_dither(&post, options));
@@ -492,5 +498,29 @@ mod tests {
             *merged.get_pixel(midpoint.max(1), 0),
             *candidate.get_pixel(midpoint.max(1), 0)
         );
+    }
+
+    #[test]
+    fn adaptive_photo_profile_renders_valid_binary_frame() {
+        let input = load_fixture("pre.png");
+        let response = render_response(
+            &input,
+            ResponseFormat::Binary,
+            RenderOptions {
+                profile: ImageProfile::AdaptivePhoto,
+                dither_options: ImageProfile::AdaptivePhoto.default_dither_options(),
+                compare: CompareOptions {
+                    profile: Some(ImageProfile::ColorPriority),
+                    split: CompareSplit::Horizontal,
+                },
+            },
+        )
+        .expect("adaptive profile response");
+
+        let ResponsePayload::Binary(bytes) = response else {
+            panic!("expected binary response");
+        };
+
+        assert_eq!(validate_binary_frame(&bytes), Ok(()));
     }
 }

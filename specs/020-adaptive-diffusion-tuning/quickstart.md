@@ -2,7 +2,7 @@
 
 ## 目的
 
-今回の feature で追加する写真調向け改善 profile を、既存上位候補と同条件で比較し、ローカル回帰と手動評価を行う。
+今回の feature で追加する写真調向け改善 profile `adaptive-photo` を、既存上位候補と同条件で比較し、ローカル回帰と手動評価を行う。
 
 ## 1. ローカル回帰確認
 
@@ -23,7 +23,7 @@ baseline との左右比較:
 
 ```bash
 cd /workspaces/photopainter-updater/server
-IMAGE_PROFILE=<new-profile> \
+IMAGE_PROFILE=adaptive-photo \
 COMPARE_WITH_BASELINE=1 \
 COMPARE_SPLIT=vertical \
 cargo run --release
@@ -33,7 +33,7 @@ cargo run --release
 
 ```bash
 cd /workspaces/photopainter-updater/server
-IMAGE_PROFILE=<new-profile> \
+IMAGE_PROFILE=adaptive-photo \
 COMPARE_PROFILE=color-priority \
 DITHER_DIFFUSION_RATE=0.8 \
 COMPARE_SPLIT=horizontal \
@@ -64,7 +64,7 @@ cargo run --release
 
 | 項目 | 記録内容 |
 |------|----------|
-| `profile` | 例: 新しい写真調 profile |
+| `profile` | 例: `adaptive-photo` |
 | `input_image` | 例: `image7` / `image8` |
 | `compare_target` | `baseline` または `color-priority + 0.8` |
 | `observations` | 青保持、低彩度面、肌、中間調、ノイズ |
@@ -74,5 +74,5 @@ cargo run --release
 ## 6. 完了条件
 
 - `cargo test` が通る
-- 少なくとも 2 種類の写真調画像で比較結果が残る
-- 既存上位候補との関係を `advance` / `hold` / `reject` で説明できる
+- 少なくとも 2 種類の写真調画像でローカル比較結果または実機比較結果が残る
+- 既存上位候補との関係を `advance` / `hold` / `reject`、もしくは follow-up として説明できる

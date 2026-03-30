@@ -194,6 +194,9 @@ mod tests {
                     neutral_bias: 0.0,
                     chroma_bias: 0.0,
                     hue_guard: 0.0,
+                    blue_bias: 0.0,
+                    highlight_guard: 0.0,
+                    skin_tone_guard: 0.0,
                 },
                 compare: crate::config::CompareOptions {
                     profile: None,

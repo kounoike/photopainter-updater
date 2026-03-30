@@ -7,7 +7,7 @@
 
 ## Summary
 
-`019` で暫定上位候補になった `color-priority + DITHER_DIFFUSION_RATE=0.8` を比較基準として維持しつつ、写真調画像で残った 3 つの弱点である「青空など青系の広い面の保持」「明るい低彩度面の濁り抑制」「肌の中間調保持」を追加改善する。実装は `server/` 側の画像変換ロジック、比較用 fixture、評価手順の更新に限定し、HTTP エンドポイント、転送フォーマット、firmware は変更しない。
+`019` で暫定上位候補になった `color-priority + DITHER_DIFFUSION_RATE=0.8` を比較基準として維持しつつ、写真調画像で残った 3 つの弱点である「青空など青系の広い面の保持」「明るい低彩度面の濁り抑制」「肌の中間調保持」を追加改善する。実装では新 profile `adaptive-photo` を導入し、`server/` 側の画像変換ロジック、比較用 fixture、評価手順の更新に限定する。HTTP エンドポイント、転送フォーマット、firmware は変更しない。
 
 ## Technical Context
 
@@ -82,7 +82,7 @@ specs/
 
 ### 1. 追加改善は新しい named profile として扱う
 
-`019` で導入した profile ベース運用を維持し、今回の追加改善は既存 profile を直接上書きせず、比較可能な新 profile として定義する。これにより、`color-priority + DITHER_DIFFUSION_RATE=0.8` を基準に差分を切り分けやすくする。
+`019` で導入した profile ベース運用を維持し、今回の追加改善は既存 profile を直接上書きせず、比較可能な新 profile `adaptive-photo` として定義する。これにより、`color-priority + DITHER_DIFFUSION_RATE=0.8` を基準に差分を切り分けやすくする。
 
 ### 2. 写真調の弱点に対して局所制御を入れる
 
@@ -113,3 +113,9 @@ specs/
 ## Complexity Tracking
 
 憲章チェック違反なし。profile ベースの拡張と fixture 追加は `019` の実験基盤を再利用する最小変更であり、新規配信経路や自動評価基盤を追加する案より単純である。
+
+## 現時点の判断
+
+- 実装済みの具体化対象は `adaptive-photo`
+- ローカル自動テストでは意図した色域補正を確認できた
+- 次の採用判断は `image7` / `image8` を使った実機比較結果を待って行う

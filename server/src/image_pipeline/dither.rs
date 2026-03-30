@@ -5,6 +5,16 @@ use crate::config::{
     VALUE_BIAS, VALUE_SATURATION_SCALE, VALUE_SCALE,
 };
 
+const BLUE_CANDIDATE: [u8; 3] = [0, 0, 255];
+
+#[derive(Clone, Copy, Debug)]
+struct PixelCharacteristics {
+    hue: f32,
+    saturation: f32,
+    value: f32,
+    luma: f32,
+}
+
 pub fn boost_saturation(image: &RgbImage, saturation_mode: SaturationMode) -> RgbImage {
     if saturation_mode == SaturationMode::Neutral {
         return image.clone();
@@ -109,10 +119,11 @@ pub fn apply_reference_dither(image: &RgbImage, options: DitherOptions) -> RgbIm
             ];
             let replacement = nearest_palette_color(clamped, options);
             output.put_pixel(x as u32, y as u32, Rgb(replacement));
+            let diffusion_factor = adaptive_diffusion_factor(clamped, replacement, options);
             let error = [
-                (clamped[0] - replacement[0] as f32) * options.diffusion_rate,
-                (clamped[1] - replacement[1] as f32) * options.diffusion_rate,
-                (clamped[2] - replacement[2] as f32) * options.diffusion_rate,
+                (clamped[0] - replacement[0] as f32) * options.diffusion_rate * diffusion_factor,
+                (clamped[1] - replacement[1] as f32) * options.diffusion_rate * diffusion_factor,
+                (clamped[2] - replacement[2] as f32) * options.diffusion_rate * diffusion_factor,
             ];
 
             if options.use_atkinson {
@@ -182,6 +193,7 @@ fn diffuse_error(
 }
 
 fn nearest_palette_color(pixel: [f32; 3], options: DitherOptions) -> [u8; 3] {
+    let characteristics = pixel_characteristics(pixel);
     let mut best = REFERENCE_PALETTE[0];
     let mut best_score = f32::MAX;
 
@@ -191,13 +203,8 @@ fn nearest_palette_color(pixel: [f32; 3], options: DitherOptions) -> [u8; 3] {
         } else {
             squared_distance(pixel, candidate)
         };
-        let mut score = base_distance;
-        if is_neutral_candidate(candidate) {
-            score += options.neutral_bias;
-        } else {
-            score += options.chroma_bias;
-        }
-        score += hue_penalty(pixel, candidate, options.hue_guard);
+        let mut score = base_distance + candidate_bias(characteristics, candidate, options);
+        score += hue_penalty(characteristics, candidate, options.hue_guard);
 
         if score < best_score {
             best = candidate;
@@ -212,29 +219,142 @@ fn is_neutral_candidate(candidate: [u8; 3]) -> bool {
     matches!(candidate, [0, 0, 0] | [255, 255, 255])
 }
 
-fn hue_penalty(pixel: [f32; 3], candidate: [u8; 3], hue_guard: f32) -> f32 {
-    if hue_guard <= f32::EPSILON || is_neutral_candidate(candidate) {
-        return 0.0;
-    }
-
-    let (input_hue, input_sat, _) = rgb_to_hsv(
+fn pixel_characteristics(pixel: [f32; 3]) -> PixelCharacteristics {
+    let (hue, saturation, value) = rgb_to_hsv(
         pixel[0].clamp(0.0, 255.0) as u8,
         pixel[1].clamp(0.0, 255.0) as u8,
         pixel[2].clamp(0.0, 255.0) as u8,
     );
+    let luma = (0.2126 * pixel[0] + 0.7152 * pixel[1] + 0.0722 * pixel[2]) / 255.0;
+
+    PixelCharacteristics {
+        hue,
+        saturation,
+        value,
+        luma,
+    }
+}
+
+fn candidate_bias(
+    characteristics: PixelCharacteristics,
+    candidate: [u8; 3],
+    options: DitherOptions,
+) -> f32 {
+    let mut score = if is_neutral_candidate(candidate) {
+        options.neutral_bias
+    } else {
+        options.chroma_bias
+    };
+
+    let blue_strength = blue_region_strength(characteristics);
+    if blue_strength > 0.0 {
+        if candidate == BLUE_CANDIDATE {
+            score -= options.blue_bias * blue_strength;
+        } else if is_neutral_candidate(candidate) {
+            score += options.blue_bias * 0.85 * blue_strength;
+        }
+    }
+
+    score
+}
+
+fn hue_penalty(characteristics: PixelCharacteristics, candidate: [u8; 3], hue_guard: f32) -> f32 {
+    if hue_guard <= f32::EPSILON || is_neutral_candidate(candidate) {
+        return 0.0;
+    }
     let (candidate_hue, candidate_sat, _) = rgb_to_hsv(candidate[0], candidate[1], candidate[2]);
 
-    if input_sat < 0.12 || candidate_sat < 0.12 {
+    if characteristics.saturation < 0.12 || candidate_sat < 0.12 {
         return 0.0;
     }
 
-    let delta = hue_distance_degrees(input_hue, candidate_hue);
+    let delta = hue_distance_degrees(characteristics.hue, candidate_hue);
     if delta <= 20.0 {
         return 0.0;
     }
 
     let normalized = (delta - 20.0) / 160.0;
     normalized * normalized * hue_guard
+}
+
+fn blue_region_strength(characteristics: PixelCharacteristics) -> f32 {
+    if characteristics.saturation < 0.18 || characteristics.value < 0.35 {
+        return 0.0;
+    }
+
+    let delta = hue_distance_degrees(characteristics.hue, 220.0);
+    if delta >= 70.0 {
+        return 0.0;
+    }
+
+    let hue_factor = 1.0 - delta / 70.0;
+    let saturation_factor = ((characteristics.saturation - 0.18) / 0.52).clamp(0.0, 1.0);
+    let value_factor = ((characteristics.value - 0.35) / 0.55).clamp(0.0, 1.0);
+
+    hue_factor * (0.45 + 0.55 * saturation_factor) * (0.55 + 0.45 * value_factor)
+}
+
+fn highlight_region_strength(characteristics: PixelCharacteristics) -> f32 {
+    if characteristics.value < 0.68 || characteristics.saturation > 0.30 {
+        return 0.0;
+    }
+
+    let brightness = ((characteristics.value - 0.68) / 0.32).clamp(0.0, 1.0);
+    let softness = ((0.30 - characteristics.saturation) / 0.30).clamp(0.0, 1.0);
+
+    brightness * softness
+}
+
+fn skin_tone_strength(characteristics: PixelCharacteristics) -> f32 {
+    if !(8.0..=55.0).contains(&characteristics.hue)
+        || characteristics.saturation < 0.12
+        || characteristics.saturation > 0.58
+        || characteristics.value < 0.30
+        || characteristics.value > 0.92
+    {
+        return 0.0;
+    }
+
+    let hue_factor = if characteristics.hue <= 30.0 {
+        1.0 - ((30.0 - characteristics.hue) / 22.0).clamp(0.0, 1.0) * 0.25
+    } else {
+        1.0 - ((characteristics.hue - 30.0) / 25.0).clamp(0.0, 1.0) * 0.35
+    };
+    let saturation_factor = (1.0 - ((characteristics.saturation - 0.30).abs() / 0.28))
+        .clamp(0.0, 1.0);
+    let value_factor =
+        (1.0 - ((characteristics.value - 0.68).abs() / 0.34)).clamp(0.0, 1.0);
+
+    hue_factor * saturation_factor * value_factor
+}
+
+fn adaptive_diffusion_factor(
+    pixel: [f32; 3],
+    replacement: [u8; 3],
+    options: DitherOptions,
+) -> f32 {
+    let characteristics = pixel_characteristics(pixel);
+    let highlight_strength = highlight_region_strength(characteristics);
+    let skin_strength = skin_tone_strength(characteristics);
+    let blue_strength = blue_region_strength(characteristics);
+    let mut factor = 1.0;
+
+    factor -= options.highlight_guard * 0.55 * highlight_strength;
+    factor -= options.skin_tone_guard * 0.45 * skin_strength;
+
+    if replacement == [255, 255, 255] && blue_strength > 0.0 {
+        factor -= options.highlight_guard * 0.12 * blue_strength;
+    }
+
+    if replacement == [255, 255, 255] && skin_strength > 0.0 {
+        factor -= options.skin_tone_guard * 0.18 * skin_strength;
+    }
+
+    if characteristics.luma > 0.82 && is_neutral_candidate(replacement) {
+        factor -= options.highlight_guard * 0.08;
+    }
+
+    factor.clamp(0.35, 1.0)
 }
 
 fn hue_distance_degrees(left: f32, right: f32) -> f32 {
@@ -300,4 +420,47 @@ pub fn rotate_right_90(image: &RgbImage) -> RgbImage {
     }
 
     rotated
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::ImageProfile;
+
+    #[test]
+    fn adaptive_photo_biases_blue_regions_away_from_neutral_colors() {
+        let options = ImageProfile::AdaptivePhoto.default_dither_options();
+        let pixel = [150.0, 190.0, 235.0];
+        let characteristics = pixel_characteristics(pixel);
+        let blue_bias = candidate_bias(characteristics, BLUE_CANDIDATE, options);
+        let white_bias = candidate_bias(characteristics, [255, 255, 255], options);
+
+        assert!(blue_region_strength(characteristics) > 0.4);
+        assert!(blue_bias < options.chroma_bias);
+        assert!(white_bias > options.neutral_bias);
+    }
+
+    #[test]
+    fn adaptive_photo_reduces_diffusion_for_bright_low_saturation_regions() {
+        let options = ImageProfile::AdaptivePhoto.default_dither_options();
+        let factor = adaptive_diffusion_factor([220.0, 225.0, 232.0], [255, 255, 255], options);
+
+        assert!(factor < 0.85, "factor={factor}");
+    }
+
+    #[test]
+    fn adaptive_photo_reduces_diffusion_for_skin_tones() {
+        let options = ImageProfile::AdaptivePhoto.default_dither_options();
+        let factor = adaptive_diffusion_factor([208.0, 164.0, 136.0], [255, 255, 255], options);
+
+        assert!(factor < 0.93, "factor={factor}");
+    }
+
+    #[test]
+    fn adaptive_photo_reduces_white_diffusion_for_bright_sky_pixel() {
+        let options = ImageProfile::AdaptivePhoto.default_dither_options();
+        let factor = adaptive_diffusion_factor([96.0, 158.0, 240.0], [255, 255, 255], options);
+
+        assert!(factor < 0.97, "factor={factor}");
+    }
 }

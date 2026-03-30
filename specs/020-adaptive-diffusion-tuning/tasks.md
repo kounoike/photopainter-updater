@@ -15,9 +15,9 @@
 
 **Purpose**: `019` の結論を今回の feature へ引き継ぎ、比較対象と評価観点を明文化する
 
-- [ ] T001 `specs/020-adaptive-diffusion-tuning/research.md` に今回実装する追加改善案、既存比較基準、見送る案を整理し、`019` との差分を明記する
-- [ ] T002 [P] `specs/020-adaptive-diffusion-tuning/quickstart.md` に比較対象画像、観察ポイント、記録項目を具体化する
-- [ ] T003 [P] `specs/020-adaptive-diffusion-tuning/data-model.md` と `specs/020-adaptive-diffusion-tuning/contracts/adaptive-profile-config.md` を見直し、新 profile と評価画像の最小要件を整合させる
+- [x] T001 `specs/020-adaptive-diffusion-tuning/research.md` に今回実装する追加改善案、既存比較基準、見送る案を整理し、`019` との差分を明記する
+- [x] T002 [P] `specs/020-adaptive-diffusion-tuning/quickstart.md` に比較対象画像、観察ポイント、記録項目を具体化する
+- [x] T003 [P] `specs/020-adaptive-diffusion-tuning/data-model.md` と `specs/020-adaptive-diffusion-tuning/contracts/adaptive-profile-config.md` を見直し、新 profile と評価画像の最小要件を整合させる
 
 ---
 
@@ -27,11 +27,11 @@
 
 **CRITICAL**: この phase 完了まで user story 実装を開始しない
 
-- [ ] T004 `server/src/config.rs` に新しい写真調 profile 定義と設定解決を追加する
-- [ ] T005 [P] `server/src/app.rs` と `server/README.md` に新 profile の起動方法と比較例を追加する
-- [ ] T006 [P] `server/testdata/dither-result-check/` に青系の広い面を含む代表画像を追加し、用途を `server/testdata/image-dither-rotate/README.md` に追記する
-- [ ] T007 `server/src/config.rs` と `server/src/image_pipeline/mod.rs` で新 profile が既存比較モードに接続されることを確認するテストを追加する
-- [ ] T008 `specs/020-adaptive-diffusion-tuning/plan.md` で Allowed Scope / Forbidden Scope を再確認し、HTTP ルート・転送フォーマット・firmware 不変を維持していることを記録する
+- [x] T004 `server/src/config.rs` に新しい写真調 profile 定義と設定解決を追加する
+- [x] T005 [P] `server/src/app.rs` と `server/README.md` に新 profile の起動方法と比較例を追加する
+- [x] T006 [P] `server/testdata/dither-result-check/` に青系の広い面を含む代表画像を追加し、用途を `server/testdata/image-dither-rotate/README.md` に追記する
+- [x] T007 `server/src/config.rs` と `server/src/image_pipeline/mod.rs` で新 profile が既存比較モードに接続されることを確認するテストを追加する
+- [x] T008 `specs/020-adaptive-diffusion-tuning/plan.md` で Allowed Scope / Forbidden Scope を再確認し、HTTP ルート・転送フォーマット・firmware 不変を維持していることを記録する
 
 **Checkpoint**: 新 profile の設定、比較画像、基本回帰確認が揃っていること
 
@@ -45,14 +45,14 @@
 
 ### Verification for User Story 1
 
-- [ ] T009 [US1] `specs/020-adaptive-diffusion-tuning/research.md` に追加改善案の判定軸と見送り案の理由を追記し、重複や曖昧さがないことを手動確認する
-- [ ] T010 [P] [US1] `specs/020-adaptive-diffusion-tuning/quickstart.md` に画像ごとの観察ポイントを追記し、青保持・低彩度面・肌の観点が揃っていることを手動確認する
+- [x] T009 [US1] `specs/020-adaptive-diffusion-tuning/research.md` に追加改善案の判定軸と見送り案の理由を追記し、重複や曖昧さがないことを手動確認する
+- [x] T010 [P] [US1] `specs/020-adaptive-diffusion-tuning/quickstart.md` に画像ごとの観察ポイントを追記し、青保持・低彩度面・肌の観点が揃っていることを手動確認する
 
 ### Implementation for User Story 1
 
-- [ ] T011 [P] [US1] `specs/020-adaptive-diffusion-tuning/data-model.md` に新 profile、評価画像、比較結果の関係を反映する
-- [ ] T012 [P] [US1] `specs/020-adaptive-diffusion-tuning/contracts/adaptive-profile-config.md` に新 profile と評価画像の契約を反映する
-- [ ] T013 [US1] `specs/020-adaptive-diffusion-tuning/plan.md` に今回の具体化対象と比較基準を最終反映する
+- [x] T011 [P] [US1] `specs/020-adaptive-diffusion-tuning/data-model.md` に新 profile、評価画像、比較結果の関係を反映する
+- [x] T012 [P] [US1] `specs/020-adaptive-diffusion-tuning/contracts/adaptive-profile-config.md` に新 profile と評価画像の契約を反映する
+- [x] T013 [US1] `specs/020-adaptive-diffusion-tuning/plan.md` に今回の具体化対象と比較基準を最終反映する
 
 **Checkpoint**: 追加改善案の意図と範囲が文書だけで説明できること
 
@@ -66,16 +66,16 @@
 
 ### Verification for User Story 2
 
-- [ ] T014 [P] [US2] `server/src/image_pipeline/dither.rs` に色域別の期待差分を確認するユニットテストを追加する
-- [ ] T015 [P] [US2] `server/src/image_pipeline/mod.rs` または `server/src/routes.rs` に新 profile 選択時の応答回帰テストを追加する
-- [ ] T016 [US2] `specs/020-adaptive-diffusion-tuning/quickstart.md` にローカル確認手順と比較起動コマンドを更新する
+- [x] T014 [P] [US2] `server/src/image_pipeline/dither.rs` に色域別の期待差分を確認するユニットテストを追加する
+- [x] T015 [P] [US2] `server/src/image_pipeline/mod.rs` または `server/src/routes.rs` に新 profile 選択時の応答回帰テストを追加する
+- [x] T016 [US2] `specs/020-adaptive-diffusion-tuning/quickstart.md` にローカル確認手順と比較起動コマンドを更新する
 
 ### Implementation for User Story 2
 
-- [ ] T017 [US2] `server/src/image_pipeline/dither.rs` に青系領域の候補色補正を実装する
-- [ ] T018 [US2] `server/src/image_pipeline/dither.rs` に明るい低彩度面と肌寄り中間調の局所誤差拡散制御を実装する
-- [ ] T019 [US2] `server/src/config.rs` に新 profile の既定パラメータと環境変数上書きの整合を実装する
-- [ ] T020 [US2] `server/src/app.rs` と `server/README.md` に新 profile の表示名、既定値、比較例を反映する
+- [x] T017 [US2] `server/src/image_pipeline/dither.rs` に青系領域の候補色補正を実装する
+- [x] T018 [US2] `server/src/image_pipeline/dither.rs` に明るい低彩度面と肌寄り中間調の局所誤差拡散制御を実装する
+- [x] T019 [US2] `server/src/config.rs` に新 profile の既定パラメータと環境変数上書きの整合を実装する
+- [x] T020 [US2] `server/src/app.rs` と `server/README.md` に新 profile の表示名、既定値、比較例を反映する
 - [ ] T021 [US2] `server/testdata/dither-result-check/` の代表画像で新 profile を手動比較し、結果を `specs/020-adaptive-diffusion-tuning/research.md` に追記する
 
 **Checkpoint**: 新 profile が起動でき、既存上位候補との差分を説明できること
@@ -90,14 +90,14 @@
 
 ### Verification for User Story 3
 
-- [ ] T022 [US3] `specs/020-adaptive-diffusion-tuning/research.md` に `advance` / `hold` / `reject` の判定基準と今回の結論を記載する
-- [ ] T023 [P] [US3] `specs/020-adaptive-diffusion-tuning/quickstart.md` に比較結果の記録先と次アクション確認項目を追記する
+- [x] T022 [US3] `specs/020-adaptive-diffusion-tuning/research.md` に `advance` / `hold` / `reject` の判定基準と今回の結論を記載する
+- [x] T023 [P] [US3] `specs/020-adaptive-diffusion-tuning/quickstart.md` に比較結果の記録先と次アクション確認項目を追記する
 
 ### Implementation for User Story 3
 
 - [ ] T024 [P] [US3] `specs/020-adaptive-diffusion-tuning/research.md` に画像別の比較結果、良化点、悪化点、残課題を整理する
-- [ ] T025 [P] [US3] `specs/020-adaptive-diffusion-tuning/data-model.md` と `specs/020-adaptive-diffusion-tuning/contracts/adaptive-profile-config.md` を結果に合わせて更新する
-- [ ] T026 [US3] `specs/020-adaptive-diffusion-tuning/plan.md` に次の採用判断または follow-up 候補を反映する
+- [x] T025 [P] [US3] `specs/020-adaptive-diffusion-tuning/data-model.md` と `specs/020-adaptive-diffusion-tuning/contracts/adaptive-profile-config.md` を結果に合わせて更新する
+- [x] T026 [US3] `specs/020-adaptive-diffusion-tuning/plan.md` に次の採用判断または follow-up 候補を反映する
 
 **Checkpoint**: 新 profile の採否と次アクションが文書で追跡できること
 
@@ -107,9 +107,9 @@
 
 **Purpose**: 横断的な仕上げと回帰確認
 
-- [ ] T027 [P] `server/src/config.rs`、`server/src/image_pipeline/dither.rs`、`server/src/image_pipeline/mod.rs` のコード整理とコメント整備を行う
-- [ ] T028 `server/README.md` と `specs/020-adaptive-diffusion-tuning/quickstart.md` の手順を突き合わせ、記載どおりに比較を再実行して差分を修正する
-- [ ] T029 `server` で `cargo test` を実行し、既存機能と新 profile の回帰がないことを確認する
+- [x] T027 [P] `server/src/config.rs`、`server/src/image_pipeline/dither.rs`、`server/src/image_pipeline/mod.rs` のコード整理とコメント整備を行う
+- [x] T028 `server/README.md` と `specs/020-adaptive-diffusion-tuning/quickstart.md` の手順を突き合わせ、記載どおりに比較を再実行して差分を修正する
+- [x] T029 `server` で `cargo test` を実行し、既存機能と新 profile の回帰がないことを確認する
 
 ---
 

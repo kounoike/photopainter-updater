@@ -10,7 +10,7 @@
 
 ### 1. AdaptivePhotoProfile
 
-写真調画像向けに追加する改善 profile。
+写真調画像向けに追加する改善 profile。今回の実装キーは `adaptive-photo`。
 
 | フィールド | 型 | 説明 |
 |-----------|----|------|
