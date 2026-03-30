@@ -119,6 +119,8 @@ Use slash commands:
 - N/A（永続保存なし、標準出力ログのみ） (014-access-logs)
 - Rust stable、C/C++ on ESP-IDF v5.5.x + `axum`、Tokio、Rust 標準ライブラリの HTTP/byte 処理、ESP-IDF `esp_http_client`、`Paint_*` / `epaper_port_display` (015-custom-transfer-format)
 - server 側はローカルファイル (`image.png` 入力)、firmware 側は設定用 SD カードを維持。ただし画像更新時の中間 BMP 保存は不要にする (015-custom-transfer-format)
+- Rust stable（edition 2024） + `axum`、Tokio、`image`、`envconfig`、`tracing`、`tracing-subscriber` (018-http-server-refactor)
+- ローカルファイル（既定は `server/contents/image.png`）、永続 DB なし (018-http-server-refactor)
 
 ## Recent Changes
 - 002-add-run-script: Added Bash (POSIX shell) / Python 3 (実行環境) + Python 標準の HTTP 配信機能
