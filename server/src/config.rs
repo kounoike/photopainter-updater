@@ -29,19 +29,128 @@ pub const REFERENCE_PALETTE: [[u8; 3]; 7] = [
     [0, 255, 0],
 ];
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SaturationMode {
+    Boosted,
+    Neutral,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct DitherOptions {
     pub use_lab: bool,
     pub use_atkinson: bool,
     pub use_zigzag: bool,
     pub diffusion_rate: f32,
+    pub saturation_mode: SaturationMode,
+    pub neutral_bias: f32,
+    pub chroma_bias: f32,
+    pub hue_guard: f32,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ImageProfile {
+    Baseline,
+    NoSaturationBoost,
+    ColorPriority,
+    HueGuard,
+    ColorPriorityHueGuard,
+}
+
+impl ImageProfile {
+    pub fn key(self) -> &'static str {
+        match self {
+            Self::Baseline => "baseline",
+            Self::NoSaturationBoost => "no-sat-boost",
+            Self::ColorPriority => "color-priority",
+            Self::HueGuard => "hue-guard",
+            Self::ColorPriorityHueGuard => "color-priority-hue-guard",
+        }
+    }
+
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Baseline => "Baseline",
+            Self::NoSaturationBoost => "No Saturation Boost",
+            Self::ColorPriority => "Color Priority",
+            Self::HueGuard => "Hue Guard",
+            Self::ColorPriorityHueGuard => "Color Priority + Hue Guard",
+        }
+    }
+
+    pub fn default_dither_options(self) -> DitherOptions {
+        match self {
+            Self::Baseline => DitherOptions {
+                use_lab: false,
+                use_atkinson: false,
+                use_zigzag: false,
+                diffusion_rate: 1.0,
+                saturation_mode: SaturationMode::Boosted,
+                neutral_bias: 0.0,
+                chroma_bias: 0.0,
+                hue_guard: 0.0,
+            },
+            Self::NoSaturationBoost => DitherOptions {
+                saturation_mode: SaturationMode::Neutral,
+                ..Self::Baseline.default_dither_options()
+            },
+            Self::ColorPriority => DitherOptions {
+                use_lab: true,
+                saturation_mode: SaturationMode::Neutral,
+                neutral_bias: 1800.0,
+                chroma_bias: -250.0,
+                ..Self::Baseline.default_dither_options()
+            },
+            Self::HueGuard => DitherOptions {
+                use_lab: true,
+                saturation_mode: SaturationMode::Neutral,
+                hue_guard: 4500.0,
+                ..Self::Baseline.default_dither_options()
+            },
+            Self::ColorPriorityHueGuard => DitherOptions {
+                use_lab: true,
+                saturation_mode: SaturationMode::Neutral,
+                neutral_bias: 1500.0,
+                chroma_bias: -200.0,
+                hue_guard: 3500.0,
+                ..Self::Baseline.default_dither_options()
+            },
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum CompareSplit {
+    Vertical,
+    Horizontal,
+}
+
+impl CompareSplit {
+    pub fn key(self) -> &'static str {
+        match self {
+            Self::Vertical => "vertical",
+            Self::Horizontal => "horizontal",
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct CompareOptions {
+    pub profile: Option<ImageProfile>,
+    pub split: CompareSplit,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct RenderOptions {
+    pub profile: ImageProfile,
+    pub dither_options: DitherOptions,
+    pub compare: CompareOptions,
 }
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ServerConfig {
     pub port: u16,
     pub content_dir: PathBuf,
-    pub dither_options: DitherOptions,
+    pub render_options: RenderOptions,
 }
 
 #[derive(Envconfig)]
@@ -50,14 +159,22 @@ struct RawServerConfig {
     port: String,
     #[envconfig(from = "CONTENT_DIR")]
     content_dir: Option<String>,
-    #[envconfig(from = "DITHER_USE_LAB", default = "0")]
-    use_lab: String,
-    #[envconfig(from = "DITHER_USE_ATKINSON", default = "0")]
-    use_atkinson: String,
-    #[envconfig(from = "DITHER_DIFFUSION_RATE", default = "1.0")]
-    diffusion_rate: String,
-    #[envconfig(from = "DITHER_ZIGZAG", default = "0")]
-    use_zigzag: String,
+    #[envconfig(from = "IMAGE_PROFILE", default = "baseline")]
+    image_profile: String,
+    #[envconfig(from = "COMPARE_WITH_BASELINE", default = "0")]
+    compare_with_baseline: String,
+    #[envconfig(from = "COMPARE_PROFILE")]
+    compare_profile: Option<String>,
+    #[envconfig(from = "COMPARE_SPLIT", default = "vertical")]
+    compare_split: String,
+    #[envconfig(from = "DITHER_USE_LAB")]
+    use_lab: Option<String>,
+    #[envconfig(from = "DITHER_USE_ATKINSON")]
+    use_atkinson: Option<String>,
+    #[envconfig(from = "DITHER_DIFFUSION_RATE")]
+    diffusion_rate: Option<String>,
+    #[envconfig(from = "DITHER_ZIGZAG")]
+    use_zigzag: Option<String>,
 }
 
 impl ServerConfig {
@@ -72,17 +189,37 @@ impl ServerConfig {
             .content_dir
             .map(PathBuf::from)
             .unwrap_or_else(default_content_dir);
-        let dither_options = DitherOptions {
-            use_lab: parse_bool_flag("DITHER_USE_LAB", &raw.use_lab)?,
-            use_atkinson: parse_bool_flag("DITHER_USE_ATKINSON", &raw.use_atkinson)?,
-            diffusion_rate: parse_diffusion_rate(&raw.diffusion_rate)?,
-            use_zigzag: parse_bool_flag("DITHER_ZIGZAG", &raw.use_zigzag)?,
+        let profile = parse_image_profile(&raw.image_profile)?;
+        let mut dither_options = profile.default_dither_options();
+        if let Some(raw_use_lab) = raw.use_lab.as_ref() {
+            dither_options.use_lab = parse_bool_flag("DITHER_USE_LAB", raw_use_lab)?;
+        }
+        if let Some(raw_use_atkinson) = raw.use_atkinson.as_ref() {
+            dither_options.use_atkinson = parse_bool_flag("DITHER_USE_ATKINSON", raw_use_atkinson)?;
+        }
+        if let Some(raw_diffusion_rate) = raw.diffusion_rate.as_ref() {
+            dither_options.diffusion_rate = parse_diffusion_rate(raw_diffusion_rate)?;
+        }
+        if let Some(raw_use_zigzag) = raw.use_zigzag.as_ref() {
+            dither_options.use_zigzag = parse_bool_flag("DITHER_ZIGZAG", raw_use_zigzag)?;
+        }
+        let render_options = RenderOptions {
+            profile,
+            dither_options,
+            compare: CompareOptions {
+                profile: resolve_compare_profile(
+                    profile,
+                    raw.compare_profile.as_deref(),
+                    parse_bool_flag("COMPARE_WITH_BASELINE", &raw.compare_with_baseline)?,
+                )?,
+                split: parse_compare_split(&raw.compare_split)?,
+            },
         };
 
         Ok(Self {
             port,
             content_dir,
-            dither_options,
+            render_options,
         })
     }
 }
@@ -101,6 +238,19 @@ fn parse_diffusion_rate(raw: &str) -> Result<f32, String> {
         .map_err(|_| "DITHER_DIFFUSION_RATE は数値で指定してください".to_string())
 }
 
+fn parse_image_profile(raw: &str) -> Result<ImageProfile, String> {
+    match raw.trim().to_ascii_lowercase().as_str() {
+        "baseline" => Ok(ImageProfile::Baseline),
+        "no-sat-boost" => Ok(ImageProfile::NoSaturationBoost),
+        "color-priority" => Ok(ImageProfile::ColorPriority),
+        "hue-guard" => Ok(ImageProfile::HueGuard),
+        "color-priority-hue-guard" => Ok(ImageProfile::ColorPriorityHueGuard),
+        _ => Err(format!(
+            "IMAGE_PROFILE は baseline / no-sat-boost / color-priority / hue-guard / color-priority-hue-guard のいずれかで指定してください"
+        )),
+    }
+}
+
 fn parse_bool_flag(name: &str, raw: &str) -> Result<bool, String> {
     match raw.trim().to_ascii_lowercase().as_str() {
         "1" | "true" | "yes" | "on" => Ok(true),
@@ -109,6 +259,42 @@ fn parse_bool_flag(name: &str, raw: &str) -> Result<bool, String> {
             "{name} は 0/1 または true/false で指定してください"
         )),
     }
+}
+
+fn parse_compare_split(raw: &str) -> Result<CompareSplit, String> {
+    match raw.trim().to_ascii_lowercase().as_str() {
+        "vertical" | "" => Ok(CompareSplit::Vertical),
+        "horizontal" => Ok(CompareSplit::Horizontal),
+        _ => Err("COMPARE_SPLIT は vertical または horizontal で指定してください".to_string()),
+    }
+}
+
+fn resolve_compare_profile(
+    active_profile: ImageProfile,
+    compare_profile: Option<&str>,
+    compare_with_baseline: bool,
+) -> Result<Option<ImageProfile>, String> {
+    if let Some(raw_compare_profile) = compare_profile {
+        let trimmed = raw_compare_profile.trim();
+        if trimmed.is_empty() {
+            return Ok(None);
+        }
+        let profile = parse_image_profile(trimmed)?;
+        if compare_with_baseline && profile != ImageProfile::Baseline {
+            return Err(
+                "COMPARE_PROFILE と COMPARE_WITH_BASELINE を併用する場合、COMPARE_PROFILE=baseline のみ指定できます"
+                    .to_string(),
+            );
+        }
+        return Ok(Some(profile));
+    }
+
+    if compare_with_baseline {
+        return Ok(Some(ImageProfile::Baseline));
+    }
+
+    let _ = active_profile;
+    Ok(None)
 }
 
 #[cfg(test)]
@@ -163,6 +349,10 @@ mod tests {
         let _lock = env_lock().lock().expect("env lock");
         let _port = EnvGuard::unset("PORT");
         let _content = EnvGuard::unset("CONTENT_DIR");
+        let _profile = EnvGuard::unset("IMAGE_PROFILE");
+        let _compare = EnvGuard::unset("COMPARE_WITH_BASELINE");
+        let _compare_profile = EnvGuard::unset("COMPARE_PROFILE");
+        let _split = EnvGuard::unset("COMPARE_SPLIT");
         let _lab = EnvGuard::unset("DITHER_USE_LAB");
         let _atk = EnvGuard::unset("DITHER_USE_ATKINSON");
         let _rate = EnvGuard::unset("DITHER_DIFFUSION_RATE");
@@ -172,15 +362,13 @@ mod tests {
 
         assert_eq!(config.port, 8000);
         assert_eq!(config.content_dir, default_content_dir());
+        assert_eq!(config.render_options.profile, ImageProfile::Baseline);
         assert_eq!(
-            config.dither_options,
-            DitherOptions {
-                use_lab: false,
-                use_atkinson: false,
-                use_zigzag: false,
-                diffusion_rate: 1.0,
-            }
+            config.render_options.dither_options,
+            ImageProfile::Baseline.default_dither_options()
         );
+        assert_eq!(config.render_options.compare.profile, None);
+        assert_eq!(config.render_options.compare.split, CompareSplit::Vertical);
     }
 
     #[test]
@@ -188,6 +376,10 @@ mod tests {
         let _lock = env_lock().lock().expect("env lock");
         let _port = EnvGuard::set("PORT", "8100");
         let _content = EnvGuard::set("CONTENT_DIR", "/tmp/override");
+        let _profile = EnvGuard::set("IMAGE_PROFILE", "color-priority");
+        let _compare = EnvGuard::set("COMPARE_WITH_BASELINE", "1");
+        let _compare_profile = EnvGuard::unset("COMPARE_PROFILE");
+        let _split = EnvGuard::set("COMPARE_SPLIT", "horizontal");
         let _lab = EnvGuard::set("DITHER_USE_LAB", "1");
         let _atk = EnvGuard::set("DITHER_USE_ATKINSON", "true");
         let _rate = EnvGuard::set("DITHER_DIFFUSION_RATE", "1.4");
@@ -197,10 +389,19 @@ mod tests {
 
         assert_eq!(config.port, 8100);
         assert_eq!(config.content_dir, PathBuf::from("/tmp/override"));
-        assert!(config.dither_options.use_lab);
-        assert!(config.dither_options.use_atkinson);
-        assert!(config.dither_options.use_zigzag);
-        assert_eq!(config.dither_options.diffusion_rate, 1.0);
+        assert_eq!(config.render_options.profile, ImageProfile::ColorPriority);
+        assert_eq!(
+            config.render_options.compare.profile,
+            Some(ImageProfile::Baseline)
+        );
+        assert_eq!(
+            config.render_options.compare.split,
+            CompareSplit::Horizontal
+        );
+        assert!(config.render_options.dither_options.use_lab);
+        assert!(config.render_options.dither_options.use_atkinson);
+        assert!(config.render_options.dither_options.use_zigzag);
+        assert_eq!(config.render_options.dither_options.diffusion_rate, 1.0);
     }
 
     #[test]
@@ -221,5 +422,52 @@ mod tests {
         let err = ServerConfig::from_env().expect_err("invalid bool");
 
         assert!(err.contains("DITHER_USE_LAB"));
+    }
+
+    #[test]
+    fn invalid_profile_is_rejected() {
+        let _lock = env_lock().lock().expect("env lock");
+        let _profile = EnvGuard::set("IMAGE_PROFILE", "unknown");
+
+        let err = ServerConfig::from_env().expect_err("invalid profile");
+
+        assert!(err.contains("IMAGE_PROFILE"));
+    }
+
+    #[test]
+    fn invalid_compare_split_is_rejected() {
+        let _lock = env_lock().lock().expect("env lock");
+        let _split = EnvGuard::set("COMPARE_SPLIT", "diagonal");
+
+        let err = ServerConfig::from_env().expect_err("invalid compare split");
+
+        assert!(err.contains("COMPARE_SPLIT"));
+    }
+
+    #[test]
+    fn compare_profile_overrides_baseline_shorthand() {
+        let _lock = env_lock().lock().expect("env lock");
+        let _profile = EnvGuard::set("IMAGE_PROFILE", "hue-guard");
+        let _compare = EnvGuard::set("COMPARE_WITH_BASELINE", "0");
+        let _compare_profile = EnvGuard::set("COMPARE_PROFILE", "color-priority");
+
+        let config = ServerConfig::from_env().expect("compare profile config");
+
+        assert_eq!(config.render_options.profile, ImageProfile::HueGuard);
+        assert_eq!(
+            config.render_options.compare.profile,
+            Some(ImageProfile::ColorPriority)
+        );
+    }
+
+    #[test]
+    fn conflicting_compare_settings_are_rejected() {
+        let _lock = env_lock().lock().expect("env lock");
+        let _compare = EnvGuard::set("COMPARE_WITH_BASELINE", "1");
+        let _compare_profile = EnvGuard::set("COMPARE_PROFILE", "color-priority");
+
+        let err = ServerConfig::from_env().expect_err("conflicting compare settings");
+
+        assert!(err.contains("COMPARE_PROFILE"));
     }
 }

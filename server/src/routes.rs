@@ -42,7 +42,7 @@ async fn serve_transformed(
     let pipeline_request = crate::image_pipeline::ImagePipelineRequest {
         input_path: input_image_path_from_dir(&state.content_dir),
         response_format,
-        dither_options: state.dither_options,
+        render_options: state.render_options,
     };
     let image = match load_input_image(&pipeline_request.input_path) {
         Ok(image) => image,
@@ -57,7 +57,7 @@ async fn serve_transformed(
     let response = match render_response(
         &image,
         pipeline_request.response_format,
-        pipeline_request.dither_options,
+        pipeline_request.render_options,
     ) {
         Ok(payload) => {
             let response = response_from_payload(payload);
@@ -183,11 +183,22 @@ mod tests {
             content_dir,
             logger: logger.clone(),
             request_counter: Arc::new(std::sync::atomic::AtomicU64::new(0)),
-            dither_options: crate::config::DitherOptions {
-                use_lab: false,
-                use_atkinson: false,
-                use_zigzag: false,
-                diffusion_rate: 1.0,
+            render_options: crate::config::RenderOptions {
+                profile: crate::config::ImageProfile::Baseline,
+                dither_options: crate::config::DitherOptions {
+                    use_lab: false,
+                    use_atkinson: false,
+                    use_zigzag: false,
+                    diffusion_rate: 1.0,
+                    saturation_mode: crate::config::SaturationMode::Boosted,
+                    neutral_bias: 0.0,
+                    chroma_bias: 0.0,
+                    hue_guard: 0.0,
+                },
+                compare: crate::config::CompareOptions {
+                    profile: None,
+                    split: crate::config::CompareSplit::Vertical,
+                },
             },
         };
         (state, logger)

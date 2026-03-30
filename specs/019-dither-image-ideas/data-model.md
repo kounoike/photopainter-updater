@@ -23,6 +23,13 @@
 | `risks` | 配列 | 想定される副作用、破綻条件 |
 | `status` | 列挙 | `planned` / `tested` / `hold` / `rejected` / `promoted` |
 
+初回実装 profile:
+- `baseline`
+- `no-sat-boost`
+- `color-priority`
+- `hue-guard`
+- `color-priority-hue-guard`
+
 ### 2. EvaluationImage
 
 比較時に手動で差し替える入力画像。

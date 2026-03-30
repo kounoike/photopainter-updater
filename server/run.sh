@@ -12,6 +12,12 @@ Usage: server/run.sh [CONTENT_DIR]
 CONTENT_DIR:
   Optional directory containing image.png to transform and serve as image.bmp/image.bin.
   If omitted, server/contents is used.
+
+Environment:
+  IMAGE_PROFILE=baseline|no-sat-boost|color-priority|hue-guard|color-priority-hue-guard
+  COMPARE_WITH_BASELINE=0|1
+  COMPARE_PROFILE=baseline|no-sat-boost|color-priority|hue-guard|color-priority-hue-guard
+  COMPARE_SPLIT=vertical|horizontal
 EOF
 }
 
@@ -72,6 +78,7 @@ else
   echo "LAN:   このホストの LAN IP を使って http://<host-ip>:${port}/ へアクセスしてください"
 fi
 echo "Routing: firmware uses binary only when image_url ends with .bin; otherwise BMP routes stay unchanged"
+echo "Profile: ${IMAGE_PROFILE:-baseline} ; Compare baseline: ${COMPARE_WITH_BASELINE:-0} ; Compare profile: ${COMPARE_PROFILE:-<none>} ; Split: ${COMPARE_SPLIT:-vertical}"
 echo "Startup and access logs: emitted through tracing to stdout"
 echo "Stop: Ctrl+C"
 

@@ -147,6 +147,17 @@
 
 実装初期に試す profile は上記 catalog から 2-4 件へ絞るが、catalog 自体は 5 件以上を維持して比較記録の母集団として残す。
 
+初回実装で有効化する profile は次の 4 件とする。
+
+| Profile | 狙い | 現時点の役割 |
+|---------|------|--------------|
+| `baseline` | 現行挙動を維持する | 比較基準 |
+| `no-sat-boost` | 彩度ブーストを外した素の見え方を確認する | 彩度ブースト再評価 |
+| `color-priority` | 白黒への吸い込みを抑え、有色を残しやすくする | 白黒/有色の採用バランス評価 |
+| `hue-guard` | 色相的に不自然な飛び色を抑える | 色相ガード評価 |
+
+`color-priority-hue-guard` は follow-up 候補として実装し、初回比較で有望だった場合に追加評価する。
+
 ### 6-9. 比較観点の補強
 
 既存の比較観点に加え、以下を意識して記録する。
@@ -169,6 +180,207 @@
 - 左右 2 分割で baseline と比較対象 profile を同時表示する
 - 必要に応じて上下分割も試し、画像内容によって見やすい方を選ぶ
 - split view 自体が境界アーティファクトを作る可能性があるため、最終判断前に全画面表示でも再確認する
+
+### 6-11. 比較記録テンプレート
+
+都度レビュー時は、少なくとも次の項目を記録する。
+
+| 項目 | 記録内容 |
+|------|----------|
+| `profile` | 例: `color-priority` |
+| `input_image` | 例: `server/contents/image.png` に配置した画像名 |
+| `compare_mode` | `single` または `split-with-baseline` |
+| `split_direction` | `vertical` / `horizontal` / `none` |
+| `device_result` | 実機で見えた差分の要約 |
+| `decision` | `advance` / `hold` / `reject` |
+| `next_action` | 次に試す案や確認したい条件 |
+
+## 7. 実装と検証の現状
+
+### 7-1. 実装済み profile
+
+- `baseline`
+- `no-sat-boost`
+- `color-priority`
+- `hue-guard`
+- `color-priority-hue-guard`
+
+### 7-2. ローカル検証済み事項
+
+- `cargo test` で既存ルートと画像パイプラインの回帰がないことを確認済み
+- `IMAGE_PROFILE=color-priority COMPARE_WITH_BASELINE=1 COMPARE_SPLIT=vertical cargo run` で split view 起動を確認済み
+- `server/README.md` と `quickstart.md` の起動例は現行実装に合わせて更新済み
+
+### 7-3. 未完了の実機評価
+
+- 実機 ePaper での比較記録は未実施
+- `advance` / `hold` / `reject` の最終判定は、少なくとも 2 件の profile を実機比較した後に記入する
+- 現時点では実装基盤とローカル確認まで完了しており、以降は手動評価フェーズとして扱う
+
+## 8. 実機色特性メモ
+
+### 8-1. 6 色バー表示の観察
+
+`server/contents/image.png` に 6 色の縦縞画像を配置し、実機表示を撮影した写真として `ref/bar.png` を確認した。
+
+入力した色は次の 6 色である。
+
+- 黒: `0, 0, 0`
+- 白: `255, 255, 255`
+- 黄: `255, 255, 0`
+- 赤: `255, 0, 0`
+- 青: `0, 0, 255`
+- 緑: `0, 255, 0`
+
+写真ベースの観察結果:
+
+- 6 色は実機上で分離して認識できる
+- 黄は最も強く視認できる
+- 青は比較的残りやすく見える
+- 赤は暗く、茶色寄りに見えやすい
+- 緑はかなり沈んで見える
+- 白はややグレー寄りに見える
+- 黒は十分に黒く見える
+
+### 8-2. 現時点の解釈
+
+- 撮影条件の影響はあるため、この観察だけで厳密な色再現特性を断定しない
+- ただし、実機では `黄は強い / 青は比較的残る / 赤と緑は鈍りやすい` 傾向がある可能性は高い
+- この傾向が正しいなら、彩度ブーストで全色を一律に押し上げるよりも、`no-sat-boost` を基準に明度コントラストや輪郭側でメリハリを足す方が自然な改善に繋がる可能性がある
+- 青の出方については、偽色としての青混入と、デバイスが青を比較的残しやすい特性を分けて観察する必要がある
+
+## 9. `image6` 実機比較メモ
+
+この節の所見は、`image6` のようなイラスト調の入力画像に対する観察として扱う。写真調の入力画像へそのまま一般化せず、別画像で再検証する前提とする。
+
+### 9-1. 入力と比較写真
+
+- 入力画像: `server/testdata/dither-result-check/image6.png`
+- 実機写真:
+  - `specs/019-dither-image-ideas/artifacts/image6/image6_no-sat-boost.jpg`
+  - `specs/019-dither-image-ideas/artifacts/image6/image6_hue-guard.jpg`
+  - `specs/019-dither-image-ideas/artifacts/image6/image6_color-priority.jpg`
+  - `specs/019-dither-image-ideas/artifacts/image6/image6_color-priority-hue-guard.jpg`
+
+### 9-2. 共通して見えた問題
+
+- 元画像の明るい空、桜のピンク、衣装の赤青に対して、実機では全体が灰色寄りに沈みやすい
+- 背景の桜と空の分離が弱く、上部が薄い靄のようにまとまりやすい
+- 赤系は暗く出やすく、衣装の赤が黒または茶色寄りへ吸われやすい
+- 地面と木立には黒の粒が広がりやすく、輪郭補助よりも汚れとして目につく箇所がある
+
+### 9-3. profile ごとの所見
+
+- `no-sat-boost`
+  - 一律な彩度押し上げがないぶん、色の破綻は少ない
+  - ただし全体はかなり眠く、主役の衣装や背景の桜が弱く見える
+- `hue-guard`
+  - 不自然な飛び色を抑える方向は見込める
+  - この画像では、色相破綻の改善より先に色量不足と暗さが支配的で、大きな押し上げ要因にはなりにくい
+- `color-priority`
+  - 白黒への吸い込みを抑えられるなら、この画像の桜、草地、衣装の色残り改善に最も効きそう
+  - 実機での比較対象として優先度が高い
+- `color-priority-hue-guard`
+  - 色を残しつつ飛び色も抑えるため、今回のような写真寄り入力では最有力候補
+  - `color-priority` 単体より破綻が少ないなら、次の具体化対象として前進させやすい
+
+### 9-4. 現時点の判断
+
+- `no-sat-boost` は baseline の代替というより、彩度ブースト再評価用の基準として有用
+- `Atkinson` は黒粒ノイズの低減には効くが、イラスト調のこの画像では少し均しすぎて発色の勢いを落とす場面がある
+- `DITHER_DIFFUSION_RATE=0.8` は黒粒抑制と発色維持のバランスが比較的良く、イラスト調のこの画像では `Atkinson` より有望に見える
+- `color-priority` 系は白黒への吸い込み改善に効くが、空の青さは十分に戻らない
+- 次に深掘りする候補は `color-priority + DITHER_DIFFUSION_RATE=0.8`
+- `hue-guard` 単体は保留。今回の画像では色相保護だけでは改善量が足りない可能性が高い
+
+### 9-5. 次アクション
+
+- `color-priority` と `color-priority-hue-guard` を split view でも比較し、桜、顔、衣装、地面の 4 領域で差分を見直す
+- 黒粒の汚れが強い場合は、profile 評価とは別軸で `DITHER_USE_ATKINSON=1` または `DITHER_DIFFUSION_RATE` 低減も補助比較する
+- 今回の傾向が再現するなら、次の改善は一律彩度ブーストではなく、白黒/有色バランスと黒の使い方の調整を優先する
+- `DITHER_DIFFUSION_RATE` は固定値の 1 点比較だけで終えず、`0.6` `0.7` `0.8` `0.9` 付近のスイープで傾向を見る価値がある
+- 将来案として、直前や 2 個前の画素との差分を使って誤差拡散率を局所的に非線形制御し、輪郭越えの汚れと広い淡色面の濁りを減らせるか検討する
+- ただし上記の所見はイラスト調入力に依存する可能性があるため、次は写真調の画像で同じ比較を再実施し、写真調入力での問題点を別途整理する
+
+## 10. `image7` 実機比較メモ
+
+この節の所見は、`image7` のような写真調の入力画像に対する観察として扱う。なお、今回の `image7` には青空が含まれていないため、青保持の評価には使わない。
+
+### 10-1. 入力と比較写真
+
+- 入力画像: `server/testdata/dither-result-check/image7.png`
+- 実機写真:
+  - `specs/019-dither-image-ideas/artifacts/image7/image7_no-sat-boost.jpg`
+  - `specs/019-dither-image-ideas/artifacts/image7/image7_no-sat-boost-diffusion-0.8.jpg`
+  - `specs/019-dither-image-ideas/artifacts/image7/image7_color-priority.jpg`
+  - `specs/019-dither-image-ideas/artifacts/image7/image7_color-priority-diffusion-0.8.jpg`
+
+### 10-2. この画像で評価できる観点
+
+- 肌の中間調が残るか
+- 赤青の衣装が痩せずに残るか
+- 草地が黄緑の面として自然に見えるか
+- 背景の桜ボケが白飛びしすぎないか
+- 木立や背景ボケにノイズが広がりすぎないか
+
+### 10-3. 共通して見えた問題
+
+- 背景の桜は淡いピンクというより白灰の大きな面に寄りやすい
+- 肌はやや白っぽく平板になりやすく、顔の情報量が落ちやすい
+- 草地は残るが、自然な緑というより黄緑寄りへ寄りやすい
+- `image6` ほど黒粒の汚れは支配的ではなく、明るい低彩度面の保持不足の方が目立つ
+
+### 10-4. profile ごとの所見
+
+- `no-sat-boost`
+  - 無難だが少し眠く、背景の白っぽさも強い
+- `no-sat-boost + DITHER_DIFFUSION_RATE=0.8`
+  - ノイズ感を少し抑えつつ、色を大きく痩せさせない
+  - 写真調でも比較的安定して見える
+- `color-priority`
+  - 衣装と草地の色残りはやや良い
+  - ただし背景の白面感や淡色面の飛びは大きくは改善しない
+- `color-priority + DITHER_DIFFUSION_RATE=0.8`
+  - 4 件の中では最もバランスが良い
+  - 色を残しつつ、ざらつきもやや穏やかで、写真調でも上位候補に置ける
+
+### 10-5. 現時点の判断
+
+- 写真調入力でも `DITHER_DIFFUSION_RATE=0.8` は有望で、`Atkinson` より先に深掘りする価値がある
+- 写真調入力でも `color-priority + DITHER_DIFFUSION_RATE=0.8` が暫定上位候補
+- ただし今回の `image7` は青空を含まないため、青保持の良し悪しは未評価のまま残る
+- 次タスクで扱うべき写真調の課題は、青空だけでなく、明るい低彩度面と肌の中間調保持でもある
+
+## 11. 判定基準と今回の結論
+
+### 11-1. `advance` / `hold` / `reject` の基準
+
+- `advance`
+  - 少なくとも 2 種類の入力画像で改善傾向が再現し、主問題を悪化させずに 1 つ以上の問題を明確に改善する
+- `hold`
+  - 特定の画像では効くが、別カテゴリ画像で弱点が残る、または未評価論点が大きい
+- `reject`
+  - 主問題の改善量が小さい、または別の破綻を増やして総合評価が悪化する
+
+### 11-2. 上位候補、保留候補、後回し候補
+
+- `advance`: `color-priority + DITHER_DIFFUSION_RATE=0.8`
+  - イラスト調 `image6` でも写真調 `image7` でも比較的バランスが良い
+- `hold`: `color-priority`
+  - 白黒への吸い込み改善には効くが、黒粒や淡色面の扱いは追加改善余地がある
+- `hold`: `no-sat-boost + DITHER_DIFFUSION_RATE=0.8`
+  - 素直で安定するが、有色を積極的に残す方向としては一段弱い
+- `hold`: `hue-guard`, `color-priority-hue-guard`
+  - 今回の入力では効果が限定的で、優先順位は高くない
+- `hold`: `Atkinson`
+  - 黒粒低減には効くが、少なくとも `image6` では均しすぎる傾向がある
+
+### 11-3. 次タスクへ渡す論点
+
+- イラスト調画像では空の青が十分に戻らない
+- 写真調画像では明るい低彩度面と肌の中間調が痩せやすい
+- 写真調の青保持は、青空を含む別画像を追加しないと評価しきれない
+- `DITHER_DIFFUSION_RATE` は固定値だけでなく、スイープや局所差分ベースの非線形制御も follow-up 候補に残す
 
 ## NEEDS CLARIFICATION の解消
 

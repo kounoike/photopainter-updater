@@ -25,7 +25,7 @@
 | 型 | 文字列 |
 | デフォルト | `baseline` |
 | 役割 | 前処理とディザリング設定を束ねた改善 profile を指定する |
-| 許容値 | 実装時に定義する profile key 一覧 |
+| 許容値 | `baseline`, `no-sat-boost`, `color-priority`, `hue-guard`, `color-priority-hue-guard` |
 | エラー時 | 未知の key は起動エラーとして扱う |
 
 ### `COMPARE_WITH_BASELINE`
@@ -37,6 +37,16 @@
 | 役割 | baseline と評価対象 profile を同一入力画像上で split view 比較する |
 | 許容値 | `0/1`, `true/false`, `yes/no`, `on/off` |
 | エラー時 | 不正値は起動エラーとして扱う |
+
+### `COMPARE_PROFILE`
+
+| 項目 | 内容 |
+|------|------|
+| 型 | 文字列 |
+| デフォルト | 未指定 |
+| 役割 | split view 比較時の比較相手 profile を指定する |
+| 許容値 | `baseline`, `no-sat-boost`, `color-priority`, `hue-guard`, `color-priority-hue-guard` |
+| エラー時 | 未知の key は起動エラーとして扱う |
 
 ### `COMPARE_SPLIT`
 
@@ -51,6 +61,8 @@
 ## 互換性ルール
 
 - `IMAGE_PROFILE=baseline` かつ `COMPARE_WITH_BASELINE=0` は現行挙動と互換であること
+- `COMPARE_PROFILE` が指定された場合は、その profile を split view の比較相手として扱うこと
+- `COMPARE_WITH_BASELINE=1` は `COMPARE_PROFILE=baseline` の shorthand として扱うこと
 - 既存 `DITHER_*` 設定を残す場合は、`IMAGE_PROFILE` と矛盾しない優先順位を定義すること
 - `run.sh` から追加設定を透過的に渡せること
 - firmware 側から見える取得 URL は変更しないこと

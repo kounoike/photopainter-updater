@@ -16,9 +16,9 @@
 
 **Purpose**: 実験タスクを実行するための文書・fixture・起動入口をそろえる
 
-- [ ] T001 `specs/019-dither-image-ideas/plan.md` と `specs/019-dither-image-ideas/research.md` を見直し、5 件以上の改善案 catalog を維持したまま最初に試す 2-4 件へ絞る判断基準を `specs/019-dither-image-ideas/research.md` に追記する
-- [ ] T002 [P] 代表入力画像候補の用途と不足している画像カテゴリを洗い出し、必要な追加 fixture 方針を `server/testdata/image-dither-rotate/README.md` に追記する
-- [ ] T003 [P] 比較記録の記入先を `specs/019-dither-image-ideas/quickstart.md` に明記し、都度レビュー前提の実験手順を追記する
+- [X] T001 `specs/019-dither-image-ideas/plan.md` と `specs/019-dither-image-ideas/research.md` を見直し、5 件以上の改善案 catalog を維持したまま最初に試す 2-4 件へ絞る判断基準を `specs/019-dither-image-ideas/research.md` に追記する
+- [X] T002 [P] 代表入力画像候補の用途と不足している画像カテゴリを洗い出し、必要な追加 fixture 方針を `server/testdata/image-dither-rotate/README.md` に追記する
+- [X] T003 [P] 比較記録の記入先を `specs/019-dither-image-ideas/quickstart.md` に明記し、都度レビュー前提の実験手順を追記する
 
 ---
 
@@ -28,11 +28,11 @@
 
 **CRITICAL**: この phase 完了まで user story 実装を開始しない
 
-- [ ] T004 `server/src/config.rs` に `IMAGE_PROFILE`、`COMPARE_WITH_BASELINE`、`COMPARE_SPLIT` を読み込む設定と検証を追加する
-- [ ] T005 [P] `server/src/image_pipeline/mod.rs` に named profile を適用する入口と split view 比較モードの共通要求を追加する
-- [ ] T006 [P] `server/src/app.rs` と `server/README.md` に実験モード起動時の表示内容と追加環境変数の説明を追加する
-- [ ] T007 `specs/019-dither-image-ideas/contracts/experiment-config.md` と `specs/019-dither-image-ideas/data-model.md` を実装前提に合わせて更新し、profile・image set・experiment run の対応関係を確定する
-- [ ] T008 `server/src/config.rs` と `specs/019-dither-image-ideas/plan.md` で Allowed Scope / Forbidden Scope を再確認し、HTTP ルート・転送フォーマット・firmware 不変を記録する
+- [X] T004 `server/src/config.rs` に `IMAGE_PROFILE`、`COMPARE_WITH_BASELINE`、`COMPARE_SPLIT` を読み込む設定と検証を追加する
+- [X] T005 [P] `server/src/image_pipeline/mod.rs` に named profile を適用する入口と split view 比較モードの共通要求を追加する
+- [X] T006 [P] `server/src/app.rs` と `server/README.md` に実験モード起動時の表示内容と追加環境変数の説明を追加する
+- [X] T007 `specs/019-dither-image-ideas/contracts/experiment-config.md` と `specs/019-dither-image-ideas/data-model.md` を実装前提に合わせて更新し、profile・image set・experiment run の対応関係を確定する
+- [X] T008 `server/src/config.rs` と `specs/019-dither-image-ideas/plan.md` で Allowed Scope / Forbidden Scope を再確認し、HTTP ルート・転送フォーマット・firmware 不変を記録する
 
 **Checkpoint**: profile 切替、split view 比較モード指定、比較記録の共通前提がそろっていること
 
@@ -46,15 +46,15 @@
 
 ### Verification for User Story 1
 
-- [ ] T009 [US1] 改善 profile の説明、狙い、懸念、試す順序を `specs/019-dither-image-ideas/research.md` に整理し、候補が重複していないことを手動確認する
-- [ ] T010 [US1] 比較観点と議論時の確認項目を `specs/019-dither-image-ideas/quickstart.md` に整理し、都度レビューで使える状態にする
+- [X] T009 [US1] 改善 profile の説明、狙い、懸念、試す順序を `specs/019-dither-image-ideas/research.md` に整理し、候補が重複していないことを手動確認する
+- [X] T010 [US1] 比較観点と議論時の確認項目を `specs/019-dither-image-ideas/quickstart.md` に整理し、都度レビューで使える状態にする
 
 ### Implementation for User Story 1
 
-- [ ] T011 [P] [US1] `server/src/config.rs` に baseline を含む profile 定義と profile 選択ロジックを追加する
-- [ ] T012 [P] [US1] `server/src/image_pipeline/dither.rs` に profile ごとの差し替え点を集約できる前処理・候補色選択の構造を追加する
-- [ ] T013 [US1] `server/src/app.rs` に現在の profile 名と比較モードを起動メッセージとして表示する
-- [ ] T014 [US1] `server/src/config.rs` の profile 解決と既定値の挙動を確認するテストを追加する
+- [X] T011 [P] [US1] `server/src/config.rs` に baseline を含む profile 定義と profile 選択ロジックを追加する
+- [X] T012 [P] [US1] `server/src/image_pipeline/dither.rs` に profile ごとの差し替え点を集約できる前処理・候補色選択の構造を追加する
+- [X] T013 [US1] `server/src/app.rs` に現在の profile 名と比較モードを起動メッセージとして表示する
+- [X] T014 [US1] `server/src/config.rs` の profile 解決と既定値の挙動を確認するテストを追加する
 
 **Checkpoint**: 改善 profile 候補が一意に識別でき、baseline を含む最初の比較対象が起動時に選べること
 
@@ -68,16 +68,16 @@
 
 ### Verification for User Story 2
 
-- [ ] T015 [US2] split view 比較と全画面再確認の手順を `specs/019-dither-image-ideas/quickstart.md` に具体化し、手動差し替え画像と追加画像の使い分けを手動確認する
-- [ ] T016 [P] [US2] `server/src/image_pipeline/mod.rs` または `server/src/routes.rs` に追加する比較モードの回帰確認テストを追加する
+- [X] T015 [US2] split view 比較と全画面再確認の手順を `specs/019-dither-image-ideas/quickstart.md` に具体化し、手動差し替え画像と追加画像の使い分けを手動確認する
+- [X] T016 [P] [US2] `server/src/image_pipeline/mod.rs` または `server/src/routes.rs` に追加する比較モードの回帰確認テストを追加する
 
 ### Implementation for User Story 2
 
-- [ ] T017 [P] [US2] `server/src/image_pipeline/mod.rs` に baseline と比較対象 profile を左右または上下で合成する split view 生成を実装する
-- [ ] T018 [P] [US2] `server/src/image_pipeline/dither.rs` に最初の比較対象 profile 群を実装する
-- [ ] T019 [US2] `server/testdata/image-dither-rotate/README.md` と必要な fixture を更新し、代表入力画像候補と手動差し替え手順を整備する
-- [ ] T020 [US2] `server/src/config.rs` と `server/run.sh` で baseline との split view 比較モードを実行可能にする
-- [ ] T021 [US2] 実機 ePaper 表示で baseline と少なくとも 2 件の profile を比較し、結果を `specs/019-dither-image-ideas/research.md` または関連記録へ追記する
+- [X] T017 [P] [US2] `server/src/image_pipeline/mod.rs` に baseline と比較対象 profile を左右または上下で合成する split view 生成を実装する
+- [X] T018 [P] [US2] `server/src/image_pipeline/dither.rs` に最初の比較対象 profile 群を実装する
+- [X] T019 [US2] `server/testdata/image-dither-rotate/README.md` と必要な fixture を更新し、代表入力画像候補と手動差し替え手順を整備する
+- [X] T020 [US2] `server/src/config.rs` と `server/run.sh` で baseline との split view 比較モードを実行可能にする
+- [X] T021 [US2] 実機 ePaper 表示で baseline と少なくとも 2 件の profile を比較し、結果を `specs/019-dither-image-ideas/research.md` または関連記録へ追記する
 
 **Checkpoint**: 実機主判定で 2 件以上の profile 比較結果が残り、split view と全画面再確認の両方が使えること
 
@@ -91,14 +91,14 @@
 
 ### Verification for User Story 3
 
-- [ ] T022 [US3] 比較結果を見ながら、advance / hold / reject の判定基準を `specs/019-dither-image-ideas/research.md` に明記する
-- [ ] T023 [US3] 上位候補の次アクションと追加検証条件を `specs/019-dither-image-ideas/quickstart.md` に反映し、独立に読めることを手動確認する
+- [X] T022 [US3] 比較結果を見ながら、advance / hold / reject の判定基準を `specs/019-dither-image-ideas/research.md` に明記する
+- [X] T023 [US3] 上位候補の次アクションと追加検証条件を `specs/019-dither-image-ideas/quickstart.md` に反映し、独立に読めることを手動確認する
 
 ### Implementation for User Story 3
 
-- [ ] T024 [P] [US3] `specs/019-dither-image-ideas/research.md` に profile ごとの比較結果、判断理由、残課題を整理する
+- [X] T024 [P] [US3] `specs/019-dither-image-ideas/research.md` に profile ごとの比較結果、判断理由、残課題を整理する
 - [ ] T025 [P] [US3] `specs/019-dither-image-ideas/data-model.md` と `specs/019-dither-image-ideas/contracts/experiment-config.md` を結果に合わせて更新し、実験記録モデルと運用ルールを確定する
-- [ ] T026 [US3] 実装を継続する上位候補と後回し候補を `specs/019-dither-image-ideas/plan.md` に反映し、次の具体化方針を記載する
+- [X] T026 [US3] 実装を継続する上位候補と後回し候補を `specs/019-dither-image-ideas/plan.md` に反映し、次の具体化方針を記載する
 
 **Checkpoint**: 次に具体化する候補が 1 件以上決まり、保留・除外の理由が文書で追跡できること
 
@@ -108,9 +108,9 @@
 
 **Purpose**: 複数 story にまたがる仕上げと回帰確認
 
-- [ ] T027 [P] `server/src/config.rs`、`server/src/image_pipeline/mod.rs`、`server/src/image_pipeline/dither.rs` のコード整理とコメント整備を行う
-- [ ] T028 `server/README.md` と `specs/019-dither-image-ideas/quickstart.md` の手順を突き合わせ、記載どおりに比較実験を再実行して差分を修正する
-- [ ] T029 `server` で `cargo test` を実行し、比較機能追加後も既存ルートと画像パイプラインの回帰がないことを確認する
+- [X] T027 [P] `server/src/config.rs`、`server/src/image_pipeline/mod.rs`、`server/src/image_pipeline/dither.rs` のコード整理とコメント整備を行う
+- [X] T028 `server/README.md` と `specs/019-dither-image-ideas/quickstart.md` の手順を突き合わせ、記載どおりに比較実験を再実行して差分を修正する
+- [X] T029 `server` で `cargo test` を実行し、比較機能追加後も既存ルートと画像パイプラインの回帰がないことを確認する
 
 ---
 
