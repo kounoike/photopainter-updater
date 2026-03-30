@@ -47,6 +47,10 @@ struct AppState {
     content_dir: PathBuf,
     logger: Arc<dyn AccessLogger>,
     request_counter: Arc<AtomicU64>,
+    use_lab: bool,
+    use_atkinson: bool,
+    diffusion_rate: f32,
+    use_zigzag: bool,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -204,7 +208,7 @@ async fn serve_transformed(
         }
     };
 
-    let (response, outcome) = match render_response(&image, response_format) {
+    let (response, outcome) = match render_response(&image, response_format, state.use_lab, state.use_atkinson, state.diffusion_rate, state.use_zigzag) {
         Ok(response) => (response, LogOutcome::Success),
         Err(err) => {
             let outcome = transform_error_outcome(&err);
@@ -256,26 +260,30 @@ fn load_input_image(path: &Path) -> Result<RgbImage, ImageLoadError> {
 fn render_response(
     input: &RgbImage,
     response_format: ResponseFormat,
+    use_lab: bool,
+    use_atkinson: bool,
+    diffusion_rate: f32,
+    use_zigzag: bool,
 ) -> Result<Response<Body>, TransformError> {
     match response_format {
-        ResponseFormat::Bmp => Ok(bmp_response(render_bmp_response(input)?)),
-        ResponseFormat::Binary => Ok(binary_frame_response(render_binary_frame_response(input)?)),
+        ResponseFormat::Bmp => Ok(bmp_response(render_bmp_response(input, use_lab, use_atkinson, diffusion_rate, use_zigzag)?)),
+        ResponseFormat::Binary => Ok(binary_frame_response(render_binary_frame_response(input, use_lab, use_atkinson, diffusion_rate, use_zigzag)?)),
     }
 }
 
-fn render_transformed_image(input: &RgbImage) -> RgbImage {
+fn render_transformed_image(input: &RgbImage, use_lab: bool, use_atkinson: bool, diffusion_rate: f32, use_zigzag: bool) -> RgbImage {
     let saturated = boost_saturation(input);
-    let dithered = apply_reference_dither(&saturated);
+    let dithered = apply_reference_dither(&saturated, use_lab, use_atkinson, diffusion_rate, use_zigzag);
     rotate_right_90(&dithered)
 }
 
-fn render_bmp_response(input: &RgbImage) -> Result<Vec<u8>, TransformError> {
-    let rotated = render_transformed_image(input);
+fn render_bmp_response(input: &RgbImage, use_lab: bool, use_atkinson: bool, diffusion_rate: f32, use_zigzag: bool) -> Result<Vec<u8>, TransformError> {
+    let rotated = render_transformed_image(input, use_lab, use_atkinson, diffusion_rate, use_zigzag);
     encode_bmp_24(&rotated).map_err(TransformError::Encode)
 }
 
-fn render_binary_frame_response(input: &RgbImage) -> Result<Vec<u8>, TransformError> {
-    let rotated = render_transformed_image(input);
+fn render_binary_frame_response(input: &RgbImage, use_lab: bool, use_atkinson: bool, diffusion_rate: f32, use_zigzag: bool) -> Result<Vec<u8>, TransformError> {
+    let rotated = render_transformed_image(input, use_lab, use_atkinson, diffusion_rate, use_zigzag);
     Ok(encode_binary_frame(&rotated))
 }
 
@@ -489,7 +497,7 @@ fn hsv_to_rgb(h: f32, s: f32, v: f32) -> [u8; 3] {
     ]
 }
 
-fn apply_reference_dither(image: &RgbImage) -> RgbImage {
+fn apply_reference_dither(image: &RgbImage, use_lab: bool, use_atkinson: bool, diffusion_rate: f32, use_zigzag: bool) -> RgbImage {
     let width = image.width() as usize;
     let height = image.height() as usize;
     let mut work = image
@@ -499,7 +507,13 @@ fn apply_reference_dither(image: &RgbImage) -> RgbImage {
     let mut output = RgbImage::new(image.width(), image.height());
 
     for y in 0..height {
-        for x in 0..width {
+        let reverse = use_zigzag && y % 2 == 1;
+        let xs: Box<dyn Iterator<Item = usize>> = if reverse {
+            Box::new((0..width).rev())
+        } else {
+            Box::new(0..width)
+        };
+        for x in xs {
             let index = y * width + x;
             let old = work[index];
             let clamped = [
@@ -507,20 +521,61 @@ fn apply_reference_dither(image: &RgbImage) -> RgbImage {
                 old[1].clamp(0.0, 255.0),
                 old[2].clamp(0.0, 255.0),
             ];
-            let replacement = nearest_palette_color(clamped);
+            let replacement = nearest_palette_color(clamped, use_lab);
             output.put_pixel(x as u32, y as u32, Rgb(replacement));
             let error = [
-                clamped[0] - replacement[0] as f32,
-                clamped[1] - replacement[1] as f32,
-                clamped[2] - replacement[2] as f32,
+                (clamped[0] - replacement[0] as f32) * diffusion_rate,
+                (clamped[1] - replacement[1] as f32) * diffusion_rate,
+                (clamped[2] - replacement[2] as f32) * diffusion_rate,
             ];
 
-            diffuse_error(&mut work, width, height, x + 1, y, error, 7.0 / 16.0);
-            if x > 0 {
-                diffuse_error(&mut work, width, height, x - 1, y + 1, error, 3.0 / 16.0);
+            if use_atkinson {
+                // Atkinson: distribute 1/8 error to 6 neighbors (75% total)
+                // Neighbor offsets are mirrored horizontally on reverse rows.
+                if !reverse {
+                    diffuse_error(&mut work, width, height, x + 1, y, error, 1.0 / 8.0);
+                    diffuse_error(&mut work, width, height, x + 2, y, error, 1.0 / 8.0);
+                    if x > 0 {
+                        diffuse_error(&mut work, width, height, x - 1, y + 1, error, 1.0 / 8.0);
+                    }
+                    diffuse_error(&mut work, width, height, x, y + 1, error, 1.0 / 8.0);
+                    diffuse_error(&mut work, width, height, x + 1, y + 1, error, 1.0 / 8.0);
+                    diffuse_error(&mut work, width, height, x, y + 2, error, 1.0 / 8.0);
+                } else {
+                    if x > 0 {
+                        diffuse_error(&mut work, width, height, x - 1, y, error, 1.0 / 8.0);
+                    }
+                    if x > 1 {
+                        diffuse_error(&mut work, width, height, x - 2, y, error, 1.0 / 8.0);
+                    }
+                    diffuse_error(&mut work, width, height, x + 1, y + 1, error, 1.0 / 8.0);
+                    diffuse_error(&mut work, width, height, x, y + 1, error, 1.0 / 8.0);
+                    if x > 0 {
+                        diffuse_error(&mut work, width, height, x - 1, y + 1, error, 1.0 / 8.0);
+                    }
+                    diffuse_error(&mut work, width, height, x, y + 2, error, 1.0 / 8.0);
+                }
+            } else {
+                // Floyd-Steinberg: distribute 100% of error to 4 neighbors
+                // Neighbor offsets are mirrored horizontally on reverse rows.
+                if !reverse {
+                    diffuse_error(&mut work, width, height, x + 1, y, error, 7.0 / 16.0);
+                    if x > 0 {
+                        diffuse_error(&mut work, width, height, x - 1, y + 1, error, 3.0 / 16.0);
+                    }
+                    diffuse_error(&mut work, width, height, x, y + 1, error, 5.0 / 16.0);
+                    diffuse_error(&mut work, width, height, x + 1, y + 1, error, 1.0 / 16.0);
+                } else {
+                    if x > 0 {
+                        diffuse_error(&mut work, width, height, x - 1, y, error, 7.0 / 16.0);
+                    }
+                    diffuse_error(&mut work, width, height, x + 1, y + 1, error, 3.0 / 16.0);
+                    diffuse_error(&mut work, width, height, x, y + 1, error, 5.0 / 16.0);
+                    if x > 0 {
+                        diffuse_error(&mut work, width, height, x - 1, y + 1, error, 1.0 / 16.0);
+                    }
+                }
             }
-            diffuse_error(&mut work, width, height, x, y + 1, error, 5.0 / 16.0);
-            diffuse_error(&mut work, width, height, x + 1, y + 1, error, 1.0 / 16.0);
         }
     }
 
@@ -546,12 +601,16 @@ fn diffuse_error(
     }
 }
 
-fn nearest_palette_color(pixel: [f32; 3]) -> [u8; 3] {
+fn nearest_palette_color(pixel: [f32; 3], use_lab: bool) -> [u8; 3] {
     let mut best = REFERENCE_PALETTE[0];
     let mut best_distance = f32::MAX;
 
     for candidate in REFERENCE_PALETTE {
-        let distance = squared_distance(pixel, candidate);
+        let distance = if use_lab {
+            lab_squared_distance(pixel, candidate)
+        } else {
+            squared_distance(pixel, candidate)
+        };
         if distance < best_distance {
             best = candidate;
             best_distance = distance;
@@ -566,6 +625,43 @@ fn squared_distance(pixel: [f32; 3], candidate: [u8; 3]) -> f32 {
     let dg = pixel[1].clamp(0.0, 255.0) - candidate[1] as f32;
     let db = pixel[2].clamp(0.0, 255.0) - candidate[2] as f32;
     dr * dr + dg * dg + db * db
+}
+
+fn rgb_to_lab(r: f32, g: f32, b: f32) -> [f32; 3] {
+    let linearize = |c: f32| -> f32 {
+        let c = c.clamp(0.0, 255.0) / 255.0;
+        if c <= 0.04045 {
+            c / 12.92
+        } else {
+            ((c + 0.055) / 1.055).powf(2.4)
+        }
+    };
+    let r = linearize(r);
+    let g = linearize(g);
+    let b = linearize(b);
+    let x = 0.4124564 * r + 0.3575761 * g + 0.1804375 * b;
+    let y = 0.2126729 * r + 0.7151522 * g + 0.0721750 * b;
+    let z = 0.0193339 * r + 0.1191920 * g + 0.9503041 * b;
+    let f = |t: f32| -> f32 {
+        if t > 0.008856 {
+            t.cbrt()
+        } else {
+            7.787 * t + 16.0 / 116.0
+        }
+    };
+    let fx = f(x / 0.95047);
+    let fy = f(y / 1.0);
+    let fz = f(z / 1.08883);
+    [116.0 * fy - 16.0, 500.0 * (fx - fy), 200.0 * (fy - fz)]
+}
+
+fn lab_squared_distance(pixel: [f32; 3], candidate: [u8; 3]) -> f32 {
+    let pl = rgb_to_lab(pixel[0], pixel[1], pixel[2]);
+    let cl = rgb_to_lab(candidate[0] as f32, candidate[1] as f32, candidate[2] as f32);
+    let dl = pl[0] - cl[0];
+    let da = pl[1] - cl[1];
+    let db = pl[2] - cl[2];
+    dl * dl + da * da + db * db
 }
 
 fn rotate_right_90(image: &RgbImage) -> RgbImage {
@@ -613,7 +709,10 @@ fn text_response(status: StatusCode, body: impl Into<Body>) -> Response<Body> {
     response
 }
 
-fn startup_messages(content_dir: &Path, port: u16) -> Vec<String> {
+fn startup_messages(content_dir: &Path, port: u16, state: &AppState) -> Vec<String> {
+    let color_distance = if state.use_lab { "CIE Lab" } else { "RGB" };
+    let algorithm = if state.use_atkinson { "Atkinson" } else { "Floyd-Steinberg" };
+    let zigzag = if state.use_zigzag { "on" } else { "off" };
     vec![
         format!(
             "Serving transformed {OUTPUT_IMAGE_NAME} from {}",
@@ -623,6 +722,7 @@ fn startup_messages(content_dir: &Path, port: u16) -> Vec<String> {
         format!("Local:  http://127.0.0.1:{port}/ and http://127.0.0.1:{port}/image.bmp"),
         format!("LAN:    use this host's IP address with port {port} from other devices"),
         format!("Binary: http://127.0.0.1:{port}/{BINARY_OUTPUT_NAME} for firmware clients"),
+        format!("Dither: {algorithm}, color={color_distance}, rate={:.2}, zigzag={zigzag}", state.diffusion_rate),
         "Access logs: one line per request is written to stdout".to_string(),
         "Stop: Ctrl+C".to_string(),
     ]
@@ -633,14 +733,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let port = read_port().map_err(std::io::Error::other)?;
     let address = SocketAddr::from(([0, 0, 0, 0], port));
     let content_dir = read_content_dir();
+    let use_lab = env::var("DITHER_USE_LAB").is_ok_and(|v| v == "1");
+    let use_atkinson = env::var("DITHER_USE_ATKINSON").is_ok_and(|v| v == "1");
+    let diffusion_rate = env::var("DITHER_DIFFUSION_RATE")
+        .ok()
+        .and_then(|v| v.parse::<f32>().ok())
+        .unwrap_or(1.0)
+        .clamp(0.0, 1.0);
+    let use_zigzag = env::var("DITHER_ZIGZAG").is_ok_and(|v| v == "1");
     let state = AppState {
         content_dir,
         logger: Arc::new(StdoutAccessLogger),
         request_counter: Arc::new(AtomicU64::new(0)),
+        use_lab,
+        use_atkinson,
+        diffusion_rate,
+        use_zigzag,
     };
     let listener = tokio::net::TcpListener::bind(address).await?;
 
-    for line in startup_messages(&state.content_dir, port) {
+    for line in startup_messages(&state.content_dir, port, &state) {
         println!("{line}");
     }
 
@@ -735,6 +847,10 @@ mod tests {
                 content_dir,
                 logger: logger.clone(),
                 request_counter: Arc::new(AtomicU64::new(0)),
+                use_lab: false,
+                use_atkinson: false,
+                diffusion_rate: 1.0,
+                use_zigzag: false,
             },
             logger,
         )
@@ -820,7 +936,9 @@ mod tests {
 
     #[test]
     fn startup_messages_include_bind_and_input_guidance() {
-        let messages = startup_messages(Path::new("/tmp/example"), 8000);
+        let dir = temp_path("startup-messages");
+        let (state, _) = test_state(dir);
+        let messages = startup_messages(Path::new("/tmp/example"), 8000, &state);
 
         assert!(messages.iter().any(|line| line.contains("0.0.0.0:8000")));
         assert!(messages.iter().any(|line| line.contains("127.0.0.1:8000")));
@@ -831,6 +949,7 @@ mod tests {
         );
         assert!(messages.iter().any(|line| line.contains("image.bin")));
         assert!(messages.iter().any(|line| line.contains("Access logs")));
+        assert!(messages.iter().any(|line| line.contains("Dither:")));
     }
 
     #[test]
@@ -919,7 +1038,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn root_and_image_bmp_return_same_transformed_bytes() {
+    async fn root_returns_binary_and_image_bmp_returns_bmp() {
         let dir = create_content_dir(
             "serve-image",
             &[
@@ -951,7 +1070,7 @@ mod tests {
         assert_eq!(image.status(), StatusCode::OK);
         assert_eq!(
             root.headers().get(CONTENT_TYPE),
-            Some(&HeaderValue::from_static("image/bmp"))
+            Some(&HeaderValue::from_static("application/vnd.photopainter-frame"))
         );
         assert_eq!(
             image.headers().get(CONTENT_TYPE),
@@ -961,9 +1080,9 @@ mod tests {
         let root_body = response_body(root).await;
         let image_body = response_body(image).await;
 
-        assert_eq!(root_body, image_body);
-        assert_eq!(&root_body[..2], b"BM");
-        assert_eq!(&root_body[28..30], &[24, 0]);
+        assert_eq!(&root_body[..4], b"PPBF");
+        assert_eq!(&image_body[..2], b"BM");
+        assert_eq!(&image_body[28..30], &[24, 0]);
 
         let entries = logged_entries(&logger);
         assert_eq!(entries.len(), 2);
@@ -1121,7 +1240,7 @@ mod tests {
             _ => Rgb([30, 200, 100]),
         });
 
-        let dithered = apply_reference_dither(&input);
+        let dithered = apply_reference_dither(&input, false, false, 1.0, false);
 
         for pixel in dithered.pixels() {
             assert!(REFERENCE_PALETTE.contains(&pixel.0));
@@ -1153,8 +1272,8 @@ mod tests {
     fn pipeline_matches_reference_tendency_for_fixture_samples() {
         let pre = load_fixture("pre.png");
         let post = load_fixture("post.png");
-        let from_pre = rotate_right_90(&apply_reference_dither(&boost_saturation(&pre)));
-        let from_post = rotate_right_90(&apply_reference_dither(&post));
+        let from_pre = rotate_right_90(&apply_reference_dither(&boost_saturation(&pre), false, false, 1.0, false));
+        let from_post = rotate_right_90(&apply_reference_dither(&post, false, false, 1.0, false));
         let mismatch_count = from_pre
             .pixels()
             .zip(from_post.pixels())
