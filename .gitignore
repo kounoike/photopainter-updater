@@ -15,6 +15,7 @@ release/
 *.rs.bk
 *.prof*
 .env*
+!.env.example
 build/
 bin/
 obj/
@@ -31,3 +32,6 @@ out/
 .idea/
 .DS_Store
 Thumbs.db
+
+# ComfyUI Docker データディレクトリ
+comfyui-data/

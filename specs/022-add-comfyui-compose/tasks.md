@@ -21,8 +21,8 @@ description: "機能実装のためのタスクリスト"
 
 **Purpose**: `.gitignore` と `.env.example` の基盤整備
 
-- [ ] T001 [P] `.gitignore` にリポジトリルートで `.env` と `comfyui-data/` を追加する（`.gitignore`）
-- [ ] T002 [P] `.env.example` をリポジトリルートに作成する（`COMFYUI_PORT=18188`、`COMFYUI_DATA_DIR=./comfyui-data`、`COMFYUI_CLI_ARGS=--fast` のコメント付きテンプレート）（`.env.example`）
+- [x] T001 [P] `.gitignore` にリポジトリルートで `.env` と `comfyui-data/` を追加する（`.gitignore`）
+- [x] T002 [P] `.env.example` をリポジトリルートに作成する（`COMFYUI_PORT=18188`、`COMFYUI_DATA_DIR=./comfyui-data`、`COMFYUI_CLI_ARGS=--fast` のコメント付きテンプレート）（`.env.example`）
 
 ---
 
@@ -32,8 +32,8 @@ description: "機能実装のためのタスクリスト"
 
 **CRITICAL**: この phase 完了まで user story 実装を開始しない
 
-- [ ] T003 `compose.yml` をリポジトリルートに新規作成し、`networks: photopainter` (driver: bridge) のみを定義したスケルトンを作成する（`compose.yml`）
-- [ ] T004 `docker compose config` を実行し `compose.yml` が正しくパースされることを確認する（コマンドライン検証）
+- [x] T003 `compose.yml` をリポジトリルートに新規作成し、`networks: photopainter` (driver: bridge) のみを定義したスケルトンを作成する（`compose.yml`）
+- [x] T004 `docker compose config` を実行し `compose.yml` が正しくパースされることを確認する（コマンドライン検証）
 
 **Checkpoint**: `docker compose config` が警告・エラーなく通過すること
 
@@ -47,13 +47,13 @@ description: "機能実装のためのタスクリスト"
 
 ### Implementation for User Story 1
 
-- [ ] T005 [US1] `compose.yml` の comfyui サービス基本定義を追加する（image: `yanwk/comfyui-boot:cu130-slim-v2`、container_name: `photopainter-comfyui`、ports: `0.0.0.0:${COMFYUI_PORT:-18188}:8188`、networks: photopainter、restart: `unless-stopped`）（`compose.yml`）
-- [ ] T006 [US1] `compose.yml` の comfyui サービスに healthcheck を追加する（test: `curl -f http://localhost:8188/system_stats`、interval: 30s、timeout: 10s、retries: 3、start_period: 60s）（`compose.yml`）
-- [ ] T007 [US1] `docker compose config` で US1 の設定が正しく解決されることを確認する（コマンドライン検証）
+- [x] T005 [US1] `compose.yml` の comfyui サービス基本定義を追加する（image: `yanwk/comfyui-boot:cu130-slim-v2`、container_name: `photopainter-comfyui`、ports: `0.0.0.0:${COMFYUI_PORT:-18188}:8188`、networks: photopainter、restart: `unless-stopped`）（`compose.yml`）
+- [x] T006 [US1] `compose.yml` の comfyui サービスに healthcheck を追加する（test: `curl -f http://localhost:8188/system_stats`、interval: 30s、timeout: 10s、retries: 3、start_period: 60s）（`compose.yml`）
+- [x] T007 [US1] `docker compose config` で US1 の設定が正しく解決されることを確認する（コマンドライン検証）
 
 ### Verification for User Story 1
 
-- [ ] T008 [US1] 手動確認: `docker compose up` を実行して `http://localhost:18188` にブラウザでアクセスし、ComfyUI Web UI が表示されること、`docker compose down` で正常停止することを `quickstart.md` の手順に沿って検証する
+- [ ] T008 [US1] 手動確認: `docker compose up` を実行して `http://localhost:18188` にブラウザでアクセスし、ComfyUI Web UI が表示されること、`docker compose down` で正常停止することを `quickstart.md` の手順に沿って検証する（**GPU実機環境で実施**）
 
 **Checkpoint**: Web UI アクセス成功・正常停止が確認できること
 
@@ -67,15 +67,15 @@ description: "機能実装のためのタスクリスト"
 
 ### Implementation for User Story 2
 
-- [ ] T009 [US2] `compose.yml` の comfyui サービスに必須 bind mount を追加する（`${COMFYUI_DATA_DIR:-./comfyui-data}/models:/root/ComfyUI/models`、`custom_nodes:/root/ComfyUI/custom_nodes`、`dot-local:/root/.local`、`output:/root/ComfyUI/output`）（`compose.yml`）
-- [ ] T010 [US2] `compose.yml` の comfyui サービスに推奨 bind mount を追加する（`user:/root/ComfyUI/user`、`input:/root/ComfyUI/input`、`dot-cache:/root/.cache`）（`compose.yml`）
-- [ ] T011 [US2] `docker compose config` で全ボリューム変数が正しく展開されることを確認する（コマンドライン検証）
+- [x] T009 [US2] `compose.yml` の comfyui サービスに必須 bind mount を追加する（`${COMFYUI_DATA_DIR:-./comfyui-data}/models:/root/ComfyUI/models`、`custom_nodes:/root/ComfyUI/custom_nodes`、`dot-local:/root/.local`、`output:/root/ComfyUI/output`）（`compose.yml`）
+- [x] T010 [US2] `compose.yml` の comfyui サービスに推奨 bind mount を追加する（`user:/root/ComfyUI/user`、`input:/root/ComfyUI/input`、`dot-cache:/root/.cache`）（`compose.yml`）
+- [x] T011 [US2] `docker compose config` で全ボリューム変数が正しく展開されることを確認する（コマンドライン検証）
 
 ### Verification for User Story 2
 
-- [ ] T012 [US2] 手動確認（モデル永続化）: ダミーファイルを `${COMFYUI_DATA_DIR:-./comfyui-data}/models/` に配置 → `docker compose down` → `docker compose up` → ファイルが残っていることを確認する
-- [ ] T013 [US2] 手動確認（出力永続化）: ComfyUI でサンプル画像を生成 → `docker compose down` → `comfyui-data/output/` に画像ファイルが残っていることを確認する
-- [ ] T013b [US2] 手動確認（カスタムノード・依存ライブラリ永続化）: ComfyUI Manager でカスタムノードをインストール → `docker compose down && docker compose up` → `comfyui-data/custom_nodes/` にノードのディレクトリが残存していること、かつ `comfyui-data/dot-local/` に pip 依存ファイルが残存していることを確認する
+- [ ] T012 [US2] 手動確認（モデル永続化）: ダミーファイルを `${COMFYUI_DATA_DIR:-./comfyui-data}/models/` に配置 → `docker compose down` → `docker compose up` → ファイルが残っていることを確認する（**GPU実機環境で実施**）
+- [ ] T013 [US2] 手動確認（出力永続化）: ComfyUI でサンプル画像を生成 → `docker compose down` → `comfyui-data/output/` に画像ファイルが残っていることを確認する（**GPU実機環境で実施**）
+- [ ] T013b [US2] 手動確認（カスタムノード・依存ライブラリ永続化）: ComfyUI Manager でカスタムノードをインストール → `docker compose down && docker compose up` → `comfyui-data/custom_nodes/` にノードのディレクトリが残存していること、かつ `comfyui-data/dot-local/` に pip 依存ファイルが残存していることを確認する（**GPU実機環境で実施**）
 
 **Checkpoint**: コンテナ再作成後もモデル・生成画像・カスタムノード・依存ライブラリが保持されること
 
@@ -89,12 +89,12 @@ description: "機能実装のためのタスクリスト"
 
 ### Implementation for User Story 3
 
-- [ ] T014 [US3] `compose.yml` の comfyui サービスに GPU 設定を追加する（`deploy.resources.reservations.devices`: driver: nvidia, count: all, capabilities: [gpu]）（`compose.yml`）
-- [ ] T015 [US3] `compose.yml` の comfyui サービスに環境変数を追加する（`NVIDIA_VISIBLE_DEVICES=all`、`NVIDIA_DRIVER_CAPABILITIES=compute,utility`、`CLI_ARGS=${COMFYUI_CLI_ARGS:---fast}`）（`compose.yml`）
+- [x] T014 [US3] `compose.yml` の comfyui サービスに GPU 設定を追加する（`deploy.resources.reservations.devices`: driver: nvidia, count: all, capabilities: [gpu]）（`compose.yml`）
+- [x] T015 [US3] `compose.yml` の comfyui サービスに環境変数を追加する（`NVIDIA_VISIBLE_DEVICES=all`、`NVIDIA_DRIVER_CAPABILITIES=compute,utility`、`CLI_ARGS=${COMFYUI_CLI_ARGS:---fast}`）（`compose.yml`）
 
 ### Verification for User Story 3
 
-- [ ] T016 [US3] 手動確認: `docker compose up` 後に `docker exec photopainter-comfyui nvidia-smi` を実行して GPU が認識されること、ComfyUI Web UI の System Stats で GPU が表示されることを確認する
+- [ ] T016 [US3] 手動確認: `docker compose up` 後に `docker exec photopainter-comfyui nvidia-smi` を実行して GPU が認識されること、ComfyUI Web UI の System Stats で GPU が表示されることを確認する（**GPU実機環境で実施**）
 
 **Checkpoint**: `nvidia-smi` が GPU 情報を返すこと
 
@@ -104,9 +104,9 @@ description: "機能実装のためのタスクリスト"
 
 **Purpose**: 最終整合確認・ドキュメント更新・エンドツーエンド検証
 
-- [ ] T017 [P] `quickstart.md` の手順が最終的な `compose.yml` と完全に整合していることを確認し、差分があれば `quickstart.md` を更新する。あわせて `research.md` の主要設計決定（GPU 設定・ボリューム戦略・ネットワーク設計）が `compose.yml` に反映されていることを確認する（`specs/022-add-comfyui-compose/quickstart.md`）
-- [ ] T018 [P] `README.md` に ComfyUI Docker Compose の起動方法への参照または簡易手順を追記する（既存の `README.md`）
-- [ ] T019 エンドツーエンド全フロー手動検証: 起動 → GPU 確認 → モデル配置 → カスタムノードインストール → 画像生成 → `docker compose down` → 再起動 → データ永続確認（モデル・カスタムノード・依存ライブラリ・生成画像すべて）の全サイクルを通して検証する
+- [x] T017 [P] `quickstart.md` の手順が最終的な `compose.yml` と完全に整合していることを確認し、差分があれば `quickstart.md` を更新する。あわせて `research.md` の主要設計決定（GPU 設定・ボリューム戦略・ネットワーク設計）が `compose.yml` に反映されていることを確認する（`specs/022-add-comfyui-compose/quickstart.md`）
+- [x] T018 [P] `README.md` に ComfyUI Docker Compose の起動方法への参照または簡易手順を追記する（既存の `README.md`）
+- [ ] T019 エンドツーエンド全フロー手動検証: 起動 → GPU 確認 → モデル配置 → カスタムノードインストール → 画像生成 → `docker compose down` → 再起動 → データ永続確認（モデル・カスタムノード・依存ライブラリ・生成画像すべて）の全サイクルを通して検証する（**GPU実機環境で実施**）
 
 ---
 
