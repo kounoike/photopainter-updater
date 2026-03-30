@@ -170,7 +170,7 @@ fn read_port() -> Result<u16, String> {
 
 fn build_app(state: AppState) -> Router {
     Router::new()
-        .route("/", get(serve_image))
+        .route("/", get(serve_binary_image))
         .route("/image.bmp", get(serve_image))
         .route("/image.bin", get(serve_binary_image))
         .fallback(any(serve_not_found))
