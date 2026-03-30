@@ -1,11 +1,15 @@
 use image::{ImageBuffer, Rgb, RgbImage};
 
 use crate::config::{
-    REFERENCE_PALETTE, SATURATION_BIAS, SATURATION_SCALE, VALUE_BIAS, VALUE_SATURATION_SCALE,
-    VALUE_SCALE,
+    DitherOptions, REFERENCE_PALETTE, SATURATION_BIAS, SATURATION_SCALE, SaturationMode,
+    VALUE_BIAS, VALUE_SATURATION_SCALE, VALUE_SCALE,
 };
 
-pub fn boost_saturation(image: &RgbImage) -> RgbImage {
+pub fn boost_saturation(image: &RgbImage, saturation_mode: SaturationMode) -> RgbImage {
+    if saturation_mode == SaturationMode::Neutral {
+        return image.clone();
+    }
+
     let mut output = RgbImage::new(image.width(), image.height());
 
     for (x, y, pixel) in image.enumerate_pixels() {
@@ -79,13 +83,7 @@ fn hsv_to_rgb(h: f32, s: f32, v: f32) -> [u8; 3] {
     ]
 }
 
-pub fn apply_reference_dither(
-    image: &RgbImage,
-    use_lab: bool,
-    use_atkinson: bool,
-    diffusion_rate: f32,
-    use_zigzag: bool,
-) -> RgbImage {
+pub fn apply_reference_dither(image: &RgbImage, options: DitherOptions) -> RgbImage {
     let width = image.width() as usize;
     let height = image.height() as usize;
     let mut work = image
@@ -95,7 +93,7 @@ pub fn apply_reference_dither(
     let mut output = RgbImage::new(image.width(), image.height());
 
     for y in 0..height {
-        let reverse = use_zigzag && y % 2 == 1;
+        let reverse = options.use_zigzag && y % 2 == 1;
         let xs: Box<dyn Iterator<Item = usize>> = if reverse {
             Box::new((0..width).rev())
         } else {
@@ -109,15 +107,15 @@ pub fn apply_reference_dither(
                 old[1].clamp(0.0, 255.0),
                 old[2].clamp(0.0, 255.0),
             ];
-            let replacement = nearest_palette_color(clamped, use_lab);
+            let replacement = nearest_palette_color(clamped, options);
             output.put_pixel(x as u32, y as u32, Rgb(replacement));
             let error = [
-                (clamped[0] - replacement[0] as f32) * diffusion_rate,
-                (clamped[1] - replacement[1] as f32) * diffusion_rate,
-                (clamped[2] - replacement[2] as f32) * diffusion_rate,
+                (clamped[0] - replacement[0] as f32) * options.diffusion_rate,
+                (clamped[1] - replacement[1] as f32) * options.diffusion_rate,
+                (clamped[2] - replacement[2] as f32) * options.diffusion_rate,
             ];
 
-            if use_atkinson {
+            if options.use_atkinson {
                 if !reverse {
                     diffuse_error(&mut work, width, height, x + 1, y, error, 1.0 / 8.0);
                     diffuse_error(&mut work, width, height, x + 2, y, error, 1.0 / 8.0);
@@ -183,23 +181,65 @@ fn diffuse_error(
     }
 }
 
-fn nearest_palette_color(pixel: [f32; 3], use_lab: bool) -> [u8; 3] {
+fn nearest_palette_color(pixel: [f32; 3], options: DitherOptions) -> [u8; 3] {
     let mut best = REFERENCE_PALETTE[0];
-    let mut best_distance = f32::MAX;
+    let mut best_score = f32::MAX;
 
     for candidate in REFERENCE_PALETTE {
-        let distance = if use_lab {
+        let base_distance = if options.use_lab {
             lab_squared_distance(pixel, candidate)
         } else {
             squared_distance(pixel, candidate)
         };
-        if distance < best_distance {
+        let mut score = base_distance;
+        if is_neutral_candidate(candidate) {
+            score += options.neutral_bias;
+        } else {
+            score += options.chroma_bias;
+        }
+        score += hue_penalty(pixel, candidate, options.hue_guard);
+
+        if score < best_score {
             best = candidate;
-            best_distance = distance;
+            best_score = score;
         }
     }
 
     best
+}
+
+fn is_neutral_candidate(candidate: [u8; 3]) -> bool {
+    matches!(candidate, [0, 0, 0] | [255, 255, 255])
+}
+
+fn hue_penalty(pixel: [f32; 3], candidate: [u8; 3], hue_guard: f32) -> f32 {
+    if hue_guard <= f32::EPSILON || is_neutral_candidate(candidate) {
+        return 0.0;
+    }
+
+    let (input_hue, input_sat, _) = rgb_to_hsv(
+        pixel[0].clamp(0.0, 255.0) as u8,
+        pixel[1].clamp(0.0, 255.0) as u8,
+        pixel[2].clamp(0.0, 255.0) as u8,
+    );
+    let (candidate_hue, candidate_sat, _) = rgb_to_hsv(candidate[0], candidate[1], candidate[2]);
+
+    if input_sat < 0.12 || candidate_sat < 0.12 {
+        return 0.0;
+    }
+
+    let delta = hue_distance_degrees(input_hue, candidate_hue);
+    if delta <= 20.0 {
+        return 0.0;
+    }
+
+    let normalized = (delta - 20.0) / 160.0;
+    normalized * normalized * hue_guard
+}
+
+fn hue_distance_degrees(left: f32, right: f32) -> f32 {
+    let delta = (left - right).abs().rem_euclid(360.0);
+    delta.min(360.0 - delta)
 }
 
 fn squared_distance(pixel: [f32; 3], candidate: [u8; 3]) -> f32 {

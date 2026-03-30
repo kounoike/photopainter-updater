@@ -1,0 +1,87 @@
+# 実験設定コントラクト: ディザリング向け画像改善比較
+
+**Branch**: `019-dither-image-ideas` | **Date**: 2026-03-30
+
+## 目的
+
+比較実験を既存の server 起動経路で再現可能にするため、起動時設定の責務を定義する。HTTP エンドポイントとレスポンス形式は変更しない。
+
+## 既存インターフェース（維持）
+
+| 項目 | 内容 |
+|------|------|
+| `GET /` | 既存どおり binary frame を返す |
+| `GET /image.bin` | 既存どおり binary frame を返す |
+| `GET /image.bmp` | 既存どおり BMP を返す |
+| `CONTENT_DIR` | 手動で差し替える入力画像ディレクトリ |
+| `PORT` | 待受ポート |
+
+## 追加する設定インターフェース
+
+### `IMAGE_PROFILE`
+
+| 項目 | 内容 |
+|------|------|
+| 型 | 文字列 |
+| デフォルト | `baseline` |
+| 役割 | 前処理とディザリング設定を束ねた改善 profile を指定する |
+| 許容値 | `baseline`, `no-sat-boost`, `color-priority`, `hue-guard`, `color-priority-hue-guard` |
+| エラー時 | 未知の key は起動エラーとして扱う |
+
+### `COMPARE_WITH_BASELINE`
+
+| 項目 | 内容 |
+|------|------|
+| 型 | 真偽値相当の文字列 |
+| デフォルト | 無効 |
+| 役割 | baseline と評価対象 profile を同一入力画像上で split view 比較する |
+| 許容値 | `0/1`, `true/false`, `yes/no`, `on/off` |
+| エラー時 | 不正値は起動エラーとして扱う |
+
+### `COMPARE_PROFILE`
+
+| 項目 | 内容 |
+|------|------|
+| 型 | 文字列 |
+| デフォルト | 未指定 |
+| 役割 | split view 比較時の比較相手 profile を指定する |
+| 許容値 | `baseline`, `no-sat-boost`, `color-priority`, `hue-guard`, `color-priority-hue-guard` |
+| エラー時 | 未知の key は起動エラーとして扱う |
+
+### `COMPARE_SPLIT`
+
+| 項目 | 内容 |
+|------|------|
+| 型 | 文字列 |
+| デフォルト | `vertical` |
+| 役割 | split view 比較時の分割方向を指定する |
+| 許容値 | `vertical`, `horizontal` |
+| エラー時 | 不正値は起動エラーとして扱う |
+
+## 互換性ルール
+
+- `IMAGE_PROFILE=baseline` かつ `COMPARE_WITH_BASELINE=0` は現行挙動と互換であること
+- `COMPARE_PROFILE` が指定された場合は、その profile を split view の比較相手として扱うこと
+- `COMPARE_WITH_BASELINE=1` は `COMPARE_PROFILE=baseline` の shorthand として扱うこと
+- 既存 `DITHER_*` 設定を残す場合は、`IMAGE_PROFILE` と矛盾しない優先順位を定義すること
+- `run.sh` から追加設定を透過的に渡せること
+- firmware 側から見える取得 URL は変更しないこと
+
+## 実験結果の最小記録単位
+
+実装では少なくとも以下を残せること:
+
+| 項目 | 説明 |
+|------|------|
+| `profile` | どの改善案を試したか |
+| `input_image` | どの入力画像を使ったか |
+| `compare_mode` | 単独表示か baseline との split view か |
+| `device_result` | 実機表示での所見 |
+| `decision` | advance / hold / reject |
+
+## 非目標
+
+- HTTP API のクエリパラメータ化
+- firmware 向けの新しい制御コマンド
+- 転送 payload への実験メタデータ埋め込み
+- 複数画像セットを自動巡回する実験ハーネス

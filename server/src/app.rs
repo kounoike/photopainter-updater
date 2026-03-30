@@ -11,7 +11,7 @@ pub struct AppState {
     pub content_dir: std::path::PathBuf,
     pub logger: Arc<dyn AccessLogger>,
     pub request_counter: Arc<AtomicU64>,
-    pub dither_options: crate::config::DitherOptions,
+    pub render_options: crate::config::RenderOptions,
 }
 
 impl AppState {
@@ -20,26 +20,40 @@ impl AppState {
             content_dir: config.content_dir.clone(),
             logger,
             request_counter: Arc::new(AtomicU64::new(0)),
-            dither_options: config.dither_options,
+            render_options: config.render_options,
         }
     }
 }
 
 pub fn startup_messages(config: &ServerConfig) -> Vec<String> {
-    let color_distance = if config.dither_options.use_lab {
+    let color_distance = if config.render_options.dither_options.use_lab {
         "CIE Lab"
     } else {
         "RGB"
     };
-    let algorithm = if config.dither_options.use_atkinson {
+    let algorithm = if config.render_options.dither_options.use_atkinson {
         "Atkinson"
     } else {
         "Floyd-Steinberg"
     };
-    let zigzag = if config.dither_options.use_zigzag {
+    let zigzag = if config.render_options.dither_options.use_zigzag {
         "on"
     } else {
         "off"
+    };
+    let saturation = match config.render_options.dither_options.saturation_mode {
+        crate::config::SaturationMode::Boosted => "boosted",
+        crate::config::SaturationMode::Neutral => "neutral",
+    };
+    let compare = if let Some(compare_profile) = config.render_options.compare.profile {
+        format!(
+            "{} ({}) split={}",
+            compare_profile.key(),
+            compare_profile.label(),
+            config.render_options.compare.split.key()
+        )
+    } else {
+        "off".to_string()
     };
     let port = config.port;
 
@@ -53,9 +67,15 @@ pub fn startup_messages(config: &ServerConfig) -> Vec<String> {
         format!("LAN:    use this host's IP address with port {port} from other devices"),
         format!("Binary: http://127.0.0.1:{port}/{BINARY_OUTPUT_NAME} for firmware clients"),
         format!(
-            "Dither: {algorithm}, color={color_distance}, rate={:.2}, zigzag={zigzag}",
-            config.dither_options.diffusion_rate
+            "Profile: {} ({})",
+            config.render_options.profile.key(),
+            config.render_options.profile.label()
         ),
+        format!(
+            "Dither: {algorithm}, color={color_distance}, rate={:.2}, zigzag={zigzag}, saturation={saturation}",
+            config.render_options.dither_options.diffusion_rate
+        ),
+        format!("Compare: {compare}"),
         "Access logs: startup and each request are written through tracing".to_string(),
         "Stop: Ctrl+C".to_string(),
     ]
