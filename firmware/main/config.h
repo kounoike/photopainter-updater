@@ -11,3 +11,4 @@ struct FirmwareConfig {
 };
 
 esp_err_t LoadConfigFromSdCard(const char* path, FirmwareConfig* out_config, char* error_detail, size_t error_detail_size);
+bool IsBinaryImageUrl(const char* image_url);

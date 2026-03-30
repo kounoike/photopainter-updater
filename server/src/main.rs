@@ -9,7 +9,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use axum::Router;
 use axum::body::Body;
 use axum::extract::{ConnectInfo, Request, State};
-use axum::http::header::{CONTENT_TYPE, HeaderValue};
+use axum::http::header::{CONTENT_LENGTH, CONTENT_TYPE, HeaderValue};
 use axum::http::{Method, Response, StatusCode};
 use axum::routing::{any, get};
 use image::codecs::bmp::BmpEncoder;
@@ -17,6 +17,14 @@ use image::{ExtendedColorType, ImageBuffer, ImageReader, Rgb, RgbImage};
 
 const INPUT_IMAGE_NAME: &str = "image.png";
 const OUTPUT_IMAGE_NAME: &str = "image.bmp";
+const BINARY_OUTPUT_NAME: &str = "image.bin";
+const BINARY_CONTENT_TYPE: &str = "application/vnd.photopainter-frame";
+const BINARY_FRAME_MAGIC: [u8; 4] = *b"PPBF";
+const BINARY_FRAME_VERSION: u8 = 1;
+const BINARY_FRAME_FLAGS: u8 = 0;
+const BINARY_HEADER_LENGTH: u16 = 20;
+const EPD_DISPLAY_WIDTH: usize = 800;
+const EPD_DISPLAY_HEIGHT: usize = 480;
 const SATURATION_SCALE: f32 = 1.52;
 const SATURATION_BIAS: f32 = 0.29;
 const VALUE_SCALE: f32 = 1.02;
@@ -164,11 +172,24 @@ fn build_app(state: AppState) -> Router {
     Router::new()
         .route("/", get(serve_image))
         .route("/image.bmp", get(serve_image))
+        .route("/image.bin", get(serve_binary_image))
         .fallback(any(serve_not_found))
         .with_state(state)
 }
 
 async fn serve_image(State(state): State<AppState>, request: Request) -> Response<Body> {
+    serve_transformed(state, request, ResponseFormat::Bmp).await
+}
+
+async fn serve_binary_image(State(state): State<AppState>, request: Request) -> Response<Body> {
+    serve_transformed(state, request, ResponseFormat::Binary).await
+}
+
+async fn serve_transformed(
+    state: AppState,
+    request: Request,
+    response_format: ResponseFormat,
+) -> Response<Body> {
     let method = request.method().clone();
     let path = request.uri().path().to_string();
     let remote = extract_remote_addr(&request);
@@ -183,8 +204,8 @@ async fn serve_image(State(state): State<AppState>, request: Request) -> Respons
         }
     };
 
-    let (response, outcome) = match render_bmp_response(&image) {
-        Ok(bytes) => (bmp_response(bytes), LogOutcome::Success),
+    let (response, outcome) = match render_response(&image, response_format) {
+        Ok(response) => (response, LogOutcome::Success),
         Err(err) => {
             let outcome = transform_error_outcome(&err);
             (err.into_response(), outcome)
@@ -192,6 +213,12 @@ async fn serve_image(State(state): State<AppState>, request: Request) -> Respons
     };
     log_request(&state, method, path, remote, response.status(), outcome);
     response
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum ResponseFormat {
+    Bmp,
+    Binary,
 }
 
 async fn serve_not_found(State(state): State<AppState>, request: Request) -> Response<Body> {
@@ -226,11 +253,30 @@ fn load_input_image(path: &Path) -> Result<RgbImage, ImageLoadError> {
         .map_err(|err| ImageLoadError::Decode(path.to_path_buf(), err))
 }
 
-fn render_bmp_response(input: &RgbImage) -> Result<Vec<u8>, TransformError> {
+fn render_response(
+    input: &RgbImage,
+    response_format: ResponseFormat,
+) -> Result<Response<Body>, TransformError> {
+    match response_format {
+        ResponseFormat::Bmp => Ok(bmp_response(render_bmp_response(input)?)),
+        ResponseFormat::Binary => Ok(binary_frame_response(render_binary_frame_response(input)?)),
+    }
+}
+
+fn render_transformed_image(input: &RgbImage) -> RgbImage {
     let saturated = boost_saturation(input);
     let dithered = apply_reference_dither(&saturated);
-    let rotated = rotate_right_90(&dithered);
+    rotate_right_90(&dithered)
+}
+
+fn render_bmp_response(input: &RgbImage) -> Result<Vec<u8>, TransformError> {
+    let rotated = render_transformed_image(input);
     encode_bmp_24(&rotated).map_err(TransformError::Encode)
+}
+
+fn render_binary_frame_response(input: &RgbImage) -> Result<Vec<u8>, TransformError> {
+    let rotated = render_transformed_image(input);
+    Ok(encode_binary_frame(&rotated))
 }
 
 fn image_load_error_outcome(error: &ImageLoadError) -> LogOutcome {
@@ -295,6 +341,66 @@ fn format_access_log_line(entry: &AccessLogEntry) -> String {
         entry.status.as_u16(),
         entry.outcome
     )
+}
+
+fn encode_binary_frame(image: &RgbImage) -> Vec<u8> {
+    let payload = pack_epaper_frame(image);
+    let payload_length = payload.len() as u32;
+    let checksum = payload_checksum(&payload);
+    let mut bytes = Vec::with_capacity(BINARY_HEADER_LENGTH as usize + payload.len());
+    bytes.extend_from_slice(&BINARY_FRAME_MAGIC);
+    bytes.push(BINARY_FRAME_VERSION);
+    bytes.push(BINARY_FRAME_FLAGS);
+    bytes.extend_from_slice(&BINARY_HEADER_LENGTH.to_le_bytes());
+    bytes.extend_from_slice(&(EPD_DISPLAY_WIDTH as u16).to_le_bytes());
+    bytes.extend_from_slice(&(EPD_DISPLAY_HEIGHT as u16).to_le_bytes());
+    bytes.extend_from_slice(&payload_length.to_le_bytes());
+    bytes.extend_from_slice(&checksum.to_le_bytes());
+    bytes.extend_from_slice(&payload);
+    bytes
+}
+
+fn pack_epaper_frame(image: &RgbImage) -> Vec<u8> {
+    let width = EPD_DISPLAY_WIDTH;
+    let height = EPD_DISPLAY_HEIGHT;
+    let width_bytes = width.div_ceil(2);
+    let mut buffer = vec![0x11; width_bytes * height];
+
+    for (x, y, pixel) in image.enumerate_pixels() {
+        if x as usize >= width || y as usize >= height {
+            continue;
+        }
+        let color = palette_index_for_rgb(pixel.0);
+        let storage_x = width - 1 - x as usize;
+        let storage_y = height - 1 - y as usize;
+        let addr = storage_x / 2 + storage_y * width_bytes;
+        let nibble = color << 4;
+        if storage_x % 2 == 0 {
+            buffer[addr] = (buffer[addr] & 0x0F) | nibble;
+        } else {
+            buffer[addr] = (buffer[addr] & 0xF0) | color;
+        }
+    }
+
+    buffer
+}
+
+fn palette_index_for_rgb(pixel: [u8; 3]) -> u8 {
+    match pixel {
+        [0, 0, 0] => 0,
+        [255, 255, 255] => 1,
+        [255, 255, 0] => 2,
+        [255, 0, 0] => 3,
+        [0, 0, 255] => 5,
+        [0, 255, 0] => 6,
+        other => panic!("unexpected transformed color {other:?}"),
+    }
+}
+
+fn payload_checksum(payload: &[u8]) -> u32 {
+    payload
+        .iter()
+        .fold(0u32, |acc, byte| acc.wrapping_add(u32::from(*byte)))
 }
 
 fn encode_bmp_24(image: &RgbImage) -> Result<Vec<u8>, image::ImageError> {
@@ -483,6 +589,20 @@ fn bmp_response(bytes: Vec<u8>) -> Response<Body> {
     response
 }
 
+fn binary_frame_response(bytes: Vec<u8>) -> Response<Body> {
+    let content_length = bytes.len();
+    let mut response = Response::new(Body::from(bytes));
+    *response.status_mut() = StatusCode::OK;
+    response
+        .headers_mut()
+        .insert(CONTENT_TYPE, HeaderValue::from_static(BINARY_CONTENT_TYPE));
+    response.headers_mut().insert(
+        CONTENT_LENGTH,
+        HeaderValue::from_str(&content_length.to_string()).expect("valid content length"),
+    );
+    response
+}
+
 fn text_response(status: StatusCode, body: impl Into<Body>) -> Response<Body> {
     let mut response = Response::new(body.into());
     *response.status_mut() = status;
@@ -502,6 +622,7 @@ fn startup_messages(content_dir: &Path, port: u16) -> Vec<String> {
         format!("Listen: http://0.0.0.0:{port}/ and http://0.0.0.0:{port}/image.bmp"),
         format!("Local:  http://127.0.0.1:{port}/ and http://127.0.0.1:{port}/image.bmp"),
         format!("LAN:    use this host's IP address with port {port} from other devices"),
+        format!("Binary: http://127.0.0.1:{port}/{BINARY_OUTPUT_NAME} for firmware clients"),
         "Access logs: one line per request is written to stdout".to_string(),
         "Stop: Ctrl+C".to_string(),
     ]
@@ -708,6 +829,7 @@ mod tests {
                 .iter()
                 .any(|line| line.contains("/tmp/example/image.png"))
         );
+        assert!(messages.iter().any(|line| line.contains("image.bin")));
         assert!(messages.iter().any(|line| line.contains("Access logs")));
     }
 
@@ -730,6 +852,70 @@ mod tests {
 
         assert_eq!(&encoded[0..2], b"BM");
         assert_eq!(&encoded[28..30], &[24, 0]);
+    }
+
+    fn parse_binary_header(bytes: &[u8]) -> (u16, u16, u32, u32, &[u8]) {
+        assert!(bytes.len() >= BINARY_HEADER_LENGTH as usize);
+        assert_eq!(&bytes[0..4], &BINARY_FRAME_MAGIC);
+        assert_eq!(bytes[4], BINARY_FRAME_VERSION);
+        assert_eq!(bytes[5], BINARY_FRAME_FLAGS);
+        let header_length = u16::from_le_bytes([bytes[6], bytes[7]]);
+        let width = u16::from_le_bytes([bytes[8], bytes[9]]);
+        let height = u16::from_le_bytes([bytes[10], bytes[11]]);
+        let payload_length = u32::from_le_bytes([bytes[12], bytes[13], bytes[14], bytes[15]]);
+        let checksum = u32::from_le_bytes([bytes[16], bytes[17], bytes[18], bytes[19]]);
+        assert_eq!(header_length, BINARY_HEADER_LENGTH);
+        let payload = &bytes[header_length as usize..];
+        assert_eq!(payload.len(), payload_length as usize);
+        (width, height, payload_length, checksum, payload)
+    }
+
+    fn validate_binary_frame(bytes: &[u8]) -> Result<(), &'static str> {
+        if bytes.is_empty() {
+            return Err("empty response body");
+        }
+        if bytes.len() < BINARY_HEADER_LENGTH as usize {
+            return Err("binary frame header is incomplete");
+        }
+        if &bytes[0..4] != BINARY_FRAME_MAGIC.as_slice() {
+            return Err("binary frame magic is invalid");
+        }
+        if bytes[4] != BINARY_FRAME_VERSION {
+            return Err("binary frame version is invalid");
+        }
+        if bytes[5] != BINARY_FRAME_FLAGS {
+            return Err("binary frame flags are invalid");
+        }
+
+        let header_length = u16::from_le_bytes([bytes[6], bytes[7]]);
+        if header_length != BINARY_HEADER_LENGTH {
+            return Err("binary frame header length is invalid");
+        }
+
+        let width = u16::from_le_bytes([bytes[8], bytes[9]]);
+        let height = u16::from_le_bytes([bytes[10], bytes[11]]);
+        if width != EPD_DISPLAY_WIDTH as u16 || height != EPD_DISPLAY_HEIGHT as u16 {
+            return Err("binary frame dimensions are invalid");
+        }
+
+        let payload_length =
+            u32::from_le_bytes([bytes[12], bytes[13], bytes[14], bytes[15]]) as usize;
+        let expected_length = EPD_DISPLAY_WIDTH * EPD_DISPLAY_HEIGHT / 2;
+        if payload_length != expected_length {
+            return Err("binary frame payload length is invalid");
+        }
+
+        if bytes.len() != BINARY_HEADER_LENGTH as usize + payload_length {
+            return Err("binary frame payload is incomplete");
+        }
+
+        let expected_checksum = u32::from_le_bytes([bytes[16], bytes[17], bytes[18], bytes[19]]);
+        let actual_checksum = payload_checksum(&bytes[BINARY_HEADER_LENGTH as usize..]);
+        if actual_checksum != expected_checksum {
+            return Err("binary frame checksum mismatch");
+        }
+
+        Ok(())
     }
 
     #[tokio::test]
@@ -791,6 +977,93 @@ mod tests {
         assert_eq!(entries[1].remote, "192.168.0.11:40124");
 
         cleanup_dir(&dir);
+    }
+
+    #[tokio::test]
+    async fn image_bin_returns_binary_frame_headers_and_payload() {
+        let dir = create_content_dir(
+            "serve-binary",
+            &[
+                (0, 0, [255, 64, 64]),
+                (1, 0, [64, 255, 64]),
+                (0, 1, [64, 64, 255]),
+            ],
+        );
+        let (state, logger) = test_state(dir.clone());
+        let router = build_app(state);
+
+        let response = router
+            .oneshot(request_with_remote(
+                "/image.bin",
+                "192.168.0.12:40125".parse().expect("remote addr"),
+            ))
+            .await
+            .expect("binary response");
+
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(
+            response.headers().get(CONTENT_TYPE),
+            Some(&HeaderValue::from_static(BINARY_CONTENT_TYPE))
+        );
+        assert!(response.headers().get(CONTENT_LENGTH).is_some());
+
+        let body = response_body(response).await;
+        let (width, height, payload_length, checksum, payload) = parse_binary_header(&body);
+        assert_eq!(
+            (width, height),
+            (EPD_DISPLAY_WIDTH as u16, EPD_DISPLAY_HEIGHT as u16)
+        );
+        assert_eq!(
+            payload_length,
+            (EPD_DISPLAY_WIDTH * EPD_DISPLAY_HEIGHT / 2) as u32
+        );
+        assert_eq!(payload_checksum(payload), checksum);
+
+        let entries = logged_entries(&logger);
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].path, "/image.bin");
+        assert_eq!(entries[0].status, StatusCode::OK);
+        assert_eq!(entries[0].outcome, LogOutcome::Success);
+
+        cleanup_dir(&dir);
+    }
+
+    #[test]
+    fn binary_frame_validation_rejects_empty_body() {
+        assert_eq!(validate_binary_frame(&[]), Err("empty response body"));
+    }
+
+    #[test]
+    fn binary_frame_validation_rejects_invalid_magic() {
+        let image = RgbImage::from_pixel(
+            EPD_DISPLAY_WIDTH as u32,
+            EPD_DISPLAY_HEIGHT as u32,
+            Rgb([255, 255, 255]),
+        );
+        let mut encoded = encode_binary_frame(&image);
+        encoded[0] = b'X';
+
+        assert_eq!(
+            validate_binary_frame(&encoded),
+            Err("binary frame magic is invalid")
+        );
+    }
+
+    #[test]
+    fn binary_frame_validation_rejects_checksum_mismatch() {
+        let image = RgbImage::from_pixel(
+            EPD_DISPLAY_WIDTH as u32,
+            EPD_DISPLAY_HEIGHT as u32,
+            Rgb([255, 255, 255]),
+        );
+        let mut encoded = encode_binary_frame(&image);
+        let last_index = encoded.len() - 1;
+        encoded[last_index] ^= 0x0f;
+
+        assert_eq!(
+            validate_binary_frame(&encoded),
+            Err("binary frame checksum mismatch")
+        );
     }
 
     #[test]
@@ -955,6 +1228,40 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn missing_image_returns_not_found_for_binary_route() {
+        let missing_dir = temp_path("missing-binary-content");
+        std::fs::create_dir_all(&missing_dir).expect("create missing dir");
+        let (state, logger) = test_state(missing_dir.clone());
+        let router = build_app(state);
+
+        let response = router
+            .oneshot(request_with_remote(
+                "/image.bin",
+                "192.168.0.32:41002".parse().expect("remote addr"),
+            ))
+            .await
+            .expect("binary response");
+
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+        assert_eq!(
+            response.headers().get(CONTENT_TYPE),
+            Some(&HeaderValue::from_static("text/plain; charset=utf-8"))
+        );
+
+        let body = response_body(response).await;
+        let text = String::from_utf8(body.to_vec()).expect("utf8 binary body");
+        assert!(text.contains("image.png is not configured"));
+
+        let entries = logged_entries(&logger);
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].path, "/image.bin");
+        assert_eq!(entries[0].status, StatusCode::NOT_FOUND);
+        assert_eq!(entries[0].outcome, LogOutcome::InputMissing);
+
+        cleanup_dir(&missing_dir);
+    }
+
+    #[tokio::test]
     async fn invalid_png_returns_unprocessable_entity_for_both_routes() {
         let dir = temp_path("invalid-content");
         std::fs::create_dir_all(&dir).expect("create invalid dir");
@@ -994,6 +1301,40 @@ mod tests {
         assert_eq!(entries[0].outcome, LogOutcome::TransformFailed);
         assert_eq!(entries[1].status, StatusCode::UNPROCESSABLE_ENTITY);
         assert_eq!(entries[1].outcome, LogOutcome::TransformFailed);
+
+        cleanup_dir(&dir);
+    }
+
+    #[tokio::test]
+    async fn invalid_png_returns_unprocessable_entity_for_binary_route() {
+        let dir = temp_path("invalid-binary-content");
+        std::fs::create_dir_all(&dir).expect("create invalid dir");
+        std::fs::write(input_image_path_from_dir(&dir), b"not-a-valid-png").expect("write invalid");
+        let (state, logger) = test_state(dir.clone());
+        let router = build_app(state);
+
+        let response = router
+            .oneshot(request_with_remote(
+                "/image.bin",
+                "192.168.0.42:42002".parse().expect("remote addr"),
+            ))
+            .await
+            .expect("binary response");
+
+        assert_eq!(response.status(), StatusCode::UNPROCESSABLE_ENTITY);
+        assert_eq!(
+            response.headers().get(CONTENT_TYPE),
+            Some(&HeaderValue::from_static("text/plain; charset=utf-8"))
+        );
+
+        let text = String::from_utf8(response_body(response).await.to_vec()).expect("utf8 body");
+        assert!(text.contains("failed to decode image.png"));
+
+        let entries = logged_entries(&logger);
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].path, "/image.bin");
+        assert_eq!(entries[0].status, StatusCode::UNPROCESSABLE_ENTITY);
+        assert_eq!(entries[0].outcome, LogOutcome::TransformFailed);
 
         cleanup_dir(&dir);
     }

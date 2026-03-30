@@ -2,6 +2,8 @@
 
 `firmware/` は `xiaozhi-esp32/` を参照して作る専用ファームウェアです。`xiaozhi-esp32/` 自体は書き換えず、`firmware/` 側から `sdcard_bsp`、`button_bsp`、`epaper_port`、`epaper_src` を component として参照します。
 
+このファームウェアの build target は `esp32s3` 固定です。`esp32` など他 target は対象外です。
+
 ## config.txt
 
 SD カードのルートに `config.txt` を配置します。
@@ -49,4 +51,4 @@ idf.py -C firmware build
 idf.py -C firmware flash monitor
 ```
 
-ターゲットは実機に合わせて変更してください。
+通常は `./scripts/build-merged-image.sh` の利用を優先してください。誤って別 target の `sdkconfig` を作った疑いがある場合は、`idf.py -C firmware fullclean` の後に `set-target esp32s3` からやり直してください。

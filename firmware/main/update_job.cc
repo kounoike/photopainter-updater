@@ -259,21 +259,36 @@ esp_err_t RunUpdate(UpdateTrigger trigger) {
         HandleFailure(trigger, FailureCategory::kWifiError, detail);
         return err;
     }
-    ESP_LOGI(kTag, "WiFi connected, starting HTTP download for trigger=%s", UpdateTriggerToString(trigger));
+    bool use_binary_path = IsBinaryImageUrl(config.image_url);
+    ESP_LOGI(kTag, "WiFi connected, starting HTTP update for trigger=%s route=%s", UpdateTriggerToString(trigger),
+             use_binary_path ? "binary" : "bmp");
 
-    err = DownloadImageToSdCard(config.image_url, kImageCachePath, detail, sizeof(detail));
-    if (err != ESP_OK) {
-        HandleFailure(trigger, FailureCategory::kHttpError, detail);
-        return err;
-    }
-    ESP_LOGI(kTag, "HTTP download completed, starting BMP render");
+    if (use_binary_path) {
+        err = DownloadBinaryFrameToDisplay(config.image_url, detail, sizeof(detail));
+        if (err != ESP_OK) {
+            FailureCategory category =
+                (err == ESP_ERR_INVALID_RESPONSE || err == ESP_ERR_INVALID_SIZE || err == ESP_ERR_INVALID_CRC)
+                    ? FailureCategory::kImageError
+                    : FailureCategory::kHttpError;
+            HandleFailure(trigger, category, detail);
+            return err;
+        }
+        ESP_LOGI(kTag, "Binary frame render completed");
+    } else {
+        err = DownloadImageToSdCard(config.image_url, kImageCachePath, detail, sizeof(detail));
+        if (err != ESP_OK) {
+            HandleFailure(trigger, FailureCategory::kHttpError, detail);
+            return err;
+        }
+        ESP_LOGI(kTag, "HTTP download completed, starting BMP render");
 
-    err = RenderBmpFromSdCard(kImageCachePath, detail, sizeof(detail));
-    if (err != ESP_OK) {
-        HandleFailure(trigger, FailureCategory::kImageError, detail);
-        return err;
+        err = RenderBmpFromSdCard(kImageCachePath, detail, sizeof(detail));
+        if (err != ESP_OK) {
+            HandleFailure(trigger, FailureCategory::kImageError, detail);
+            return err;
+        }
+        ESP_LOGI(kTag, "BMP render completed");
     }
-    ESP_LOGI(kTag, "BMP render completed");
 
     ClearLastFailureState();
     StopActivityLed();

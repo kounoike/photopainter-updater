@@ -117,6 +117,8 @@ Use slash commands:
 - ローカルファイル (`server/contents/image.png` 入力、配信時に生成される 24bit BMP 出力) (013-image-dither-rotate)
 - Rust stable + `axum`、Tokio、Rust 標準ライブラリの時刻/ソケット/標準出力 (014-access-logs)
 - N/A（永続保存なし、標準出力ログのみ） (014-access-logs)
+- Rust stable、C/C++ on ESP-IDF v5.5.x + `axum`、Tokio、Rust 標準ライブラリの HTTP/byte 処理、ESP-IDF `esp_http_client`、`Paint_*` / `epaper_port_display` (015-custom-transfer-format)
+- server 側はローカルファイル (`image.png` 入力)、firmware 側は設定用 SD カードを維持。ただし画像更新時の中間 BMP 保存は不要にする (015-custom-transfer-format)
 
 ## Recent Changes
 - 002-add-run-script: Added Bash (POSIX shell) / Python 3 (実行環境) + Python 標準の HTTP 配信機能
