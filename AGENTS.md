@@ -124,6 +124,8 @@ Use slash commands:
 - Rust stable（edition 2024）、Bash（既存起動補助） + 既存 `axum`, `envconfig`, `image`, `tokio`, `tracing` (019-dither-image-ideas)
 - ローカルファイル（`server/contents/`、`server/testdata/`、`specs/019-dither-image-ideas/` の実験記録） (019-dither-image-ideas)
 - ローカルファイル（`server/contents/`、`server/testdata/`、`specs/020-adaptive-diffusion-tuning/`） (020-adaptive-diffusion-tuning)
+- Docker Compose v2、YAML、Markdown + Docker Engine / Docker Compose v2、公式イメージ `ollama/ollama`、既存 `yanwk/comfyui-boot:cu128-slim` (023-add-ollama-compose)
+- ホスト bind mount ディレクトリ（`./comfyui-data`、新規 `./ollama-data`） (023-add-ollama-compose)
 
 ## Recent Changes
 - 002-add-run-script: Added Bash (POSIX shell) / Python 3 (実行環境) + Python 標準の HTTP 配信機能
