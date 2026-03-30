@@ -7,6 +7,12 @@
 
 **記述ルール**: この文書は日本語で記述する。固有名詞、コード識別子、ライブラリ名のみ原文維持可。
 
+## Clarifications
+
+### Session 2026-03-30
+
+- Q: Ollama の接続公開範囲をどうするか → A: Compose では外部公開方法を決めず、内部ネットワーク専用にする
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Ollama を compose から起動する (Priority: P1)
@@ -15,12 +21,12 @@
 
 **Why this priority**: Ollama サービスを起動できなければ、この feature の価値が成立しないため。
 
-**Independent Test**: `docker compose up` で Ollama を起動し、Ollama API へローカルから到達できれば完了。
+**Independent Test**: `docker compose up` で Ollama を起動し、Compose 内ネットワークから Ollama API へ到達できれば完了。
 
 **Acceptance Scenarios**:
 
 1. **Given** Docker Compose が利用可能な環境で, **When** `compose.yml` を使って Ollama を起動する, **Then** Ollama サービスが正常起動する
-2. **Given** Ollama が起動している状態で, **When** ローカルから Ollama API へ接続する, **Then** 応答を確認できる
+2. **Given** Ollama が起動している状態で, **When** Compose 内ネットワークから Ollama API へ接続する, **Then** 応答を確認できる
 
 ---
 
@@ -58,22 +64,23 @@
 - Ollama のデータ保存先が未作成でも、Docker が扱えるか、または手順書で事前準備が分かること
 - ComfyUI のみ使いたい利用者がいても、既存の ComfyUI 起動方法が不必要に複雑化しないこと
 - GPU 有無や利用方針が ComfyUI と Ollama で異なる場合でも、サービスごとの責務が混線しないこと
+- Ollama を外部公開しない前提でも、Compose 内からの疎通確認方法が明確であること
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
 - **FR-001**: System MUST 既存の `compose.yml` に Ollama サービスを追加し、Docker Compose から起動できるようにする
-- **FR-002**: System MUST Ollama API をホストから利用できるよう、到達可能なポート公開または同等の接続手段を提供する
+- **FR-002**: System MUST Ollama API を Compose 内ネットワーク専用とし、ホストへのポート公開を必須要件にしない
 - **FR-003**: Users MUST be able to Ollama の保存データをホスト側へ永続化し、コンテナ再作成後もモデルを再利用できる
 - **FR-004**: System MUST Ollama のホスト側保存先や必要な設定を、既存 Compose 運用と同じ方針で調整できるようにする
 - **FR-005**: System MUST ComfyUI の既存設定と利用手順を壊さずに Ollama を追加する
-- **FR-006**: System MUST `compose.yml` の検証方法と Ollama の起動・停止・接続確認手順を文書化する
+- **FR-006**: System MUST `compose.yml` の検証方法と Ollama の起動・停止・Compose 内からの接続確認手順を文書化する
 - **FR-007**: System MUST Ollama 追加に伴う運用上の前提、永続化方針、既存サービスとの共存方針を成果物へ記録する
 
 ### Key Entities *(include if feature involves data)*
 
-- **Ollama サービス**: Docker Compose で管理される LLM 実行サービス。API 公開とモデル保存領域を持つ。
+- **Ollama サービス**: Docker Compose で管理される LLM 実行サービス。Compose 内ネットワーク向け API とモデル保存領域を持つ。
 - **モデル保存領域**: Ollama が取得したモデルや関連データを保持するホスト側ディレクトリ。
 - **Compose 構成**: ComfyUI と Ollama を同一 `compose.yml` で扱うためのサービス定義、ポート、ネットワーク、ボリューム設定。
 
@@ -99,7 +106,7 @@
 
 - **SC-001**: `docker compose` による検証と起動手順を使って、Ollama サービスを追加した Compose 構成を 5 分以内に立ち上げ確認できる
 - **SC-002**: Ollama で取得したモデルが、コンテナ停止・再作成後も保持されることを確認できる
-- **SC-003**: 既存の ComfyUI 利用手順を維持したまま、Ollama の起動・接続確認手順を追加で説明できる
+- **SC-003**: 既存の ComfyUI 利用手順を維持したまま、Ollama の起動・Compose 内接続確認手順を追加で説明できる
 - **SC-004**: 成果物を読めば、Ollama 追加後の保存先、接続先、既存サービスとの関係を誤解なく説明できる
 
 ## Assumptions
@@ -107,7 +114,7 @@
 - 既存の `compose.yml` は ComfyUI 用として継続利用する
 - Ollama 自体の詳細なモデル運用やアプリ統合は今回のスコープ外とする
 - Docker Compose v2 系の運用を前提にする
-- Ollama の利用確認はローカルまたは同一ホスト上からの API 到達確認で十分とする
+- Ollama の利用確認は Compose 内ネットワークからの API 到達確認で十分とする
 
 ## Documentation Impact
 
