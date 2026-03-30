@@ -14,7 +14,7 @@
 **Language/Version**: Docker Compose v2、YAML、Markdown  
 **Primary Dependencies**: Docker Engine / Docker Compose v2、公式イメージ `ollama/ollama`、既存 `yanwk/comfyui-boot:cu128-slim`  
 **Storage**: ホスト bind mount ディレクトリ（`./comfyui-data`、新規 `./ollama-data`）  
-**Testing**: `docker compose config`、`docker compose up -d`、`docker compose exec ollama ollama list`、`docker compose exec comfyui curl -fsS http://ollama:11434/api/version` による手動確認  
+**Testing**: `docker compose config`、`docker compose up -d ollama`、`docker compose exec ollama ollama list`、`docker compose up -d`、`docker compose exec comfyui curl -fsS http://ollama:11434/api/version` による手動確認  
 **Target Platform**: ローカル Linux 開発環境、単一ホスト上の Docker Compose 運用  
 **Project Type**: Docker Compose ベースのローカル運用構成 + ドキュメント更新  
 **Performance Goals**: 5 分以内に起動確認できること、コンテナ再作成後もモデル再取得が不要であること  
@@ -107,8 +107,8 @@ specs/023-add-ollama-compose/
 - Ollama データディレクトリ準備
 - `docker compose up -d ollama`
 - `docker compose exec ollama ollama list`
-- `docker compose exec comfyui curl -fsS http://ollama:11434/api/version`
 - モデル pull と再作成後の保持確認
+- ComfyUI からの `curl http://ollama:11434/api/version` は共存確認で使う
 
 ## Implementation Strategy
 

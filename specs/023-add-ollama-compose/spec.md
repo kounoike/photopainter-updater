@@ -21,12 +21,12 @@
 
 **Why this priority**: Ollama サービスを起動できなければ、この feature の価値が成立しないため。
 
-**Independent Test**: `docker compose up` で Ollama を起動し、Compose 内ネットワークから Ollama API へ到達できれば完了。
+**Independent Test**: `docker compose up -d ollama` で Ollama を起動し、`docker compose exec ollama ollama list` で応答確認できれば完了。
 
 **Acceptance Scenarios**:
 
 1. **Given** Docker Compose が利用可能な環境で, **When** `compose.yml` を使って Ollama を起動する, **Then** Ollama サービスが正常起動する
-2. **Given** Ollama が起動している状態で, **When** Compose 内ネットワークから Ollama API へ接続する, **Then** 応答を確認できる
+2. **Given** Ollama が起動している状態で, **When** `docker compose exec ollama ollama list` を実行する, **Then** 応答を確認できる
 
 ---
 
@@ -60,11 +60,11 @@
 
 ### Edge Cases
 
-- Ollama 用ポートが既存サービスやホスト上の他プロセスと競合する場合、起動失敗時に明確に分かること
 - Ollama のデータ保存先が未作成でも、Docker が扱えるか、または手順書で事前準備が分かること
 - ComfyUI のみ使いたい利用者がいても、既存の ComfyUI 起動方法が不必要に複雑化しないこと
 - GPU 有無や利用方針が ComfyUI と Ollama で異なる場合でも、サービスごとの責務が混線しないこと
 - Ollama を外部公開しない前提でも、Compose 内からの疎通確認方法が明確であること
+- Ollama をホストへ公開しない前提でも、利用者が内部接続先 `http://ollama:11434` を誤解しないこと
 
 ## Requirements *(mandatory)*
 

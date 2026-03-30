@@ -46,12 +46,12 @@
 
 **Goal**: Ollama を Docker Compose から起動し、Compose 内ネットワークから API 到達確認できるようにする
 
-**Independent Test**: `docker compose up -d ollama` と `docker compose exec comfyui curl -fsS http://ollama:11434/api/version` で起動と内部疎通を確認できれば完了
+**Independent Test**: `docker compose up -d ollama` と `docker compose exec ollama ollama list` で起動確認できれば完了
 
 ### Verification for User Story 1
 
-- [ ] T006 [US1] 起動と内部疎通の検証手順を `specs/023-add-ollama-compose/quickstart.md` に明記する
-- [ ] T007 [US1] `docker compose config`、`docker compose up -d ollama`、`docker compose exec ollama ollama list`、`docker compose exec comfyui curl -fsS http://ollama:11434/api/version` を実行して結果を確認する
+- [ ] T006 [US1] Ollama 単体起動の検証手順を `specs/023-add-ollama-compose/quickstart.md` に明記する
+- [ ] T007 [US1] `docker compose config`、`docker compose up -d ollama`、`docker compose exec ollama ollama list` を実行して結果を確認する
 
 ### Implementation for User Story 1
 
@@ -88,12 +88,12 @@
 
 **Goal**: 既存 ComfyUI の利用手順を壊さず、同一 compose 上で Ollama を共存させる
 
-**Independent Test**: `docker compose config` と `docker compose up -d` の結果、および `README.md` / `quickstart.md` を確認して ComfyUI 手順が維持されていれば完了
+**Independent Test**: `docker compose config`、`docker compose up -d`、`docker compose exec comfyui curl -fsS http://ollama:11434/api/version` の結果、および `README.md` / `quickstart.md` を確認して ComfyUI 手順が維持されていれば完了
 
 ### Verification for User Story 3
 
-- [ ] T016 [US3] ComfyUI 維持と Ollama 追加後の利用手順を `README.md` と `specs/023-add-ollama-compose/quickstart.md` で確認する
-- [ ] T017 [US3] `docker compose config` と `docker compose up -d` を実行し、`docker compose ps` で `comfyui` と `ollama` の共存を確認する
+- [ ] T016 [US3] ComfyUI 維持と Ollama 追加後の利用手順、および内部接続先の説明を `README.md` と `specs/023-add-ollama-compose/quickstart.md` で確認する
+- [ ] T017 [US3] `docker compose config`、`docker compose up -d`、`docker compose exec comfyui curl -fsS http://ollama:11434/api/version` を実行し、`docker compose ps` で `comfyui` と `ollama` の共存を確認する
 
 ### Implementation for User Story 3
 
