@@ -7,12 +7,12 @@
 
 ## Summary
 
-`yanwk/comfyui-boot:cu130-slim-v2` を使用した ComfyUI Docker Compose 環境を構築する。リポジトリルートに `compose.yml` を配置し、NVIDIA GPU 必須構成でモデル・カスタムノード・pip 依存ライブラリ・出力を bind mount で永続化する。ポートはデフォルト `18188`（ホスト側）、ホストのボリュームパスは `.env` で設定可能。将来の HTTP サーバ統合を見越した名前付きネットワーク定義を含める。Docker Compose ベストプラクティス調査結果は `research.md` にまとめ、設計根拠として参照する。
+`yanwk/comfyui-boot:cu128-slim` を使用した ComfyUI Docker Compose 環境を構築する。リポジトリルートに `compose.yml` を配置し、NVIDIA GPU 必須構成でモデル・カスタムノード・pip 依存ライブラリ・出力を bind mount で永続化する。ポートはデフォルト `18188`（ホスト側）、ホストのボリュームパスは `.env` で設定可能。将来の HTTP サーバ統合を見越した名前付きネットワーク定義を含める。Docker Compose ベストプラクティス調査結果は `research.md` にまとめ、設計根拠として参照する。
 
 ## Technical Context
 
 **Language/Version**: YAML (Docker Compose v2 / `compose.yml` 形式)  
-**Primary Dependencies**: `yanwk/comfyui-boot:cu130-slim-v2`、Docker Compose v2、NVIDIA Container Toolkit  
+**Primary Dependencies**: `yanwk/comfyui-boot:cu128-slim`、Docker Compose v2、NVIDIA Container Toolkit  
 **Storage**: bind mount（ホスト側任意ディレクトリ、`.env` で指定）  
 **Testing**: 手動検証（`docker compose up` → ブラウザで `http://localhost:18188` アクセス確認）  
 **Target Platform**: Linux + NVIDIA GPU（NVIDIA Container Toolkit インストール済み）  
@@ -68,7 +68,7 @@ compose.yml              # ComfyUI サービス定義（新規作成）
 **主要決定事項**:
 | 決定事項 | 採用内容 | 根拠 |
 |---------|---------|------|
-| イメージ | `yanwk/comfyui-boot:cu130-slim-v2` | ローカル開発向け設計・dockerful design・毎日ビルド |
+| イメージ | `yanwk/comfyui-boot:cu128-slim` | ローカル開発向け設計・dockerful design・毎日ビルド |
 | GPU 設定 | `deploy.resources.reservations.devices` | Docker Compose v2 の推奨方式 |
 | 必須ボリューム | models / custom_nodes / .local / output | カスタムノード依存含む永続化 |
 | 推奨ボリューム | user / input / .cache | 設定・キャッシュ永続化 |
@@ -84,7 +84,7 @@ compose.yml              # ComfyUI サービス定義（新規作成）
 ```yaml
 services:
   comfyui:
-    image: yanwk/comfyui-boot:cu130-slim-v2
+    image: yanwk/comfyui-boot:cu128-slim
     container_name: photopainter-comfyui
     ports:
       - "0.0.0.0:${COMFYUI_PORT:-18188}:8188"

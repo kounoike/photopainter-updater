@@ -1,6 +1,6 @@
 services:
   comfyui:
-    image: yanwk/comfyui-boot:cu130-slim-v2
+    image: yanwk/comfyui-boot:cu128-slim
     container_name: photopainter-comfyui
     ports:
       - "0.0.0.0:${COMFYUI_PORT:-18188}:8188"

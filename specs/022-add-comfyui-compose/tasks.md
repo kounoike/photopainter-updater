@@ -47,7 +47,7 @@ description: "機能実装のためのタスクリスト"
 
 ### Implementation for User Story 1
 
-- [x] T005 [US1] `compose.yml` の comfyui サービス基本定義を追加する（image: `yanwk/comfyui-boot:cu130-slim-v2`、container_name: `photopainter-comfyui`、ports: `0.0.0.0:${COMFYUI_PORT:-18188}:8188`、networks: photopainter、restart: `unless-stopped`）（`compose.yml`）
+- [x] T005 [US1] `compose.yml` の comfyui サービス基本定義を追加する（image: `yanwk/comfyui-boot:cu128-slim`、container_name: `photopainter-comfyui`、ports: `0.0.0.0:${COMFYUI_PORT:-18188}:8188`、networks: photopainter、restart: `unless-stopped`）（`compose.yml`）
 - [x] T006 [US1] `compose.yml` の comfyui サービスに healthcheck を追加する（test: `curl -f http://localhost:8188/system_stats`、interval: 30s、timeout: 10s、retries: 3、start_period: 60s）（`compose.yml`）
 - [x] T007 [US1] `docker compose config` で US1 の設定が正しく解決されることを確認する（コマンドライン検証）
 
