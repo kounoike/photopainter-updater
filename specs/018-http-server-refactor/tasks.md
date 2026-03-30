@@ -39,7 +39,7 @@
 - [ ] T006 [P] `server/src/response.rs` に BMP/Binary/Text の HTTP response helper を移設する
 - [ ] T007 `server/src/app.rs` に `AppState`、起動メッセージ生成、listener/router 起動配線を実装する
 - [ ] T008 `server/src/main.rs` を最小の起動エントリへ整理し、`config.rs`、`logging.rs`、`app.rs`、`routes.rs`、`response.rs`、`image_pipeline` を参照する構成へ置き換える
-- [ ] T009 `specs/018-http-server-refactor/contracts/server-runtime-contract.md` と `specs/018-http-server-refactor/plan.md` を確認し、route 名と起動導線を維持する実装境界を `server/src/main.rs` コメントまたは関連文書に反映する
+- [ ] T009 `specs/018-http-server-refactor/contracts/server-runtime-contract.md` と `specs/018-http-server-refactor/plan.md` を確認し、route 名と起動導線を維持する実装境界を `specs/018-http-server-refactor/quickstart.md` に反映する
 
 **Checkpoint**: 基盤完了後に user story 実装へ進む
 
@@ -116,7 +116,8 @@
 
 - [ ] T027 [P] `server/src/main.rs`、`server/src/app.rs`、`server/src/routes.rs`、`server/src/config.rs`、`server/src/logging.rs`、`server/src/response.rs`、`server/src/image_pipeline/` 配下の未使用コードと import を整理する
 - [ ] T028 `specs/018-http-server-refactor/quickstart.md` の手順に沿って `server/run.sh` と主要 route の手動確認結果を反映する
-- [ ] T029 `server/Cargo.toml` と `server/src/` 配下を対象に `cargo fmt` / `cargo test` の最終実行を完了する
+- [ ] T029 `server/README.md` または既存の server 向け運用文書に設定項目説明と責務分割後の変更対象の探し方を反映する
+- [ ] T030 `server/Cargo.toml` と `server/src/` 配下を対象に `cargo fmt` / `cargo test` の最終実行を完了する
 
 ---
 

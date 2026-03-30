@@ -17,7 +17,7 @@
 **Testing**: `cargo test`、HTTP 応答の自動テスト、設定読込の単体テスト、起動ログ/失敗系の手動確認  
 **Target Platform**: ローカル LAN 上で動く開発用 HTTP サーバ、Linux 系 devcontainer / ローカル実行環境  
 **Project Type**: 単一 Rust サーバの内部リファクタリング  
-**Performance Goals**: 既存の BMP/Binary 変換と HTTP 応答時間を実用上劣化させず、起動時に設定解決結果を即時確認できること  
+**Performance Goals**: 既存の `cargo test` で確認できる主要 route 応答と変換回帰を維持し、起動時には待受先と設定解決結果を 1 回の起動ログ確認で判断できること  
 **Constraints**: 既存 route と response contract 維持、画像変換アルゴリズム自体は変えない、外部基盤を追加しない、`server/` 配下の変更に限定する  
 **Scale/Scope**: 単一プロセス・単一入力画像・少数クライアント向けのローカル運用。対象は server crate の構造整理と回帰防止
 
