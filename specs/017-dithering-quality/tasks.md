@@ -17,8 +17,8 @@
 
 **Purpose**: 変更対象の現状把握と実装境界の確認
 
-- [ ] T001 `server/src/main.rs` の `apply_reference_dither`、`squared_distance`、`nearest_palette_color`、`AppState` 定義を読んで現状を確認する
-- [ ] T002 `server/src/main.rs` の `main()` 関数と環境変数読み込み箇所（`PORT`、`CONTENT_DIR`）を読んで追加位置を確認する
+- [x] T001 `server/src/main.rs` の `apply_reference_dither`、`squared_distance`、`nearest_palette_color`、`AppState` 定義を読んで現状を確認する
+- [x] T002 `server/src/main.rs` の `main()` 関数と環境変数読み込み箇所（`PORT`、`CONTENT_DIR`）を読んで追加位置を確認する
 
 ---
 
@@ -28,11 +28,11 @@
 
 **CRITICAL**: この phase 完了まで user story 実装を開始しない
 
-- [ ] T003 `server/src/main.rs` の `AppState` に `use_lab: bool` と `use_atkinson: bool` フィールドを追加する
-- [ ] T004 `server/src/main.rs` の `main()` で `DITHER_USE_LAB` と `DITHER_USE_ATKINSON` 環境変数を読み込み `AppState` に格納する
-- [ ] T005 `server/src/main.rs` に `rgb_to_lab(pixel: [u8; 3]) -> [f32; 3]` 関数を追加する（sRGB→XYZ→CIE Lab、D65光源）
-- [ ] T006 `server/src/main.rs` に `lab_squared_distance(pixel: [f32; 3], candidate: [u8; 3]) -> f32` 関数を追加する
-- [ ] T007 `cargo build` でビルドエラーがないことを確認する
+- [x] T003 `server/src/main.rs` の `AppState` に `use_lab: bool` と `use_atkinson: bool` フィールドを追加する
+- [x] T004 `server/src/main.rs` の `main()` で `DITHER_USE_LAB` と `DITHER_USE_ATKINSON` 環境変数を読み込み `AppState` に格納する
+- [x] T005 `server/src/main.rs` に `rgb_to_lab(pixel: [u8; 3]) -> [f32; 3]` 関数を追加する（sRGB→XYZ→CIE Lab、D65光源）
+- [x] T006 `server/src/main.rs` に `lab_squared_distance(pixel: [f32; 3], candidate: [u8; 3]) -> f32` 関数を追加する
+- [x] T007 `cargo build` でビルドエラーがないことを確認する
 
 **Checkpoint**: T003〜T007 完了後に user story 実装へ進む
 
@@ -46,11 +46,13 @@
 
 ### Implementation for User Story 1
 
-- [ ] T008 [US1] `server/src/main.rs` の `apply_reference_dither` を `AppState`（または `use_atkinson: bool` 引数）を受け取るよう変更し、`use_atkinson` が `true` のとき Atkinson 係数（6隣接ピクセルに各 1/8）で誤差拡散するよう実装する
-- [ ] T009 [US1] `cargo test` を実行し、既存のディザリングテストが全通過することを確認する（デフォルトは Floyd-Steinberg のまま）
+- [x] T008 [US1] `server/src/main.rs` の `apply_reference_dither` を `AppState`（または `use_atkinson: bool` 引数）を受け取るよう変更し、`use_atkinson` が `true` のとき Atkinson 係数（6隣接ピクセルに各 1/8）で誤差拡散するよう実装する
+- [x] T009 [US1] `cargo test` を実行し、既存のディザリングテストが全通過することを確認する（デフォルトは Floyd-Steinberg のまま）
 - [ ] T010 [US1] `DITHER_USE_ATKINSON=1 cargo run --release` でサーバーを起動し、実機で画像を表示して現行との違いを目視確認する
 
 **Checkpoint**: B案が独立して動作し、デフォルト動作が変わっていないこと
+
+> **Note**: T010・T013・T014-T015 は実機評価タスクのため、このブランチではペンディング。実機で各パターンを評価してからアルゴリズムを決定する。
 
 ---
 
@@ -62,8 +64,8 @@
 
 ### Implementation for User Story 2
 
-- [ ] T011 [US1] [US2] `server/src/main.rs` の `nearest_palette_color` を `use_lab: bool` 引数を受け取るよう変更し、`use_lab` が `true` のとき `lab_squared_distance` を使用するよう実装する
-- [ ] T012 [US2] `cargo test` を実行し、既存テストが全通過することを確認する（デフォルトは RGB のまま）
+- [x] T011 [US1] [US2] `server/src/main.rs` の `nearest_palette_color` を `use_lab: bool` 引数を受け取るよう変更し、`use_lab` が `true` のとき `lab_squared_distance` を使用するよう実装する
+- [x] T012 [US2] `cargo test` を実行し、既存テストが全通過することを確認する（デフォルトは RGB のまま）
 - [ ] T013 [US2] `DITHER_USE_LAB=1 cargo run --release` でサーバーを起動し、実機で画像を表示して色選択の変化を目視確認する
 
 **Checkpoint**: A案が独立して動作し、デフォルト動作が変わっていないこと
@@ -87,6 +89,8 @@
 
 ## Phase 6: User Story 4 - 評価結果に基づくクリーンアップ (Priority: P3)
 
+> **Note**: このフェーズは実機評価完了後に **別ブランチ・別タスク** で実施する。
+
 **Goal**: 採用アルゴリズムを正式採用し、評価用コードを除去してコードをクリーンにする
 
 **Independent Test**: クリーンアップ後に `cargo run --release`（フラグなし）で起動し、採用アルゴリズムで画像が正常に表示されること。`grep -r "DITHER_USE" server/src/` で何も出力されないこと
@@ -103,9 +107,23 @@
 
 ---
 
+## 実装時の追加変更（仕様外）
+
+当初計画になかったが評価に有用として実装済み：
+
+- `DITHER_DIFFUSION_RATE` 環境変数（`0.0`〜`1.0`、デフォルト `1.0`）: 誤差拡散率を下げることで遠方への誤差伝播を抑制する
+- `DITHER_ZIGZAG` 環境変数（`1` で有効）: 蛇行スキャン（奇数行を右→左）で誤差の方向バイアスを低減する
+- 起動時ログに現在のディザリング設定を出力（`Dither:` 行）
+
+これらも US4 クリーンアップ時に採用・不採用を判断すること。
+
+---
+
 ## Phase 7: Polish & Cross-Cutting Concerns
 
 **Purpose**: コードコメントの更新と最終確認
+
+> **Note**: このフェーズも US4 完了後に別タスクで実施する。
 
 - [ ] T021 `server/src/main.rs` の `apply_reference_dither` と `nearest_palette_color` 付近のコメントを採用アルゴリズムに合わせて更新する
 - [ ] T022 `cargo test` で全テスト通過を最終確認する
