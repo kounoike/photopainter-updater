@@ -5,6 +5,8 @@ Auto-generated from all feature plans. Last updated: 2026-03-30
 この文書は日本語で記述する。固有名詞、コード識別子、ライブラリ名のみ原文維持可。
 
 ## Active Technologies
+- Rust（サーバーのみ） + 既存の `image` クレートのみ（新規依存なし） (017-dithering-quality)
+- N/A（画像変換はオンザフライ） (017-dithering-quality)
 
 - Rust（サーバー）、C++（ファームウェア） + axum（ルーティング）、既存バイナリフレーム処理実装 (016-default-bin-format)
 
@@ -24,6 +26,7 @@ cargo test [ONLY COMMANDS FOR ACTIVE TECHNOLOGIES][ONLY COMMANDS FOR ACTIVE TECH
 Rust（サーバー）、C++（ファームウェア）: Follow standard conventions
 
 ## Recent Changes
+- 017-dithering-quality: Added Rust（サーバーのみ） + 既存の `image` クレートのみ（新規依存なし）
 
 - 016-default-bin-format: Added Rust（サーバー）、C++（ファームウェア） + axum（ルーティング）、既存バイナリフレーム処理実装
 
