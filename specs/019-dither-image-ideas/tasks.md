@@ -16,8 +16,8 @@
 
 **Purpose**: 実験タスクを実行するための文書・fixture・起動入口をそろえる
 
-- [ ] T001 `specs/019-dither-image-ideas/plan.md` と `specs/019-dither-image-ideas/research.md` を見直し、最初に試す改善 profile 候補を 2-4 件へ絞る判断基準を `specs/019-dither-image-ideas/research.md` に追記する
-- [ ] T002 [P] 固定画像セットの用途と不足している画像カテゴリを洗い出し、必要な追加 fixture 方針を `server/testdata/image-dither-rotate/README.md` に追記する
+- [ ] T001 `specs/019-dither-image-ideas/plan.md` と `specs/019-dither-image-ideas/research.md` を見直し、5 件以上の改善案 catalog を維持したまま最初に試す 2-4 件へ絞る判断基準を `specs/019-dither-image-ideas/research.md` に追記する
+- [ ] T002 [P] 代表入力画像候補の用途と不足している画像カテゴリを洗い出し、必要な追加 fixture 方針を `server/testdata/image-dither-rotate/README.md` に追記する
 - [ ] T003 [P] 比較記録の記入先を `specs/019-dither-image-ideas/quickstart.md` に明記し、都度レビュー前提の実験手順を追記する
 
 ---
@@ -28,13 +28,13 @@
 
 **CRITICAL**: この phase 完了まで user story 実装を開始しない
 
-- [ ] T004 `server/src/config.rs` に `IMAGE_PROFILE`、`EXPERIMENT_IMAGE_SET`、`EXTRA_CONTENT_DIR` を読み込む設定と検証を追加する
+- [ ] T004 `server/src/config.rs` に `IMAGE_PROFILE`、`COMPARE_WITH_BASELINE`、`COMPARE_SPLIT` を読み込む設定と検証を追加する
 - [ ] T005 [P] `server/src/image_pipeline/mod.rs` に named profile を適用する入口と split view 比較モードの共通要求を追加する
 - [ ] T006 [P] `server/src/app.rs` と `server/README.md` に実験モード起動時の表示内容と追加環境変数の説明を追加する
 - [ ] T007 `specs/019-dither-image-ideas/contracts/experiment-config.md` と `specs/019-dither-image-ideas/data-model.md` を実装前提に合わせて更新し、profile・image set・experiment run の対応関係を確定する
 - [ ] T008 `server/src/config.rs` と `specs/019-dither-image-ideas/plan.md` で Allowed Scope / Forbidden Scope を再確認し、HTTP ルート・転送フォーマット・firmware 不変を記録する
 
-**Checkpoint**: profile 切替、固定画像セット指定、比較記録の共通前提がそろっていること
+**Checkpoint**: profile 切替、split view 比較モード指定、比較記録の共通前提がそろっていること
 
 ---
 
@@ -42,7 +42,7 @@
 
 **Goal**: 改善仮説を重複なく整理し、比較対象 profile を独立に説明できる状態にする
 
-**Independent Test**: `specs/019-dither-image-ideas/research.md` と `specs/019-dither-image-ideas/quickstart.md` を読むだけで、少なくとも複数カテゴリの改善 profile 候補とその狙い、リスク、比較観点を説明できること
+**Independent Test**: `specs/019-dither-image-ideas/research.md` と `specs/019-dither-image-ideas/quickstart.md` を読むだけで、少なくとも 5 件以上の改善案 catalog と、最初に試す 2-4 件の profile 候補について狙い、リスク、比較観点を説明できること
 
 ### Verification for User Story 1
 
@@ -62,21 +62,21 @@
 
 ## Phase 4: User Story 2 - 実験して比較する (Priority: P2)
 
-**Goal**: 固定画像セットと split view を使って、候補 profile を実機比較できる状態にする
+**Goal**: 手動差し替え入力画像と split view を使って、候補 profile を実機比較できる状態にする
 
-**Independent Test**: 2 件以上の profile について、固定画像セットを基準に split view もしくは全画面表示で比較し、実機 ePaper 表示の所見を `specs/019-dither-image-ideas/` 配下に記録できること
+**Independent Test**: 2 件以上の profile について、同じ入力画像を手動で差し替えながら split view もしくは全画面表示で比較し、実機 ePaper 表示の所見を `specs/019-dither-image-ideas/` 配下に記録できること
 
 ### Verification for User Story 2
 
-- [ ] T015 [US2] split view 比較と全画面再確認の手順を `specs/019-dither-image-ideas/quickstart.md` に具体化し、固定画像セットと追加画像の使い分けを手動確認する
+- [ ] T015 [US2] split view 比較と全画面再確認の手順を `specs/019-dither-image-ideas/quickstart.md` に具体化し、手動差し替え画像と追加画像の使い分けを手動確認する
 - [ ] T016 [P] [US2] `server/src/image_pipeline/mod.rs` または `server/src/routes.rs` に追加する比較モードの回帰確認テストを追加する
 
 ### Implementation for User Story 2
 
 - [ ] T017 [P] [US2] `server/src/image_pipeline/mod.rs` に baseline と比較対象 profile を左右または上下で合成する split view 生成を実装する
 - [ ] T018 [P] [US2] `server/src/image_pipeline/dither.rs` に最初の比較対象 profile 群を実装する
-- [ ] T019 [US2] `server/testdata/image-dither-rotate/README.md` と必要な fixture を更新し、固定画像セットの比較用途を整備する
-- [ ] T020 [US2] `server/src/config.rs` と `server/run.sh` で image set と追加画像ディレクトリの切替を実行可能にする
+- [ ] T019 [US2] `server/testdata/image-dither-rotate/README.md` と必要な fixture を更新し、代表入力画像候補と手動差し替え手順を整備する
+- [ ] T020 [US2] `server/src/config.rs` と `server/run.sh` で baseline との split view 比較モードを実行可能にする
 - [ ] T021 [US2] 実機 ePaper 表示で baseline と少なくとも 2 件の profile を比較し、結果を `specs/019-dither-image-ideas/research.md` または関連記録へ追記する
 
 **Checkpoint**: 実機主判定で 2 件以上の profile 比較結果が残り、split view と全画面再確認の両方が使えること
@@ -150,7 +150,7 @@
 ```bash
 Task: "server/src/image_pipeline/mod.rs に baseline と比較対象 profile を左右または上下で合成する split view 生成を実装する"
 Task: "server/src/image_pipeline/dither.rs に最初の比較対象 profile 群を実装する"
-Task: "server/testdata/image-dither-rotate/README.md と必要な fixture を更新し、固定画像セットの比較用途を整備する"
+Task: "server/testdata/image-dither-rotate/README.md と必要な fixture を更新し、代表入力画像候補と手動差し替え手順を整備する"
 ```
 
 ---

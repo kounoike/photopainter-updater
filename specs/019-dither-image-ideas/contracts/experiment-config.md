@@ -13,7 +13,7 @@
 | `GET /` | 既存どおり binary frame を返す |
 | `GET /image.bin` | 既存どおり binary frame を返す |
 | `GET /image.bmp` | 既存どおり BMP を返す |
-| `CONTENT_DIR` | 入力画像ディレクトリ |
+| `CONTENT_DIR` | 手動で差し替える入力画像ディレクトリ |
 | `PORT` | 待受ポート |
 
 ## 追加する設定インターフェース
@@ -28,28 +28,29 @@
 | 許容値 | 実装時に定義する profile key 一覧 |
 | エラー時 | 未知の key は起動エラーとして扱う |
 
-### `EXPERIMENT_IMAGE_SET`
+### `COMPARE_WITH_BASELINE`
+
+| 項目 | 内容 |
+|------|------|
+| 型 | 真偽値相当の文字列 |
+| デフォルト | 無効 |
+| 役割 | baseline と評価対象 profile を同一入力画像上で split view 比較する |
+| 許容値 | `0/1`, `true/false`, `yes/no`, `on/off` |
+| エラー時 | 不正値は起動エラーとして扱う |
+
+### `COMPARE_SPLIT`
 
 | 項目 | 内容 |
 |------|------|
 | 型 | 文字列 |
-| デフォルト | `baseline` |
-| 役割 | 比較基準として使う固定画像セットを指定する |
-| 許容値 | 実装時に定義する image set key 一覧 |
-| エラー時 | 未知の key は起動エラーとして扱う |
-
-### `EXTRA_CONTENT_DIR`
-
-| 項目 | 内容 |
-|------|------|
-| 型 | パス文字列 |
-| デフォルト | 未設定 |
-| 役割 | 必要時のみ追加画像の確認に使う補助入力ディレクトリ |
-| エラー時 | パス不正または画像不足は明示的エラーにする |
+| デフォルト | `vertical` |
+| 役割 | split view 比較時の分割方向を指定する |
+| 許容値 | `vertical`, `horizontal` |
+| エラー時 | 不正値は起動エラーとして扱う |
 
 ## 互換性ルール
 
-- `IMAGE_PROFILE=baseline` は現行挙動と互換であること
+- `IMAGE_PROFILE=baseline` かつ `COMPARE_WITH_BASELINE=0` は現行挙動と互換であること
 - 既存 `DITHER_*` 設定を残す場合は、`IMAGE_PROFILE` と矛盾しない優先順位を定義すること
 - `run.sh` から追加設定を透過的に渡せること
 - firmware 側から見える取得 URL は変更しないこと
@@ -61,8 +62,8 @@
 | 項目 | 説明 |
 |------|------|
 | `profile` | どの改善案を試したか |
-| `image_set` | どの固定画像セットで比較したか |
-| `extra_images` | 補足で何を追加したか |
+| `input_image` | どの入力画像を使ったか |
+| `compare_mode` | 単独表示か baseline との split view か |
 | `device_result` | 実機表示での所見 |
 | `decision` | advance / hold / reject |
 
@@ -71,3 +72,4 @@
 - HTTP API のクエリパラメータ化
 - firmware 向けの新しい制御コマンド
 - 転送 payload への実験メタデータ埋め込み
+- 複数画像セットを自動巡回する実験ハーネス

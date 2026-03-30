@@ -23,17 +23,17 @@
 | `risks` | 配列 | 想定される副作用、破綻条件 |
 | `status` | 列挙 | `planned` / `tested` / `hold` / `rejected` / `promoted` |
 
-### 2. EvaluationImageSet
+### 2. EvaluationImage
 
-比較の再現性を担保する入力画像セット。
+比較時に手動で差し替える入力画像。
 
 | フィールド | 型 | 説明 |
 |-----------|----|------|
-| `id` | 文字列 | 画像セットの一意キー |
-| `label` | 文字列 | セット名 |
-| `baseline_images` | 配列 | 基準比較に必ず使う画像一覧 |
-| `optional_images` | 配列 | 必要時のみ補足に使う画像一覧 |
+| `id` | 文字列 | 画像の一意キー |
+| `label` | 文字列 | 比較表に表示する画像名 |
+| `path` | パス | `CONTENT_DIR` に手動配置する入力画像の場所 |
 | `coverage_tags` | 配列 | 無彩色階調、低彩度写真、高彩度領域、輪郭重視など |
+| `is_reference_candidate` | 真偽値 | 代表比較画像候補かどうか |
 
 ### 3. ExperimentRun
 
@@ -42,8 +42,9 @@
 | フィールド | 型 | 説明 |
 |-----------|----|------|
 | `profile_id` | 文字列 | 試した改善 profile |
-| `image_set_id` | 文字列 | 使用した固定画像セット |
-| `extra_image_ids` | 配列 | 補足で使った追加画像 |
+| `input_image_id` | 文字列 | 使用した入力画像 |
+| `compare_mode` | 列挙 | `single` / `split-with-baseline` |
+| `split_direction` | 列挙 | `vertical` / `horizontal` / `none` |
 | `execution_mode` | 列挙 | `bmp-preview` / `binary-preview` / `device-check` |
 | `observations` | 配列 | 粒状感、輪郭保持、色の自然さ、破綻など観察結果 |
 | `decision` | 列挙 | `advance` / `hold` / `reject` |
@@ -69,7 +70,7 @@
 ## 関係
 
 - `ImprovementProfile` 1 件に対し `ExperimentRun` は複数回ありうる
-- `EvaluationImageSet` 1 件を複数 profile が共有する
+- `EvaluationImage` 1 件を複数 profile が共有する
 - `ExperimentRun` は必須の `ComparisonCriterion` をすべて記録対象に持つ
 
 ## 状態遷移
@@ -84,7 +85,7 @@ hold -> tested
 ```
 
 - `planned`: 実験前
-- `tested`: 固定画像セットで比較済み
+- `tested`: 同じ入力画像で比較済み
 - `hold`: 条件付きで保留
 - `rejected`: 今回対象外
 - `promoted`: 次の具体化または採用判断へ進める
@@ -92,6 +93,7 @@ hold -> tested
 ## バリデーションルール
 
 - `id` は比較記録内で一意でなければならない
-- `ExperimentRun` は少なくとも 1 つの `EvaluationImageSet.baseline_images` を使わなければならない
+- `ExperimentRun` は少なくとも 1 つの `EvaluationImage` を参照しなければならない
+- `compare_mode=split-with-baseline` の run には `split_direction` が必須
 - `decision=advance` の run には `next_action` が必須
 - `status=tested` 以上の profile には少なくとも 1 件の `ExperimentRun` が必要
