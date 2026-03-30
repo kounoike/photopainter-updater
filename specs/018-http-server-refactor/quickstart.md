@@ -3,8 +3,9 @@
 ## 1. 既定値起動確認
 
 1. `server/run.sh` を既定値のまま起動する。
-2. 起動ログに待受先、入力元、binary/BMP の取得先、主要変換設定、停止方法が出ることを確認する。
-3. 既定の入力元が `server/contents` と整合することを確認する。
+2. `server/run.sh` の事前案内に待受先と route 一覧が出ることを確認する。
+3. アプリ本体の `tracing` startup log に待受先、入力元、binary/BMP の取得先、主要変換設定、停止方法が出ることを確認する。
+4. 既定の入力元が `server/contents` と整合することを確認する。
 
 ## 2. 設定上書き確認
 
@@ -28,7 +29,7 @@
 ## 5. ログ導線確認
 
 1. 正常なリクエストを 1 回送る。
-2. 1 リクエストにつき 1 件のアクセスログが出ることを確認する。
+2. `tracing` のアクセスログが 1 リクエストにつき 1 行出ることを確認する。
 3. 入力画像未配置または decode 不能な画像で失敗系を発生させる。
 4. 正常系と失敗系が同じ導線で区別できることを確認する。
 
@@ -37,3 +38,10 @@
 1. `cd server && cargo test` を実行する。
 2. 既存 route 応答の回帰、設定読込、起動メッセージ、失敗系が通ることを確認する。
 3. 必要なら `cargo fmt --check` も実行し、分割後の構成が整形規約を満たすことを確認する。
+
+## 7. 実施済み確認
+
+1. `cd server && cargo test` を実行し、23 tests passed を確認した。
+2. `PORT=8123 ./run.sh` で起動し、wrapper の案内と `tracing` startup log の両方を確認した。
+3. `GET /`、`GET /image.bmp`、`GET /image.bin`、`GET /unknown` を実行し、順に `200 binary`、`200 bmp`、`200 binary`、`404 text/plain` を確認した。
+4. `tracing` のアクセスログで `request_id`、`path`、`status`、`outcome` が 1 リクエスト 1 行で出ることを確認した。

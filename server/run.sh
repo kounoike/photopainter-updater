@@ -72,7 +72,7 @@ else
   echo "LAN:   このホストの LAN IP を使って http://<host-ip>:${port}/ へアクセスしてください"
 fi
 echo "Routing: firmware uses binary only when image_url ends with .bin; otherwise BMP routes stay unchanged"
-echo "Access logs: each request is written as one line to stdout"
+echo "Startup and access logs: emitted through tracing to stdout"
 echo "Stop: Ctrl+C"
 
 cd "${script_dir}"

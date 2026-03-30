@@ -5,8 +5,11 @@ edition = "2024"
 
 [dependencies]
 axum = "0.8"
+envconfig = "0.11"
 image = { version = "0.25", default-features = false, features = ["bmp", "png"] }
 tokio = { version = "1", features = ["fs", "macros", "rt-multi-thread"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["fmt", "std"] }
 
 [dev-dependencies]
 tower = { version = "0.5", features = ["util"] }

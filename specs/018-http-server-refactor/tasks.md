@@ -22,9 +22,9 @@
 
 **Purpose**: 依存追加と分割先ファイルの土台を準備する
 
-- [ ] T001 `server/Cargo.toml` に `envconfig`、`tracing`、`tracing-subscriber` を追加する
-- [ ] T002 [P] `server/src/config.rs` と `server/src/logging.rs` を新規作成して設定/ログの受け皿を用意する
-- [ ] T003 [P] `server/src/app.rs`、`server/src/routes.rs`、`server/src/response.rs`、`server/src/image_pipeline/mod.rs` を新規作成して責務分割の土台を用意する
+- [X] T001 `server/Cargo.toml` に `envconfig`、`tracing`、`tracing-subscriber` を追加する
+- [X] T002 [P] `server/src/config.rs` と `server/src/logging.rs` を新規作成して設定/ログの受け皿を用意する
+- [X] T003 [P] `server/src/app.rs`、`server/src/routes.rs`、`server/src/response.rs`、`server/src/image_pipeline/mod.rs` を新規作成して責務分割の土台を用意する
 
 ---
 
@@ -34,12 +34,12 @@
 
 **CRITICAL**: この phase 完了まで user story 実装を開始しない
 
-- [ ] T004 `server/src/config.rs` に `ServerConfig` と `DitherOptions` の設定読込・既定値・入力検証を実装する
-- [ ] T005 [P] `server/src/logging.rs` に `AccessLogEvent`、失敗分類、`tracing` 初期化関数を実装する
-- [ ] T006 [P] `server/src/response.rs` に BMP/Binary/Text の HTTP response helper を移設する
-- [ ] T007 `server/src/app.rs` に `AppState`、起動メッセージ生成、listener/router 起動配線を実装する
-- [ ] T008 `server/src/main.rs` を最小の起動エントリへ整理し、`config.rs`、`logging.rs`、`app.rs`、`routes.rs`、`response.rs`、`image_pipeline` を参照する構成へ置き換える
-- [ ] T009 `specs/018-http-server-refactor/contracts/server-runtime-contract.md` と `specs/018-http-server-refactor/plan.md` を確認し、route 名と起動導線を維持する実装境界を `specs/018-http-server-refactor/quickstart.md` に反映する
+- [X] T004 `server/src/config.rs` に `ServerConfig` と `DitherOptions` の設定読込・既定値・入力検証を実装する
+- [X] T005 [P] `server/src/logging.rs` に `AccessLogEvent`、失敗分類、`tracing` 初期化関数を実装する
+- [X] T006 [P] `server/src/response.rs` に BMP/Binary/Text の HTTP response helper を移設する
+- [X] T007 `server/src/app.rs` に `AppState`、起動メッセージ生成、listener/router 起動配線を実装する
+- [X] T008 `server/src/main.rs` を最小の起動エントリへ整理し、`config.rs`、`logging.rs`、`app.rs`、`routes.rs`、`response.rs`、`image_pipeline` を参照する構成へ置き換える
+- [X] T009 `specs/018-http-server-refactor/contracts/server-runtime-contract.md` と `specs/018-http-server-refactor/plan.md` を確認し、route 名と起動導線を維持する実装境界を `specs/018-http-server-refactor/quickstart.md` に反映する
 
 **Checkpoint**: 基盤完了後に user story 実装へ進む
 
@@ -53,16 +53,16 @@
 
 ### Verification for User Story 1
 
-- [ ] T010 [US1] `specs/018-http-server-refactor/quickstart.md` に責務分離後の回帰確認観点が揃っているか見直して必要なら追記する
-- [ ] T011 [US1] `server/src/routes.rs` と `server/src/image_pipeline/mod.rs` の `#[cfg(test)]` モジュールへ route 応答と変換回帰の自動テストを再配置する
+- [X] T010 [US1] `specs/018-http-server-refactor/quickstart.md` に責務分離後の回帰確認観点が揃っているか見直して必要なら追記する
+- [X] T011 [US1] `server/src/routes.rs` と `server/src/image_pipeline/mod.rs` の `#[cfg(test)]` モジュールへ route 応答と変換回帰の自動テストを再配置する
 
 ### Implementation for User Story 1
 
-- [ ] T012 [P] [US1] `server/src/image_pipeline/load.rs` と `server/src/image_pipeline/dither.rs` に入力画像読込とディザ処理を移設する
-- [ ] T013 [P] [US1] `server/src/image_pipeline/bmp.rs` と `server/src/image_pipeline/binary.rs` に BMP/Binary 生成処理を移設する
-- [ ] T014 [US1] `server/src/image_pipeline/mod.rs` に `ImagePipelineRequest` と `ImagePipelineResult` を実装して変換 API を統一する
-- [ ] T015 [US1] `server/src/routes.rs` に `/`、`/image.bmp`、`/image.bin`、fallback handler と router 構築を実装する
-- [ ] T016 [US1] `server/src/main.rs` と `server/src/app.rs` から旧 `main.rs` 内の重複処理を削除し、責務分離後の呼び出しへ統合する
+- [X] T012 [P] [US1] `server/src/image_pipeline/load.rs` と `server/src/image_pipeline/dither.rs` に入力画像読込とディザ処理を移設する
+- [X] T013 [P] [US1] `server/src/image_pipeline/bmp.rs` と `server/src/image_pipeline/binary.rs` に BMP/Binary 生成処理を移設する
+- [X] T014 [US1] `server/src/image_pipeline/mod.rs` に `ImagePipelineRequest` と `ImagePipelineResult` を実装して変換 API を統一する
+- [X] T015 [US1] `server/src/routes.rs` に `/`、`/image.bmp`、`/image.bin`、fallback handler と router 構築を実装する
+- [X] T016 [US1] `server/src/main.rs` と `server/src/app.rs` から旧 `main.rs` 内の重複処理を削除し、責務分離後の呼び出しへ統合する
 
 **Checkpoint**: User Story 1 が独立して検証可能であること
 
@@ -76,14 +76,14 @@
 
 ### Verification for User Story 2
 
-- [ ] T017 [US2] `server/src/config.rs` の `#[cfg(test)]` モジュールに既定値、環境変数 override、不正値入力の単体テストを追加する
-- [ ] T018 [US2] `specs/018-http-server-refactor/quickstart.md` に `PORT`、`CONTENT_DIR`、ディザ関連設定の確認手順を必要に応じて補強する
+- [X] T017 [US2] `server/src/config.rs` の `#[cfg(test)]` モジュールに既定値、環境変数 override、不正値入力の単体テストを追加する
+- [X] T018 [US2] `specs/018-http-server-refactor/quickstart.md` に `PORT`、`CONTENT_DIR`、ディザ関連設定の確認手順を必要に応じて補強する
 
 ### Implementation for User Story 2
 
-- [ ] T019 [US2] `server/src/config.rs` に `envconfig` ベースの環境変数マッピングと起動エラー整形を実装する
-- [ ] T020 [US2] `server/src/app.rs` に `ServerConfig` から `AppState` を組み立てる初期化処理と起動時の設定要約生成を実装する
-- [ ] T021 [US2] `server/run.sh` を更新し、既存引数互換を維持したまま設定読込後の起動案内が新構成と整合するようにする
+- [X] T019 [US2] `server/src/config.rs` に `envconfig` ベースの環境変数マッピングと起動エラー整形を実装する
+- [X] T020 [US2] `server/src/app.rs` に `ServerConfig` から `AppState` を組み立てる初期化処理と起動時の設定要約生成を実装する
+- [X] T021 [US2] `server/run.sh` を更新し、既存引数互換を維持したまま設定読込後の起動案内が新構成と整合するようにする
 
 **Checkpoint**: User Story 2 が独立して検証可能であること
 
@@ -97,14 +97,14 @@
 
 ### Verification for User Story 3
 
-- [ ] T022 [US3] `server/src/logging.rs` と `server/src/routes.rs` の `#[cfg(test)]` モジュールにアクセスログの成功/失敗分類を確認するテストを追加する
-- [ ] T023 [US3] `specs/018-http-server-refactor/quickstart.md` と `specs/018-http-server-refactor/contracts/server-runtime-contract.md` に起動ログ/アクセスログ確認手順の最終形を反映する
+- [X] T022 [US3] `server/src/logging.rs` と `server/src/routes.rs` の `#[cfg(test)]` モジュールにアクセスログの成功/失敗分類を確認するテストを追加する
+- [X] T023 [US3] `specs/018-http-server-refactor/quickstart.md` と `specs/018-http-server-refactor/contracts/server-runtime-contract.md` に起動ログ/アクセスログ確認手順の最終形を反映する
 
 ### Implementation for User Story 3
 
-- [ ] T024 [US3] `server/src/logging.rs` に起動ログ、アクセスログ、失敗分類ログの `tracing` 出力を実装する
-- [ ] T025 [US3] `server/src/routes.rs` に request 単位の `AccessLogEvent` 生成と正常系/失敗系の記録処理を統合する
-- [ ] T026 [US3] `server/src/app.rs` と `server/src/main.rs` に startup log 初期化と待受情報の出力配線を統合する
+- [X] T024 [US3] `server/src/logging.rs` に起動ログ、アクセスログ、失敗分類ログの `tracing` 出力を実装する
+- [X] T025 [US3] `server/src/routes.rs` に request 単位の `AccessLogEvent` 生成と正常系/失敗系の記録処理を統合する
+- [X] T026 [US3] `server/src/app.rs` と `server/src/main.rs` に startup log 初期化と待受情報の出力配線を統合する
 
 **Checkpoint**: すべての user story が独立検証可能であること
 
@@ -114,10 +114,10 @@
 
 **Purpose**: 横断的な仕上げと最終回帰確認
 
-- [ ] T027 [P] `server/src/main.rs`、`server/src/app.rs`、`server/src/routes.rs`、`server/src/config.rs`、`server/src/logging.rs`、`server/src/response.rs`、`server/src/image_pipeline/` 配下の未使用コードと import を整理する
-- [ ] T028 `specs/018-http-server-refactor/quickstart.md` の手順に沿って `server/run.sh` と主要 route の手動確認結果を反映する
-- [ ] T029 `server/README.md` または既存の server 向け運用文書に設定項目説明と責務分割後の変更対象の探し方を反映する
-- [ ] T030 `server/Cargo.toml` と `server/src/` 配下を対象に `cargo fmt` / `cargo test` の最終実行を完了する
+- [X] T027 [P] `server/src/main.rs`、`server/src/app.rs`、`server/src/routes.rs`、`server/src/config.rs`、`server/src/logging.rs`、`server/src/response.rs`、`server/src/image_pipeline/` 配下の未使用コードと import を整理する
+- [X] T028 `specs/018-http-server-refactor/quickstart.md` の手順に沿って `server/run.sh` と主要 route の手動確認結果を反映する
+- [X] T029 `server/README.md` または既存の server 向け運用文書に設定項目説明と責務分割後の変更対象の探し方を反映する
+- [X] T030 `server/Cargo.toml` と `server/src/` 配下を対象に `cargo fmt` / `cargo test` の最終実行を完了する
 
 ---
 
