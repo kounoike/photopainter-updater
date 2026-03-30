@@ -8,19 +8,20 @@
 
 ## エンティティ
 
-### 1. AdaptivePhotoProfile
+### 1. ExperimentalAlgorithm
 
-写真調画像向けに追加する改善 profile。今回の実装キーは `adaptive-photo`。
+写真調画像向けに試した追加改善アルゴリズム。runtime には残さず、再現用メモとして保持する。
 
 | フィールド | 型 | 説明 |
 |-----------|----|------|
-| `id` | 文字列 | profile の一意キー |
+| `id` | 文字列 | 実験アルゴリズムの一意キー |
 | `label` | 文字列 | 表示用の短い名称 |
 | `base_profile` | 列挙 | 既存比較基準。今回は `color-priority` を想定する |
 | `blue_bias` | 数値 | 青系領域で有色候補を残しやすくする補正量 |
 | `highlight_guard` | 数値 | 明るい低彩度面で誤差拡散を弱める補正量 |
 | `skin_tone_guard` | 数値 | 肌寄りの暖色中間調で誤差拡散を弱める補正量 |
-| `status` | 列挙 | `planned` / `tested` / `hold` / `promoted` |
+| `known_issues` | 配列 | 青空未改善、cyan/teal 系の服色が普通の水色へ寄るなどの判明問題 |
+| `status` | 列挙 | `planned` / `tested` / `hold` / `rejected` |
 
 ### 2. EvaluationImage
 
@@ -58,24 +59,25 @@
 
 ## 関係
 
-- `AdaptivePhotoProfile` は 1 件以上の `ComparisonResult` を持つ
+- `ExperimentalAlgorithm` は 1 件以上の `ComparisonResult` を持つ
 - `EvaluationImage` は複数の `ComparisonResult` から参照される
 - `LocalCheckPoint` は新 profile のローカル回帰確認に使われる
 
 ## 状態遷移
 
-### AdaptivePhotoProfile
+### ExperimentalAlgorithm
 
 ```text
 planned -> tested -> promoted
 planned -> tested -> hold
+planned -> tested -> rejected
 hold -> tested
 ```
 
 - `planned`: 実装前または比較前
 - `tested`: ローカルまたは手動比較を実施済み
 - `hold`: 条件付きで保留
-- `promoted`: 次の採用判断へ進める
+- `rejected`: 今回は runtime 採用しない
 
 ## バリデーションルール
 

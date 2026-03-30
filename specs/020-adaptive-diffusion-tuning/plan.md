@@ -7,7 +7,7 @@
 
 ## Summary
 
-`019` で暫定上位候補になった `color-priority + DITHER_DIFFUSION_RATE=0.8` を比較基準として維持しつつ、写真調画像で残った 3 つの弱点である「青空など青系の広い面の保持」「明るい低彩度面の濁り抑制」「肌の中間調保持」を追加改善する。実装では新 profile `adaptive-photo` を導入し、`server/` 側の画像変換ロジック、比較用 fixture、評価手順の更新に限定する。HTTP エンドポイント、転送フォーマット、firmware は変更しない。
+`019` で暫定上位候補になった `color-priority + DITHER_DIFFUSION_RATE=0.8` を比較基準として維持しつつ、写真調画像で残った 3 つの弱点である「青空など青系の広い面の保持」「明るい低彩度面の濁り抑制」「肌の中間調保持」を追加改善候補として検討した。検討の結果、試作アルゴリズムは runtime には残さず、`server/` 側の現行実装は据え置いたうえで、比較用 fixture、評価手順、再現用アルゴリズム文書を残す。HTTP エンドポイント、転送フォーマット、firmware は変更しない。
 
 ## Technical Context
 
@@ -80,9 +80,9 @@ specs/
 
 ## 設計方針
 
-### 1. 追加改善は新しい named profile として扱う
+### 1. 追加改善は再現用アルゴリズムとして残す
 
-`019` で導入した profile ベース運用を維持し、今回の追加改善は既存 profile を直接上書きせず、比較可能な新 profile `adaptive-photo` として定義する。これにより、`color-priority + DITHER_DIFFUSION_RATE=0.8` を基準に差分を切り分けやすくする。
+`019` で導入した profile ベース運用は維持するが、今回の追加改善は常設 profile としては採用しない。代わりに、再試行可能なアルゴリズム要約を文書へ残し、`color-priority + DITHER_DIFFUSION_RATE=0.8` を基準に差分を切り分けた記録だけを保持する。
 
 ### 2. 写真調の弱点に対して局所制御を入れる
 
@@ -102,13 +102,11 @@ specs/
 
 ## 実装対象メモ
 
-- `server/src/config.rs`: 新 profile 定義、既定値、環境変数の組み合わせ整理
-- `server/src/image_pipeline/dither.rs`: 写真調向けの候補色選択補正と局所誤差拡散制御
-- `server/src/image_pipeline/mod.rs`: 新 profile を既存比較フローへ接続
-- `server/src/app.rs`: 起動時メッセージに新 profile 情報を反映
-- `server/README.md`: 新 profile の起動方法と比較例を追記
+- `server/src/config.rs`: 現行 profile を維持する
+- `server/src/image_pipeline/dither.rs`: 追加実装は残さず、現行ロジックを維持する
+- `server/README.md`: 現行 profile の説明を維持する
 - `server/testdata/dither-result-check/`: 青保持を評価できる代表画像の整備
-- `specs/020-adaptive-diffusion-tuning/`: 判断基準、比較結果、手順を文書化
+- `specs/020-adaptive-diffusion-tuning/`: 判断基準、比較結果、再現用アルゴリズム、手順を文書化
 
 ## Complexity Tracking
 
@@ -116,6 +114,6 @@ specs/
 
 ## 現時点の判断
 
-- 実装済みの具体化対象は `adaptive-photo`
-- ローカル自動テストでは意図した色域補正を確認できた
-- 次の採用判断は `image7` / `image8` を使った実機比較結果を待って行う
+- runtime に残す具体化対象はなし
+- 比較の結果、現行 `color-priority + DITHER_DIFFUSION_RATE=0.8` を置き換える根拠は得られなかった
+- 次に進める場合は、新たに判明した cyan/teal 系の服色の崩れを問題設定へ加えて再設計する

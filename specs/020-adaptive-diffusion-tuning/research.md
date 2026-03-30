@@ -2,15 +2,15 @@
 
 **Branch**: `020-adaptive-diffusion-tuning` | **Date**: 2026-03-30
 
-## 1. 追加改善の実装単位
+## 1. 追加改善の記録単位
 
-**Decision:** 今回の改善は既存 `color-priority` を直接変更せず、新しい写真調向け profile `adaptive-photo` として追加する。
+**Decision:** 今回の改善は runtime の新 profile としては残さず、再現用アルゴリズム文書として残す。
 
-**Rationale:** `019` では `color-priority + DITHER_DIFFUSION_RATE=0.8` が暫定上位候補になっており、これを基準として残したまま差分比較できる状態が必要である。既存 profile を上書きすると、どの改善が効いたか切り分けにくくなる。
+**Rationale:** `019` では `color-priority + DITHER_DIFFUSION_RATE=0.8` が暫定上位候補になっており、これを基準として残したまま差分比較できる状態が必要である。今回の試作は実機で有意差を示せず、新しい問題点も見つかったため、runtime に残すより再現可能な文書として残す方が妥当である。
 
 **Alternatives considered:**
 - `color-priority` の既定値をそのまま書き換える: 比較基準が消え、回帰評価がしにくい。
-- 環境変数を個別に増やして都度組み合わせる: 実験条件の再現性が落ちる。
+- 試作コードをそのまま残す: 差が見えない状態で複雑さだけが残る。
 
 ---
 
@@ -62,27 +62,84 @@
 
 ---
 
-## 6. 実装後のローカル確認
+## 6. 試作アルゴリズムの再現メモ
 
-**Decision:** 実装直後の完了判定には `cargo test` を使い、青寄り、高明度低彩度、肌寄り暖色の 3 色域に対する挙動確認を自動テストで担保する。
+**Decision:** 今回試した追加改善は、次の 3 要素を組み合わせた実験アルゴリズムとして文書に残す。
 
-**Rationale:** この turn では実機 ePaper の撮り直しや肉眼比較までは含めず、まず `adaptive-photo` が既存の配信経路で安全に動作し、今回狙った色域に対して補正が効いていることをローカルで確認する。実機比較は follow-up として残す。
+**Rationale:** 実装コードは残さないが、後で同じ案を再試行できる程度の再現性は必要である。
 
-**Alternatives considered:**
-- 実機比較完了まで実装完了を遅らせる: コード変更の安全性確認と実機所見の準備を同時に進めにくい。
-- 自動テストを追加しない: 青保持や局所 diffusion 制御の意図がコードから追いにくい。
+### 再現用アルゴリズム要約
+
+1. ベースは `color-priority + DITHER_DIFFUSION_RATE=0.8`
+2. 青系の広い面では、白黒候補より青候補を選びやすくする補正を追加する
+3. 高明度かつ低彩度の領域では、誤差拡散を局所的に弱める
+4. 肌寄りの暖色中間調でも、誤差拡散を局所的に弱める
+
+### 試作時に見えた限界
+
+- 実機では `color-priority + DITHER_DIFFUSION_RATE=0.8` と有意差が見えにくかった
+- 青空保持の改善は確認できなかった
+- `image8` の cyan/teal 系の独特な服色が、実機では普通の水色に寄って見える問題が残った
 
 ### ローカル確認結果
 
-- `cargo test` は通過し、`adaptive-photo` の config 解決と binary response 生成に回帰がないことを確認した
-- `server/src/image_pipeline/dither.rs` のユニットテストで、青寄り領域の青優先補正、明るい低彩度面の diffusion 抑制、肌寄り暖色の diffusion 抑制を確認した
-- 実機 ePaper での最終比較は未実施のため、`advance` / `hold` / `reject` の最終判定は follow-up とする
+- 試作コードを外した状態で `cargo test` が通ることを確認した
+- 現行 runtime は `color-priority + DITHER_DIFFUSION_RATE=0.8` を基準に据えたまま維持する
 
 ---
 
-## 7. 判定基準と現時点の結論
+## 7. 実機観察メモ欄
 
-### 7-1. `advance` / `hold` / `reject` の基準
+以下は、今回の追加改善検討で見えた所見を残す欄として使う。
+
+### 7-0. `image6` 補足メモ
+
+- artifact: `specs/020-adaptive-diffusion-tuning/artifacts/image6/image6_splitview.jpg`
+- compare_target: `color-priority + DITHER_DIFFUSION_RATE=0.8`
+- observation:
+  - 右半分の方が全体に黄色が鮮やかに見え、第一印象は良い
+  - 写真調向け追加改善案を当てても、少なくともこのイラスト調入力では大きな破綻より先に「黄の鮮やかさ向上」が目についた
+- interpretation:
+  - イラスト調に対して即座に悪化するタイプの回帰は今のところ強く見えていない
+  - ただし `image6` は今回の主判定画像ではないため、採否判断の主根拠には使わず補足所見として扱う
+
+### 7-1. `image7`
+
+- compare_target: `color-priority + DITHER_DIFFUSION_RATE=0.8`
+- artifact: `specs/020-adaptive-diffusion-tuning/artifacts/image7/image7_splitview.jpg`
+- skin_midtones:
+  - 右半分の方が全体に見栄えが良く、左半分より破綻感が少ない
+- bright_low_saturation:
+  - 左半分はゴミが乗っているような見え方があり、右半分の方が素直に見える
+- noise_or_black_speckles:
+  - 左半分でノイズや汚れに見える粒が目立つ
+- false_color_risk:
+  - 現時点では右半分で強い悪化は感じない
+- decision: `hold`
+- next_action:
+  - 肌と明るい背景のどちらに効いているかを単独表示でも一度だけ確認する
+
+### 7-2. `image8`
+
+- compare_target: `color-priority + DITHER_DIFFUSION_RATE=0.8`
+- artifact: `specs/020-adaptive-diffusion-tuning/artifacts/image8/image8_splitview.jpg`
+- blue_retention:
+  - 右半分の方が全体としては良く見えるが、どちらの半分にも青空が十分には見えない
+- bright_background_grain:
+  - 左半分はゴミが乗っているようなノイズ感があり、右半分の方が見やすい
+- side_effects:
+  - 右半分が優勢でも、今回主目的だった青空保持は未達のまま残っている
+- neutral_absorption:
+  - 左半分は白灰や汚れ寄りに見えやすい
+- cyan_teal_clothing:
+  - 元画像の緑よりの水色っぽい独特の服色が、実機では普通の水色に寄って見える
+- decision: `reject` 寄りの `hold`
+- next_action:
+  - 青空保持だけでなく、cyan/teal 系衣服の色崩れも新しい問題設定として追加する
+
+## 8. 判定基準と現時点の結論
+
+### 8-1. `advance` / `hold` / `reject` の基準
 
 - `advance`
   - ローカル回帰に加え、写真調 2 系統以上の比較で既存上位候補を上回る改善が確認できる
@@ -91,14 +148,16 @@
 - `reject`
   - ローカル回帰で既存 profile を悪化させる、または狙った色域に対する改善が確認できない
 
-### 7-2. 現時点の結論
+### 8-2. 現時点の結論
 
-- `hold`: `adaptive-photo`
-  - ローカル自動テストでは今回狙った 3 色域への補正を確認できた
-  - ただし `image7` / `image8` を使った実機比較をまだ終えていないため、最終採用候補へは昇格させない
+- `reject`: 写真調向け追加改善の runtime 採用
+  - `image6` / `image7` / `image8` を見比べても、既存 `color-priority + DITHER_DIFFUSION_RATE=0.8` に対する有意差は見えにくかった
+  - 一部で左半分の「ゴミが乗ったような」ノイズ感との差は見えたが、profile 追加に見合うだけの明確な前進とは言いにくい
+  - `image8` では青空保持が改善せず、さらに cyan/teal 系の服色が普通の水色に寄る新しい問題点が見つかった
+  - したがって、今回の試作は runtime に残さず、再現用アルゴリズム文書だけを保持する
 
-### 7-3. 次アクション
+### 8-3. 次アクション
 
-- `image7` で明るい低彩度面と肌の中間調の見え方を `color-priority + DITHER_DIFFUSION_RATE=0.8` と比較する
-- `image8` で青系の広い面と明るい背景の見え方を `color-priority + DITHER_DIFFUSION_RATE=0.8` と比較する
-- 実機比較で優位性が確認できた場合に `advance` へ更新し、既定 profile 候補として再評価する
+- 現行 runtime は `color-priority + DITHER_DIFFUSION_RATE=0.8` を維持する
+- 次に写真調改善を再開する場合は、青空保持だけでなく cyan/teal 系衣服の色崩れも問題設定に含める
+- 実験を再開する場合は、本書の再現用アルゴリズム要約を出発点にして別 feature として切り直す

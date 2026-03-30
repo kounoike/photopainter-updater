@@ -1,10 +1,10 @@
-# 実験設定コントラクト: 写真調追加改善 profile
+# 実験設定コントラクト: 写真調追加改善の再現条件
 
 **Branch**: `020-adaptive-diffusion-tuning` | **Date**: 2026-03-30
 
 ## 目的
 
-写真調向け追加改善を、既存の server 起動経路と比較ワークフローの中で再現可能にするため、profile と検証入力の責務を定義する。
+写真調向け追加改善の検討結果を、既存の server 起動経路と比較ワークフローの中で再現可能にするため、比較基準と検証入力の責務を定義する。追加アルゴリズム自体は runtime に残さない。
 
 ## 維持するインターフェース
 
@@ -16,7 +16,7 @@
 | `CONTENT_DIR` | 手動で差し替える入力画像ディレクトリ |
 | `PORT` | 待受ポート |
 
-## 追加・更新する設定インターフェース
+## 比較時に使う設定インターフェース
 
 ### `IMAGE_PROFILE`
 
@@ -24,8 +24,8 @@
 |------|------|
 | 型 | 文字列 |
 | デフォルト | `baseline` |
-| 許容値 | 既存 profile に加えて、新しい写真調向け profile `adaptive-photo` を追加する |
-| 役割 | 既存上位候補と追加改善案を切り替える |
+| 許容値 | 現行の `baseline`, `no-sat-boost`, `color-priority`, `hue-guard`, `color-priority-hue-guard` |
+| 役割 | 既存上位候補と比較基準を切り替える |
 | エラー時 | 未知の key は起動エラーとして扱う |
 
 ### `DITHER_DIFFUSION_RATE`
@@ -41,7 +41,6 @@
 
 - `IMAGE_PROFILE=baseline` かつ比較設定なしは現行挙動と互換であること
 - 既存 profile の key と比較モードは破壊しないこと
-- 新 profile は `COMPARE_WITH_BASELINE` または `COMPARE_PROFILE` と組み合わせて比較できること
 - firmware から見える URL と payload 形式は変更しないこと
 
 ## 評価入力の最小要件
@@ -60,3 +59,4 @@
 - firmware 向けの新しい制御コマンド
 - 転送 payload への評価メタデータ埋め込み
 - 自動化された実機比較ハーネスの導入
+- 実験アルゴリズムを常設 profile として runtime に残すこと

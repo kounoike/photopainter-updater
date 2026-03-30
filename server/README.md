@@ -10,7 +10,7 @@
 
 - `PORT`: 待受ポート。既定値は `8000`
 - `CONTENT_DIR`: 入力画像 `image.png` を読むディレクトリ。既定値は `server/contents`
-- `IMAGE_PROFILE`: `baseline` / `no-sat-boost` / `color-priority` / `hue-guard` / `color-priority-hue-guard` / `adaptive-photo`
+- `IMAGE_PROFILE`: `baseline` / `no-sat-boost` / `color-priority` / `hue-guard` / `color-priority-hue-guard`
 - `COMPARE_WITH_BASELINE`: `0/1` または `true/false`
 - `COMPARE_PROFILE`: 比較相手の profile。指定時は `baseline` 以外とも比較できる
 - `COMPARE_SPLIT`: `vertical` または `horizontal`
@@ -45,15 +45,6 @@ COMPARE_SPLIT=horizontal \
 ./run.sh
 ```
 
-`adaptive-photo` を `color-priority + DITHER_DIFFUSION_RATE=0.8` 相当と上下比較:
-
-```bash
-IMAGE_PROFILE=adaptive-photo \
-COMPARE_PROFILE=color-priority \
-DITHER_DIFFUSION_RATE=0.8 \
-COMPARE_SPLIT=horizontal \
-./run.sh
-```
 
 ## 責務分割後の変更対象
 

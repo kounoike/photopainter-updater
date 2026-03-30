@@ -45,9 +45,6 @@ pub struct DitherOptions {
     pub neutral_bias: f32,
     pub chroma_bias: f32,
     pub hue_guard: f32,
-    pub blue_bias: f32,
-    pub highlight_guard: f32,
-    pub skin_tone_guard: f32,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -57,7 +54,6 @@ pub enum ImageProfile {
     ColorPriority,
     HueGuard,
     ColorPriorityHueGuard,
-    AdaptivePhoto,
 }
 
 impl ImageProfile {
@@ -68,7 +64,6 @@ impl ImageProfile {
             Self::ColorPriority => "color-priority",
             Self::HueGuard => "hue-guard",
             Self::ColorPriorityHueGuard => "color-priority-hue-guard",
-            Self::AdaptivePhoto => "adaptive-photo",
         }
     }
 
@@ -79,7 +74,6 @@ impl ImageProfile {
             Self::ColorPriority => "Color Priority",
             Self::HueGuard => "Hue Guard",
             Self::ColorPriorityHueGuard => "Color Priority + Hue Guard",
-            Self::AdaptivePhoto => "Adaptive Photo",
         }
     }
 
@@ -94,9 +88,6 @@ impl ImageProfile {
                 neutral_bias: 0.0,
                 chroma_bias: 0.0,
                 hue_guard: 0.0,
-                blue_bias: 0.0,
-                highlight_guard: 0.0,
-                skin_tone_guard: 0.0,
             },
             Self::NoSaturationBoost => DitherOptions {
                 saturation_mode: SaturationMode::Neutral,
@@ -121,18 +112,6 @@ impl ImageProfile {
                 neutral_bias: 1500.0,
                 chroma_bias: -200.0,
                 hue_guard: 3500.0,
-                ..Self::Baseline.default_dither_options()
-            },
-            Self::AdaptivePhoto => DitherOptions {
-                use_lab: true,
-                diffusion_rate: 0.8,
-                saturation_mode: SaturationMode::Neutral,
-                neutral_bias: 1550.0,
-                chroma_bias: -260.0,
-                hue_guard: 1800.0,
-                blue_bias: 1000.0,
-                highlight_guard: 0.38,
-                skin_tone_guard: 0.28,
                 ..Self::Baseline.default_dither_options()
             },
         }
@@ -266,9 +245,8 @@ fn parse_image_profile(raw: &str) -> Result<ImageProfile, String> {
         "color-priority" => Ok(ImageProfile::ColorPriority),
         "hue-guard" => Ok(ImageProfile::HueGuard),
         "color-priority-hue-guard" => Ok(ImageProfile::ColorPriorityHueGuard),
-        "adaptive-photo" => Ok(ImageProfile::AdaptivePhoto),
         _ => Err(format!(
-            "IMAGE_PROFILE は baseline / no-sat-boost / color-priority / hue-guard / color-priority-hue-guard / adaptive-photo のいずれかで指定してください"
+            "IMAGE_PROFILE は baseline / no-sat-boost / color-priority / hue-guard / color-priority-hue-guard のいずれかで指定してください"
         )),
     }
 }
@@ -491,26 +469,5 @@ mod tests {
         let err = ServerConfig::from_env().expect_err("conflicting compare settings");
 
         assert!(err.contains("COMPARE_PROFILE"));
-    }
-
-    #[test]
-    fn adaptive_photo_profile_uses_expected_defaults() {
-        let _lock = env_lock().lock().expect("env lock");
-        let _profile = EnvGuard::set("IMAGE_PROFILE", "adaptive-photo");
-        let _compare = EnvGuard::unset("COMPARE_WITH_BASELINE");
-        let _compare_profile = EnvGuard::unset("COMPARE_PROFILE");
-        let _split = EnvGuard::unset("COMPARE_SPLIT");
-        let _lab = EnvGuard::unset("DITHER_USE_LAB");
-        let _atk = EnvGuard::unset("DITHER_USE_ATKINSON");
-        let _rate = EnvGuard::unset("DITHER_DIFFUSION_RATE");
-        let _zigzag = EnvGuard::unset("DITHER_ZIGZAG");
-
-        let config = ServerConfig::from_env().expect("adaptive photo config");
-
-        assert_eq!(config.render_options.profile, ImageProfile::AdaptivePhoto);
-        assert_eq!(
-            config.render_options.dither_options,
-            ImageProfile::AdaptivePhoto.default_dither_options()
-        );
     }
 }
