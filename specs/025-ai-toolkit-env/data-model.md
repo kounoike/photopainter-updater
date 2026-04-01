@@ -2,87 +2,85 @@
 
 **Phase 1 成果物** | Branch: `025-ai-toolkit-env`
 
-## 1. `AiToolkitEnvironment`
+## 1. `AiToolkitService`
 
-AI Toolkit を試す利用者が参照する論理的な試用環境全体。
-
-| 項目 | 型 | 説明 |
-|------|----|------|
-| `name` | string | 利用者向け名称。`AI Toolkit 試用環境` を想定 |
-| `entrypoint` | enum | 正式導線。`compose` 固定 |
-| `base_services` | list of `BaseServiceSet` | 土台として使う既存サービス群 |
-| `representative_operation` | `RepresentativeOperation` | 試用成功判定に使う代表操作 |
-| `recovery_hints` | list of `RecoveryHint` | 失敗時の確認観点 |
-| `docs` | list of path | 利用者が参照する README / quickstart / contract |
-
-### ルール
-
-- AI Toolkit 試用環境は新規常駐サービス群ではなく、既存 Compose 構成の利用者向け束ね直しとして扱う
-- `entrypoint` は Docker Compose 中心で一意に扱う
-
-## 2. `BaseServiceSet`
-
-既存構成のうち、AI Toolkit 試用環境の土台として維持するサービス定義。
+`compose.yml` に追加される AI Toolkit 実行サービス。
 
 | 項目 | 型 | 説明 |
 |------|----|------|
-| `service_name` | enum | `comfyui` または `ollama` |
-| `role` | string | AI Toolkit 内での役割 |
-| `startup_mode` | string | 単独起動または全体起動の想定 |
-| `persistent_path` | path | ホスト側永続ディレクトリ |
-| `user_visible_entry` | path or URL | 利用者が最初に触る入口 |
+| `service_name` | string | `ai-toolkit` |
+| `image` | string | `ostris/aitoolkit:latest` を想定 |
+| `ui_port` | number | Web UI 公開ポート |
+| `restart_policy` | string | 再起動方針 |
+| `gpu_requirement` | string | GPU 利用前提の説明 |
+| `env_config` | list of `AiToolkitEnvConfig` | 起動時に参照する環境変数 |
+| `storage` | list of `AiToolkitStorage` | 永続化対象 |
 
 ### ルール
 
-- `service_name` は既存 `compose.yml` の命名を維持する
-- AI Toolkit 追加後も単独利用導線を残す
+- `service_name` は `ai-toolkit` として固定する
+- 既存 `comfyui` と `ollama` は別 service のまま維持する
 
-## 3. `TrialEntryPoint`
+## 2. `AiToolkitStorage`
 
-利用者が AI Toolkit を試し始めるときに辿る入口情報。
+AI Toolkit が継続利用する設定、データ、出力の保存先。
 
 | 項目 | 型 | 説明 |
 |------|----|------|
-| `prerequisites` | list of string | Docker/GPU/設定ファイルなどの前提 |
-| `prepare_steps` | ordered list | `.env` 準備や必要ディレクトリ確認 |
-| `start_command` | string | 主な起動コマンド |
-| `verification_steps` | ordered list | 起動後に状態確認する順序 |
+| `name` | enum | `config` / `datasets` / `output` / `db` / `hf-cache` |
+| `host_path` | path | ホスト側の保存先 |
+| `container_path` | path | コンテナ内の対応パス |
+| `persistence_role` | string | 再起動後に保持したい内容 |
 
 ### ルール
 
-- 入口手順は README で概要、quickstart で詳細を持つ
-- 追加の口頭説明なしに利用開始判断できること
+- US2 を満たすため、再起動後も同じ `host_path` を参照できること
+- `db` は単一ファイルでも保存対象として扱う
 
-## 4. `RepresentativeOperation`
+## 3. `AiToolkitEnvConfig`
 
-試用成功判定に使う最小の利用者操作。
+AI Toolkit 起動前に利用者が調整しうる `.env` 設定。
 
 | 項目 | 型 | 説明 |
 |------|----|------|
-| `operation_name` | string | 利用者が識別できる代表操作名 |
-| `command` | string | 代表操作として実行するコマンド |
-| `depends_on` | list of service name | 実行に必要な主要サービス |
-| `success_signal` | string | 成功とみなす観測結果 |
-| `fallback_signal` | string | 失敗時に次の確認先へ進むための兆候 |
+| `name` | string | 環境変数名 |
+| `default_value` | string | 既定値 |
+| `required` | boolean | 必須か任意か |
+| `purpose` | string | 利用目的 |
 
 ### ルール
 
-- 代表操作は `docker compose exec comfyui curl -fsS http://ollama:11434/api/version` を想定する
-- 代表操作は 1 件でよいが、主要サービスの起動確認に続く手順であること
-- 技術者以外でも読み取れる成功シグナル表現を使う
+- 少なくとも UI 公開と認証に関わる入口を含める
+- `.env.example` で説明される名前と一致させる
+
+## 4. `AiToolkitAccessPath`
+
+利用者が AI Toolkit UI へ到達するための入口情報。
+
+| 項目 | 型 | 説明 |
+|------|----|------|
+| `start_command` | string | AI Toolkit を起動するコマンド |
+| `access_url` | string | 利用者がブラウザで開く URL |
+| `success_signal` | string | UI 到達を確認する条件 |
+| `failure_signal` | string | 起動失敗時に見える兆候 |
+
+### ルール
+
+- `start_command` は `docker compose up -d ai-toolkit` を想定する
+- `success_signal` は Web UI 到達で定義する
 
 ## 5. `RecoveryHint`
 
-試用失敗時に利用者が参照する復帰・切り分け情報。
+利用者が起動失敗時に最初に確認する切り分け情報。
 
 | 項目 | 型 | 説明 |
 |------|----|------|
-| `category` | enum | `compose-state` / `env-config` / `persistent-data` |
-| `symptom` | string | 利用者が遭遇する症状 |
+| `category` | enum | `compose-state` / `env-config` / `storage-path` |
+| `symptom` | string | 利用者が見ている症状 |
 | `check_point` | string | 最初に確認する対象 |
-| `next_action` | string | 次に取るべき行動 |
+| `next_action` | string | 次に取る行動 |
 
 ### ルール
 
-- 復帰の切り口は 3 系統に統一する
-- 代表操作失敗時も、まず `category` に対応する確認へ誘導する
+- 切り口は 3 系統に統一する
+- quickstart と contract で同じ分類を使う

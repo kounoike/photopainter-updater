@@ -4,7 +4,7 @@
 
 ## 目的
 
-既存 `compose.yml` 上の ComfyUI と Ollama を AI Toolkit 試用環境として見せる際、利用者が期待してよい入口、確認方法、既存導線との互換条件を固定する。
+`ostris/ai-toolkit` をこのリポジトリの `compose.yml` へ追加する際、利用者が期待してよい service 名、起動方法、Web UI 到達条件、既存導線との互換性を固定する。
 
 ## 維持する既存インターフェース
 
@@ -12,35 +12,36 @@
 |------|------|
 | `comfyui` service 名 | 変更しない |
 | `ollama` service 名 | 変更しない |
-| `COMFYUI_PORT` | 既存どおり ComfyUI Web UI のホスト公開に使う |
-| `COMFYUI_DATA_DIR` / `OLLAMA_DATA_DIR` | 既存どおりホスト側永続化先として扱う |
+| `COMFYUI_PORT` | 既存どおり ComfyUI Web UI 公開に使う |
 | `README.md` の ComfyUI / Ollama 個別導線 | 破壊しない |
 | `photopainter` network | 既存どおり共有 bridge network として維持する |
 
-## AI Toolkit として追加で見せるインターフェース
+## AI Toolkit として追加するインターフェース
 
-### 利用者入口
-
-| 項目 | 契約 |
-|------|------|
-| 入口文書 | ルート `README.md` に AI Toolkit 試用環境の入口を追加する |
-| 詳細手順 | `specs/025-ai-toolkit-env/quickstart.md` に置く |
-| 正式導線 | Docker Compose 起動を中心とする |
-| 土台サービス | ComfyUI と Ollama を明示する |
-
-### 試用成功判定
+### `ai-toolkit` service
 
 | 項目 | 契約 |
 |------|------|
-| 最小成功条件 | 主要サービス起動後、代表操作 1 件を成功できること |
-| 代表操作 | `docker compose exec comfyui curl -fsS http://ollama:11434/api/version` を使い、README と quickstart で同じ説明を使う |
-| 復帰方針 | `compose-state`、`env-config`、`persistent-data` の 3 系統で案内する |
+| service 名 | `ai-toolkit` |
+| image | `ostris/aitoolkit:latest` |
+| ports | Web UI 到達用ポートを公開する |
+| volumes | config / datasets / output / DB / cache の保存先を持つ |
+| restart | `unless-stopped` 相当を維持する |
+| GPU 前提 | 既存 compose 方針に沿って明示する |
+
+### `.env` 入口
+
+| 項目 | 契約 |
+|------|------|
+| UI ポート | `.env.example` に入口を持つ |
+| 認証設定 | `AI_TOOLKIT_AUTH` を案内する |
+| 保存先 | AI Toolkit 用保存先の説明を持つ |
 
 ## 利用契約
 
-- 利用者は `.env.example` を `.env` へコピーして試用を開始できること
-- 利用者は `docker compose up -d` または明示された同等コマンドで主要サービスを起動できること
-- 利用者は README から quickstart へ移動し、代表操作 1 件の成功可否を自力で判断できること
+- 利用者は `.env.example` を `.env` へコピーして AI Toolkit を起動できること
+- 利用者は `docker compose up -d ai-toolkit` で AI Toolkit を個別起動できること
+- 利用者は README から quickstart へ移動し、Web UI 到達可否を自力で判断できること
 - AI Toolkit を使わない利用者も、従来どおり ComfyUI または Ollama の単独導線を参照できること
 
 ## 検証契約
@@ -48,14 +49,14 @@
 最低限、以下の確認が再現できること。
 
 1. `docker compose config` が成功する
-2. 主要サービスが Compose 上で起動できる
-3. 利用者が状態確認コマンドまたは同等の観測方法で起動状態を把握できる
-4. `docker compose exec comfyui curl -fsS http://ollama:11434/api/version` の成功可否を README / quickstart の手順どおりに判断できる
-5. 失敗時に `compose-state`、`env-config`、`persistent-data` のいずれかから次の確認先を特定できる
+2. `docker compose up -d ai-toolkit` でサービス起動できる
+3. `docker compose ps ai-toolkit` または同等手段で起動状態を把握できる
+4. 利用者が指定 URL へアクセスして Web UI 到達可否を判断できる
+5. 再起動後も保存先の参照位置が維持される
 
 ## 非目標
 
-- 新しい本番運用向け AI サービス基盤の追加
-- `firmware/` や `server/` 本体への AI Toolkit 統合実装
-- 既存 ComfyUI / Ollama 導線の置き換え
-- クラウド依存の新規追加や複雑なオーケストレーション導入
+- AI Toolkit 自体のソース改変
+- AI Toolkit の学習ジョブ設計やモデル選定の最適化
+- `firmware/` や `server/` 本体との統合
+- 既存 ComfyUI / Ollama 導線の置換

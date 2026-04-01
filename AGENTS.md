@@ -130,6 +130,8 @@ Use slash commands:
 - ローカルファイル（参照画像セット、学習設定、キャッシュ、LoRA 成果物、validation 画像） (024-zimage-character-lora)
 - Docker Compose v2、YAML、Markdown、既存コンテナイメージ設定 + Docker Engine / Docker Compose v2、既存 `yanwk/comfyui-boot:cu128-slim`、既存 `ollama/ollama`、既存 `.env.example` と `README.md` (025-ai-toolkit-env)
 - ホスト bind mount ディレクトリ（`./comfyui-data`、`./ollama-data`）、feature 配下の Markdown 成果物 (025-ai-toolkit-env)
+- Docker Compose v2、YAML、Markdown + Docker Engine / Docker Compose v2、`ostris/aitoolkit:latest`、既存 `yanwk/comfyui-boot:cu128-slim`、既存 `ollama/ollama` (025-ai-toolkit-env)
+- ホスト bind mount または bind mount 相当のローカルパス（AI Toolkit 用 config / datasets / output / DB / Hugging Face cache）、feature 配下の Markdown 成果物 (025-ai-toolkit-env)
 
 ## Recent Changes
 - 002-add-run-script: Added Bash (POSIX shell) / Python 3 (実行環境) + Python 標準の HTTP 配信機能
