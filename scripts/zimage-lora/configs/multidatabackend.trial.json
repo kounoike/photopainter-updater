@@ -1,0 +1,21 @@
+[
+  {
+    "id": "__CHARACTER_ID___train_512",
+    "type": "local",
+    "instance_data_dir": "__DATASET_DIR__",
+    "caption_strategy": "textfile",
+    "cache_dir_vae": "__VAE_CACHE_DIR__",
+    "repeats": "__DATASET_REPEATS__",
+    "crop": false,
+    "resolution": 512,
+    "resolution_type": "pixel",
+    "minimum_image_size": 192
+  },
+  {
+    "id": "__CHARACTER_ID___text_embeds",
+    "type": "local",
+    "dataset_type": "text_embeds",
+    "default": true,
+    "cache_dir": "__TEXT_EMBED_CACHE_DIR__"
+  }
+]

@@ -1,0 +1,7 @@
+.env
+.env.local
+.dockerignore
+workspace/
+logs/
+tmp/
+__pycache__/

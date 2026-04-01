@@ -1,0 +1,5 @@
+# nickname<TAB>prompt
+portrait	portrait of __CHARACTER_ID__, same character identity, clean anime illustration, readable face
+upper_body	upper body illustration of __CHARACTER_ID__, same hair and eye colors, anime style
+full_body	full body anime illustration of __CHARACTER_ID__, same character identity, simple background
+seasonal	anime illustration of __CHARACTER_ID__ in a gentle seasonal scene, same character identity
