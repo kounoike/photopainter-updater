@@ -21,33 +21,33 @@
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-**Purpose**: 実装対象と既存導線の現状を固定する
+**Purpose**: upstream `ostris/ai-toolkit` の compose 前提と本リポジトリの既存 Compose 構成との差分を固定する
 
-- [ ] T001 `compose.yml`、`.env.example`、`README.md` の現状と `specs/025-ai-toolkit-env/plan.md` の方針差分を確認する
-- [ ] T002 `specs/025-ai-toolkit-env/contracts/ai-toolkit-compose-contract.md` と `specs/025-ai-toolkit-env/quickstart.md` を実装前提に合わせて見直し、実装対象のチェックポイントを確定する
+- [ ] T001 `compose.yml`、`.env.example`、`README.md` と `specs/025-ai-toolkit-env/plan.md` / `specs/025-ai-toolkit-env/research.md` の差分を確認する
+- [ ] T002 `specs/025-ai-toolkit-env/contracts/ai-toolkit-compose-contract.md` と `specs/025-ai-toolkit-env/quickstart.md` を実装前提に合わせて見直し、AI Toolkit の service 名、保存先、UI 到達条件を確定する
 
 ---
 
 ## Phase 2: Foundational (Blocking Prerequisites)
 
-**Purpose**: 全 user story に先行する共通導線と境界を整える
+**Purpose**: 全 user story に先行する AI Toolkit 追加方針を整える
 
 **CRITICAL**: この phase 完了まで user story 実装を開始しない
 
-- [ ] T003 `README.md` に追加する AI Toolkit 入口の見出し、説明範囲、既存 ComfyUI/Ollama 導線との関係を設計どおりに整理する
-- [ ] T004 [P] `.env.example` に AI Toolkit 試用時の前提として参照する変数説明の不足を洗い出す
-- [ ] T005 [P] `compose.yml` で AI Toolkit 試用導線に必要な補助説明や命名整理が必要か確認し、Allowed Scope 内の変更候補を確定する
-- [ ] T006 `specs/025-ai-toolkit-env/quickstart.md` に代表操作と `compose-state` / `env-config` / `persistent-data` の 3 系統復帰方針を最終反映する
+- [ ] T003 `compose.yml` に追加する `ai-toolkit` service の image、ports、volumes、environment、restart 方針を設計どおりに整理する
+- [ ] T004 [P] `.env.example` に追加する AI Toolkit 用ポート、認証、保存先変数の候補を整理する
+- [ ] T005 [P] `README.md` と `specs/025-ai-toolkit-env/quickstart.md` の役割分担を整理し、入口と詳細手順の境界を確定する
+- [ ] T006 `specs/025-ai-toolkit-env/quickstart.md` に `compose-state` / `env-config` / `storage-path` の 3 系統復帰方針を最終反映する
 
 **Checkpoint**: 基盤完了後に user story 実装へ進む
 
 ---
 
-## Phase 3: User Story 1 - すぐ試せる作業開始導線 (Priority: P1)
+## Phase 3: User Story 1 - AI Toolkit を起動して触り始める (Priority: P1)
 
-**Goal**: 新規利用者が AI Toolkit 試用環境を起動し、代表操作の成功可否まで迷わず到達できるようにする
+**Goal**: `docker compose up -d ai-toolkit` で AI Toolkit を起動し、Web UI 到達まで案内できるようにする
 
-**Independent Test**: 新しい開発者が `README.md` と `specs/025-ai-toolkit-env/quickstart.md` だけを参照し、`docker compose up -d` と `docker compose exec comfyui curl -fsS http://ollama:11434/api/version` まで到達できれば完了
+**Independent Test**: 利用者が `README.md` と `specs/025-ai-toolkit-env/quickstart.md` だけを参照し、`docker compose up -d ai-toolkit` 実行後に Web UI 到達可否を判断できれば完了
 
 ### Verification for User Story 1
 
@@ -55,20 +55,20 @@
 
 ### Implementation for User Story 1
 
-- [ ] T008 [US1] AI Toolkit 試用環境の入口説明を `README.md` に追加する
-- [ ] T009 [US1] AI Toolkit 試用開始に必要な前提条件と `.env` 準備手順を `README.md` に反映する
-- [ ] T010 [US1] `docker compose up -d` と代表操作 `docker compose exec comfyui curl -fsS http://ollama:11434/api/version` の実行手順を `specs/025-ai-toolkit-env/quickstart.md` に具体化する
-- [ ] T011 [US1] AI Toolkit 試用導線に必要な説明補強を `.env.example` に反映する
+- [ ] T008 [US1] `ai-toolkit` service を `compose.yml` に追加する
+- [ ] T009 [US1] AI Toolkit 用の入口説明と起動コマンドを `README.md` に追加する
+- [ ] T010 [US1] `docker compose up -d ai-toolkit` と Web UI 到達確認手順を `specs/025-ai-toolkit-env/quickstart.md` に具体化する
+- [ ] T011 [US1] AI Toolkit 起動に必要な主要環境変数を `.env.example` に追加する
 
 **Checkpoint**: User Story 1 が独立して検証可能であること
 
 ---
 
-## Phase 4: User Story 2 - 再現可能な共有環境 (Priority: P2)
+## Phase 4: User Story 2 - 試用データと設定を保持して再開する (Priority: P2)
 
-**Goal**: 複数の開発者が同じ Compose 前提から同じ試用開始判定へ到達できるようにする
+**Goal**: AI Toolkit の保存先を維持したまま停止・再起動・再開できるようにする
 
-**Independent Test**: 同じ利用者が別タイミングで `.env.example`、`README.md`、`specs/025-ai-toolkit-env/quickstart.md` を参照し、同一の前提条件、起動手順、代表操作成功条件を解釈差異なく辿れれば完了
+**Independent Test**: 利用者が AI Toolkit を起動・停止・再起動した後も、同じ保存先設定で再開できると手順書から判断できれば完了
 
 ### Verification for User Story 2
 
@@ -76,20 +76,20 @@
 
 ### Implementation for User Story 2
 
-- [ ] T013 [US2] 共通の前提条件、永続化ディレクトリ、起動順序を `specs/025-ai-toolkit-env/quickstart.md` に統一表現で整理する
-- [ ] T014 [US2] 既存 ComfyUI/Ollama を土台にする再現可能な説明へ `specs/025-ai-toolkit-env/contracts/ai-toolkit-compose-contract.md` を同期する
-- [ ] T015 [US2] 共通の利用開始判定と成功シグナルを `README.md` と `specs/025-ai-toolkit-env/quickstart.md` の両方で一致させる
-- [ ] T016 [US2] 必要な補助説明やコメントを `compose.yml` に反映し、AI Toolkit 試用時の読み取りやすさを揃える
+- [ ] T013 [US2] AI Toolkit 用の config / datasets / output / DB / cache の保存先を `compose.yml` に反映する
+- [ ] T014 [US2] 保存先と再起動前提を `.env.example` に反映する
+- [ ] T015 [US2] 保存先準備、停止、再起動、再開の手順を `specs/025-ai-toolkit-env/quickstart.md` に追加する
+- [ ] T016 [US2] 保存先維持の前提と対象範囲を `specs/025-ai-toolkit-env/contracts/ai-toolkit-compose-contract.md` に同期する
 
 **Checkpoint**: User Story 1 と 2 が独立検証可能であること
 
 ---
 
-## Phase 5: User Story 3 - 既存作業への影響を抑える (Priority: P3)
+## Phase 5: User Story 3 - 既存 Compose 導線を壊さずに共存させる (Priority: P3)
 
-**Goal**: AI Toolkit の追加導線が既存 ComfyUI / Ollama 利用者の主要導線を壊さないようにする
+**Goal**: AI Toolkit の追加が既存 ComfyUI / Ollama 導線を壊さないようにする
 
-**Independent Test**: 既存利用者が `README.md` を読んだとき、ComfyUI と Ollama の単独利用導線をそのまま辿れ、AI Toolkit が追加導線であると理解できれば完了
+**Independent Test**: 利用者が `README.md` を確認したとき、ComfyUI / Ollama の既存導線が残り、AI Toolkit は追加サービスとして理解できれば完了
 
 ### Verification for User Story 3
 
@@ -97,9 +97,9 @@
 
 ### Implementation for User Story 3
 
-- [ ] T018 [US3] 既存 ComfyUI と Ollama の個別導線を壊さない説明へ `README.md` を調整する
-- [ ] T019 [US3] AI Toolkit の対象 / 非対象と非目標を `specs/025-ai-toolkit-env/contracts/ai-toolkit-compose-contract.md` に反映する
-- [ ] T020 [US3] 既存導線を置き換えない境界説明と復帰方針を `specs/025-ai-toolkit-env/quickstart.md` に追加する
+- [ ] T018 [US3] 既存 ComfyUI / Ollama 導線を維持した説明へ `README.md` を調整する
+- [ ] T019 [US3] AI Toolkit が追加サービスであることと非目標を `specs/025-ai-toolkit-env/contracts/ai-toolkit-compose-contract.md` に反映する
+- [ ] T020 [US3] 既存サービスと独立して AI Toolkit を起動できる説明を `specs/025-ai-toolkit-env/quickstart.md` に追加する
 
 **Checkpoint**: すべての user story が独立検証可能であること
 
@@ -110,8 +110,8 @@
 **Purpose**: 複数 story にまたがる最終確認
 
 - [ ] T021 [P] `specs/025-ai-toolkit-env/spec.md`、`specs/025-ai-toolkit-env/plan.md`、`specs/025-ai-toolkit-env/tasks.md` の整合を最終確認する
-- [ ] T022 `docker compose config` と `docker compose ps` の確認結果に基づき `README.md`、`.env.example`、`specs/025-ai-toolkit-env/quickstart.md` の手順差分を修正する
-- [ ] T023 `specs/025-ai-toolkit-env/quickstart.md` の手順どおりに代表操作まで通し確認し、残リスクを `specs/025-ai-toolkit-env/quickstart.md` に反映する
+- [ ] T022 `docker compose config` と `docker compose ps ai-toolkit` の確認結果に基づき `README.md`、`.env.example`、`specs/025-ai-toolkit-env/quickstart.md` の手順差分を修正する
+- [ ] T023 `specs/025-ai-toolkit-env/quickstart.md` の手順どおりに AI Toolkit Web UI 到達まで通し確認し、残リスクを `specs/025-ai-toolkit-env/quickstart.md` に反映する
 
 ---
 
@@ -127,19 +127,19 @@
 ### User Story Dependencies
 
 - **User Story 1 (P1)**: Foundational 後に開始可能
-- **User Story 2 (P2)**: User Story 1 の導線表現を土台に進めると安全
-- **User Story 3 (P3)**: User Story 1 と 2 の文書反映後に最終境界整理として実施する
+- **User Story 2 (P2)**: User Story 1 の service 追加後に進める
+- **User Story 3 (P3)**: User Story 1 と 2 の反映後に境界整理として実施する
 
 ### Within Each User Story
 
 - 手動確認手順を先に固め、その後に実装対象ファイルへ反映する
-- `README.md` と `specs/025-ai-toolkit-env/quickstart.md` の説明は同じ成功条件を使う
-- 既存導線を壊さない確認を省略しない
+- `README.md` と `specs/025-ai-toolkit-env/quickstart.md` の説明は同じ起動条件を使う
+- 既存導線非破壊の確認を省略しない
 
 ### Parallel Opportunities
 
 - `[P]` 付き Foundational タスクは並列実行可能
-- User Story 1 完了後、User Story 2 の contract 同期と `compose.yml` 補助説明は並列化可能
+- User Story 1 完了後、User Story 2 の contract 同期と `.env.example` 更新は並列化可能
 - Polish では整合確認と手順差分修正を分けて進められる
 
 ---
@@ -147,9 +147,9 @@
 ## Parallel Example: User Story 2
 
 ```bash
-Task: "共通の前提条件、永続化ディレクトリ、起動順序を specs/025-ai-toolkit-env/quickstart.md に統一表現で整理する"
-Task: "既存 ComfyUI/Ollama を土台にする再現可能な説明へ specs/025-ai-toolkit-env/contracts/ai-toolkit-compose-contract.md を同期する"
-Task: "必要な補助説明やコメントを compose.yml に反映し、AI Toolkit 試用時の読み取りやすさを揃える"
+Task: "AI Toolkit 用の config / datasets / output / DB / cache の保存先を compose.yml に反映する"
+Task: "保存先と再起動前提を .env.example に反映する"
+Task: "保存先維持の前提と対象範囲を specs/025-ai-toolkit-env/contracts/ai-toolkit-compose-contract.md に同期する"
 ```
 
 ---
@@ -162,20 +162,20 @@ Task: "必要な補助説明やコメントを compose.yml に反映し、AI Too
 2. Phase 2: Foundational を完了する
 3. Phase 3: User Story 1 を完了する
 4. User Story 1 を独立検証する
-5. AI Toolkit 入口から代表操作までの導線が成立することを確認する
+5. `ai-toolkit` 起動と Web UI 到達の導線が成立することを確認する
 
 ### Incremental Delivery
 
 1. Setup + Foundational を完了する
 2. User Story 1 を追加して独立検証する
-3. User Story 2 を追加して再現性を独立検証する
+3. User Story 2 を追加して保存先維持を独立検証する
 4. User Story 3 を追加して既存導線非破壊を独立検証する
 5. 最後に通し確認で前段 story を壊していないことを確認する
 
 ### Parallel Team Strategy
 
 1. チームで Setup + Foundational を完了する
-2. User Story 1 完了後、User Story 2 の文書同期と `compose.yml` 調整を分担する
+2. User Story 1 完了後、User Story 2 の保存先同期と文書更新を分担する
 3. User Story 3 は既存導線レビュー担当が独立検証まで完了する
 
 ---
