@@ -126,6 +126,8 @@ Use slash commands:
 - ローカルファイル（`server/contents/`、`server/testdata/`、`specs/020-adaptive-diffusion-tuning/`） (020-adaptive-diffusion-tuning)
 - Docker Compose v2、YAML、Markdown + Docker Engine / Docker Compose v2、公式イメージ `ollama/ollama`、既存 `yanwk/comfyui-boot:cu128-slim` (023-add-ollama-compose)
 - ホスト bind mount ディレクトリ（`./comfyui-data`、新規 `./ollama-data`） (023-add-ollama-compose)
+- Python 3.10-3.13、Bash (POSIX shell)、Markdown + `SimpleTuner`、`bitsandbytes` または同等の量子化バックエンド、Hugging Face Hub、既存 ComfyUI / `Z-Image` 推論環境 (024-zimage-character-lora)
+- ローカルファイル（参照画像セット、学習設定、キャッシュ、LoRA 成果物、validation 画像） (024-zimage-character-lora)
 
 ## Recent Changes
 - 002-add-run-script: Added Bash (POSIX shell) / Python 3 (実行環境) + Python 標準の HTTP 配信機能
