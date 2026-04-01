@@ -13,7 +13,7 @@
 
 - Q: AI Toolkit 試用環境の正式導線は何を中心に定義するか? → A: Docker Compose サービス群中心
 - Q: AI Toolkit 試用環境は既存資産のどこを土台にするか? → A: 既存 ComfyUI と Ollama を土台にし、不足分だけ追加する
-- Q: 何をもって AI Toolkit を試せたとみなすか? → A: 主要サービスが起動し、AI Toolkit の代表操作を 1 つ成功できれば試用成功
+- Q: 何をもって AI Toolkit を試せたとみなすか? → A: 主要サービスが起動し、`docker compose exec comfyui curl -fsS http://ollama:11434/api/version` が成功できれば試用成功
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -23,27 +23,27 @@
 
 **Why this priority**: 試用環境がすぐ使えなければ、この feature の価値が成立しないため。
 
-**Independent Test**: 新しい開発者が案内に従って Docker Compose ベースの試用環境を立ち上げ、追加の探索なしに AI Toolkit の基本操作を開始できれば完了。
+**Independent Test**: 新しい開発者が案内に従って Docker Compose ベースの試用環境を立ち上げ、追加の探索なしに `docker compose exec comfyui curl -fsS http://ollama:11434/api/version` まで到達できれば完了。
 
 **Acceptance Scenarios**:
 
 1. **Given** 開発者がこのリポジトリを取得した直後で, **When** Docker Compose 中心の試用環境案内に従って準備を行う, **Then** AI Toolkit を試し始めるまでに必要な手順が一続きで分かる
-2. **Given** 開発者が Docker Compose ベースの試用環境を起動した状態で, **When** AI Toolkit の代表操作を 1 つ実行する, **Then** 試用成功可否を判断できる
+2. **Given** 開発者が Docker Compose ベースの試用環境を起動した状態で, **When** `docker compose exec comfyui curl -fsS http://ollama:11434/api/version` を実行する, **Then** 試用成功可否を判断できる
 
 ---
 
 ### User Story 2 - 再現可能な共有環境 (Priority: P2)
 
-開発者として、他のメンバーと同じく既存 ComfyUI と Ollama を土台にした Docker Compose ベースの前提で AI Toolkit を試せる再現可能な環境がほしい。これにより、個人差のある手元設定ではなく、同じ結果を比較しながら検証できる。
+開発者として、同じ既存 ComfyUI と Ollama を土台にした Docker Compose ベースの前提で AI Toolkit を繰り返し試せる再現可能な環境がほしい。これにより、毎回の試行で手順や判定基準がぶれず、同じ条件で検証をやり直せる。
 
 **Why this priority**: 再現性がないと検証結果の共有や切り分けが難しくなり、試用の価値が下がるため。
 
-**Independent Test**: 別の開発者が同じ案内を使って環境を準備し、同等の初期状態から主要サービス起動と代表操作 1 件の成功まで到達できれば完了。
+**Independent Test**: 同じ利用者が別タイミングで同じ案内を使って環境を準備し、同等の初期状態から主要サービス起動と代表操作成功まで再到達できれば完了。
 
 **Acceptance Scenarios**:
 
-1. **Given** 2 人以上の開発者が同じ成果物を参照する, **When** それぞれが試用環境を準備する, **Then** 主要な前提条件と開始手順に差異が生じない
-2. **Given** 既存の作業環境がある開発者と新規の開発者がいる, **When** 両者が試用環境へ入る, **Then** 共通の確認手順で利用開始可否を判断できる
+1. **Given** 同じ利用者が別タイミングで同じ成果物を参照する, **When** それぞれ試用環境を準備する, **Then** 主要な前提条件と開始手順の解釈がぶれない
+2. **Given** 利用者が一度試用環境を中断した後で, **When** 再度試用環境へ入る, **Then** 同じ確認手順で利用開始可否を判断できる
 
 ---
 
@@ -65,7 +65,7 @@
 - 必要な前提条件が満たされない場合でも、何が不足しているかを利用者が判断できること
 - 途中で試用を中断しても、再開時に最初から調べ直さず続きから進められること
 - AI Toolkit を使わない開発者が既存の導線だけを使う場合、試用環境追加による誤解や強制が起きないこと
-- 利用者ごとに権限や認証状態が異なる場合でも、必要な準備責任の所在が分かること
+- 外部サービス固有の認証差異は今回の対象外とし、Compose 起動とローカル疎通確認に必要な前提のみ扱うこと
 
 ## Requirements *(mandatory)*
 
@@ -73,8 +73,8 @@
 
 - **FR-001**: System MUST AI Toolkit を試用する利用者向けに、既存 ComfyUI と Ollama を土台に必要分だけ追加する Docker Compose サービス群を中心とした開始条件、準備手順、最初の確認手順を一連で提供しなければならない
 - **FR-002**: System MUST 利用者が追加の口頭説明なしで試用を始められるよう、必要な前提条件と不足時の対処方針を明示しなければならない
-- **FR-003**: Users MUST be able to 共通の手順で主要サービス起動後に AI Toolkit の代表操作を 1 つ実行し、利用開始可否を判断できなければならない
-- **FR-004**: System MUST 複数の開発者が同じ Docker Compose ベースの初期条件から試用を再現できるよう、環境の前提と利用手順を統一して記録しなければならない
+- **FR-003**: Users MUST be able to 共通の手順で主要サービス起動後に `docker compose exec comfyui curl -fsS http://ollama:11434/api/version` を実行し、利用開始可否を判断できなければならない
+- **FR-004**: System MUST 同じ利用者が同じ Docker Compose ベースの初期条件から試用を再現できるよう、環境の前提と利用手順を統一して記録しなければならない
 - **FR-008**: System MUST 既存 ComfyUI と Ollama の利用方針を壊さず、AI Toolkit 試用に必要な追加要素だけを識別できるようにしなければならない
 - **FR-005**: System MUST 試用環境の追加が既存の主要な開発導線を置き換えないことを明示しなければならない
 - **FR-006**: System MUST AI Toolkit を使わない利用者にも影響範囲が分かるよう、試用対象と非対象を区別して示さなければならない
@@ -93,6 +93,9 @@
 ### Allowed Scope
 
 - AI Toolkit 試用環境のうち、既存 ComfyUI と Ollama を土台にした Docker Compose サービス群を中心にした開始条件、利用手順、確認方法の整理
+- `compose.yml` の補助説明やコメント整理
+- `.env.example` の AI Toolkit 試用向け説明更新
+- `README.md` の AI Toolkit 入口追加と既存導線の整理
 - 試用環境と既存開発導線の関係整理
 - 試用時の前提条件、不足条件、復帰方法の文書化
 - `specs/025-ai-toolkit-env/` 配下の成果物作成
@@ -108,8 +111,8 @@
 
 ### Measurable Outcomes
 
-- **SC-001**: 新規利用者が案内を読み始めてから 15 分以内に、主要サービスの起動と代表操作 1 件の成功可否を自力で判断できる
-- **SC-002**: 2 名以上の開発者が同じ Docker Compose 中心の案内を使ったとき、主要な準備手順の解釈差異なく試用開始まで到達できる
+- **SC-001**: 新規利用者が案内を読み始めてから 15 分以内に、主要サービスの起動と `docker compose exec comfyui curl -fsS http://ollama:11434/api/version` の成功可否を自力で判断できる
+- **SC-002**: 同じ利用者が同じ Docker Compose 中心の案内を使って別タイミングでも、主要な準備手順の解釈差異なく試用開始まで到達できる
 - **SC-003**: AI Toolkit を使わない開発者が主要導線を参照した際に、試用環境が任意であることを 1 回の読了で理解できる
 - **SC-004**: 試用中の代表的な失敗時に、利用者が追加質問なしで次の確認先または代表操作成功までの復帰手順を特定できる
 
@@ -119,10 +122,11 @@
 - AI Toolkit はまず「試す」ことが目的であり、本番利用の設計確定までは求めない
 - 既存の Compose 資産は試用導線の主要な土台として参照され、devcontainer は必要に応じた補助導線として扱う
 - ComfyUI と Ollama は既存資産として継続利用し、今回の変更はそれらを置き換えず拡張する前提とする
+- 外部サービス固有の認証や権限制御の差異は今回のスコープ外とし、ローカル Compose 利用に必要な前提だけを扱う
 - 試用環境の価値は、最小限の準備で検証を始められることと、チームで前提を共有できることにある
 
 ## Documentation Impact
 
 - `specs/025-ai-toolkit-env/spec.md` に AI Toolkit 試用環境の目的、利用者価値、境界を記載する
 - 後続 phase で `plan.md`、`tasks.md`、必要に応じて `research.md`、`quickstart.md` を作成する
-- 実装時には既存 README や関連運用文書へ、試用環境の入口と既存導線との関係を反映する必要がある
+- 実装時には `README.md`、`.env.example`、必要に応じて `compose.yml` と関連運用文書へ、試用環境の入口と既存導線との関係を反映する必要がある

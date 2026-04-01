@@ -24,7 +24,7 @@
 **Target Platform**: NVIDIA GPU を使うローカル Linux 開発環境、単一ホストの Docker Compose 運用  
 **Project Type**: Docker Compose ベースのローカル AI 試用環境 + ドキュメント整備  
 **Performance Goals**: 新規利用者が 15 分以内に主要サービス起動と代表操作 1 件の成功可否を判断できること、既存利用者が既存導線を維持したまま AI Toolkit 入口を理解できること  
-**Constraints**: ローカル優先、既存 ComfyUI/Ollama を置き換えない、外部公開前提を増やさない、`firmware/` と `server/` 本体へ手を入れない、最小限の追加ファイルに留める  
+**Constraints**: ローカル優先、既存 ComfyUI/Ollama を置き換えない、外部公開前提を増やさない、外部サービス固有の認証差異は対象外、`firmware/` と `server/` 本体へ手を入れない、最小限の追加ファイルに留める
 **Scale/Scope**: 単一 compose プロジェクト、主要サービス 2 本を中心にした試用導線、ローカル利用者 1-2 名の再現可能な開始手順
 
 ## Constitution Check

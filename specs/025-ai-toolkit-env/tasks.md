@@ -68,7 +68,7 @@
 
 **Goal**: 複数の開発者が同じ Compose 前提から同じ試用開始判定へ到達できるようにする
 
-**Independent Test**: 別の開発者が `.env.example`、`README.md`、`specs/025-ai-toolkit-env/quickstart.md` を参照し、同一の前提条件、起動手順、代表操作成功条件を解釈差異なく辿れれば完了
+**Independent Test**: 同じ利用者が別タイミングで `.env.example`、`README.md`、`specs/025-ai-toolkit-env/quickstart.md` を参照し、同一の前提条件、起動手順、代表操作成功条件を解釈差異なく辿れれば完了
 
 ### Verification for User Story 2
 
