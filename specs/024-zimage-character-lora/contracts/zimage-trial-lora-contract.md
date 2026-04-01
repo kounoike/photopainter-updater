@@ -53,6 +53,8 @@ Rules:
 
 trial 完了は、学習済み LoRA を推論へ適用し、少なくとも 1 つ以上の validation 画像について「同一キャラクターとして識別可能か」を判断できる状態を満たすこと。
 
+最小再利用確認は、既存のローカル `Z-Image` 推論環境へ LoRA 成果物と validation prompt を渡す単一の再利用経路を canonical path とする。今回の feature ではその推論環境自体の構築は保証対象外だが、artifact と prompt の受け渡し単位は固定する。
+
 完了条件:
 
 1. 学習成果物の保存先が特定できる

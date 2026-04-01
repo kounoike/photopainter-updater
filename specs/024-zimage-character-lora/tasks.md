@@ -27,7 +27,7 @@
 
 **CRITICAL**: この phase 完了まで user story 実装を開始しない
 
-- [ ] T004 `scripts/zimage-lora/configs/trial-12gb.env.example` に 12GB trial 向け共通環境変数雛形を定義する
+- [ ] T004 `scripts/zimage-lora/configs/trial-12gb.env.example` に Docker ベースの 12GB trial 向け共通環境変数雛形を定義する
 - [ ] T005 [P] `scripts/zimage-lora/configs/trial-12gb.json` に `model_family=z-image` / `model_flavour=turbo` / 量子化 / offload を含む trial 学習設定雛形を定義する
 - [ ] T006 [P] `scripts/zimage-lora/configs/multidatabackend.trial.json` に 少数画像 dataset と validation 用 cache の dataloader 雛形を定義する
 - [ ] T007 `scripts/zimage-lora/validate-trial-layout.sh` を作成し、Reference Image Set と Trial Training Profile の最小前提を検証できるようにする
@@ -50,7 +50,7 @@
 
 ### Implementation for User Story 1
 
-- [ ] T011 [P] [US1] `scripts/zimage-lora/train-trial.sh` を実装し、trial-12gb 設定と dataloader 設定を使って SimpleTuner 学習を起動できるようにする
+- [ ] T011 [P] [US1] `scripts/zimage-lora/train-trial.sh` と `scripts/zimage-lora/docker-compose.yml` を実装し、trial-12gb 設定と dataloader 設定を使って Docker ベースの SimpleTuner 学習を起動できるようにする
 - [ ] T012 [P] [US1] `scripts/zimage-lora/lib/common.sh` を実装し、環境変数読込、出力先解決、依存確認の共通処理をまとめる
 - [ ] T013 [US1] `scripts/zimage-lora/train-trial.sh` に `--quantize_via=cpu`、`gradient_checkpointing`、group offload の縮退分岐を追加する
 - [ ] T014 [US1] `docs/zimage-lora-trial/README.md` に 学習開始コマンド、必要ディレクトリ、生成物の保存先を記載する
@@ -73,8 +73,8 @@
 
 ### Implementation for User Story 2
 
-- [ ] T018 [P] [US2] `docs/zimage-lora-trial/data-prep.md` を作成し、高品質少数画像、恒常特徴優先、背景/ポーズ抑制の基準を文書化する
-- [ ] T019 [P] [US2] `scripts/zimage-lora/templates/character-caption.txt` に 恒常特徴中心の caption template を追加する
+- [ ] T018 [P] [US2] `docs/zimage-lora-trial/data-prep.md` と `docs/zimage-lora-trial/trait-separation.md` を作成し、高品質少数画像、`character fixed traits` 優先、`outfit variable traits` 分離、背景/ポーズ抑制の基準を文書化する
+- [ ] T019 [P] [US2] `scripts/zimage-lora/templates/character-caption.txt` に `character fixed traits` 中心の caption template を追加する
 - [ ] T020 [P] [US2] `scripts/zimage-lora/templates/dataset-layout.md` に 参照画像ディレクトリ構成、caption 配置、validation prompt 配置の雛形を追加する
 - [ ] T021 [US2] `scripts/zimage-lora/validate-trial-layout.sh` に caption と画像枚数の妥当性確認を追加する
 - [ ] T022 [US2] `docs/zimage-lora-trial/data-prep.md` と `scripts/zimage-lora/templates/dataset-layout.md` に 少数画像不足時の `repeats` 調整指針を追記する
@@ -96,7 +96,7 @@
 
 ### Implementation for User Story 3
 
-- [ ] T025 [P] [US3] `scripts/zimage-lora/validate-reuse.sh` を実装し、LoRA 成果物、validation prompt、出力先を受けて再利用確認を実行できるようにする
+- [ ] T025 [P] [US3] `scripts/zimage-lora/validate-reuse.sh` を実装し、既存のローカル `Z-Image` 推論環境へ LoRA 成果物、validation prompt、出力先を渡して再利用確認を実行できるようにする
 - [ ] T026 [P] [US3] `scripts/zimage-lora/templates/validation-prompts.txt` に 同一キャラクター識別可否を判断する最小 prompt 集合を追加する
 - [ ] T027 [US3] `docs/zimage-lora-trial/integration-boundary.md` を作成し、character 恒常要素と scene 可変要素の責務分界、および `keep / adapt / replace` の将来拡張点を整理する
 - [ ] T028 [US3] `docs/zimage-lora-trial/README.md` に 学習成果物の保存先、最小再利用確認、ComfyUI 本格統合を今回 scope 外とする注意を追記する
@@ -135,7 +135,7 @@
 
 - 手動確認手順を先に整備し、実装後にその手順で検証する
 - 共通 script / template を先に整え、その後に story 固有の確認処理を追加する
-- dataset 準備方針は学習実行より前に検証できるようにする
+- dataset 準備方針は初回の暫定 trial と独立に検証・再利用できるようにする
 - 最小再利用確認は学習成果物が生成された後にのみ実施する
 
 ### Parallel Opportunities

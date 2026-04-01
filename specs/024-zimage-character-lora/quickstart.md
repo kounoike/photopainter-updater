@@ -16,9 +16,9 @@
 
 ## 3. SimpleTuner を準備する
 
-1. Python 3.10-3.13 が使えることを確認する
-2. `simpletuner[cuda]` を導入する
-3. trial 用の `config.json` と dataloader 設定を作る
+1. Docker Engine、Docker Compose v2、NVIDIA Container Toolkit が使えることを確認する
+2. Docker ベースの `SimpleTuner` 実行環境を build する
+3. trial 用の `config.json` と dataloader 設定を bind mount で渡す
 4. `model_family=z-image`、`model_flavour=turbo`、`pretrained_model_name_or_path=TONGYI-MAI/Z-Image-Turbo` を設定する
 
 ## 4. trial 学習を開始する
@@ -31,13 +31,13 @@
 ## 5. 最小再利用確認を行う
 
 1. 生成された LoRA 成果物を確認する
-2. validation prompt を使って生成画像を出す
+2. 既存のローカル `Z-Image` 推論環境へ artifact と validation prompt を渡して生成画像を出す
 3. 同一キャラクターとして識別可能かを確認する
 4. trial 継続可否をメモに残す
 
 ## 6. 将来統合へ向けて残すべき情報
 
 1. どの trial 条件で成立したか
-2. どの恒常特徴が保持されたか
+2. どの `character fixed traits` が保持されたか
 3. どの drift が残ったか
-4. scene 可変要素と character 恒常要素の責務分界
+4. `character fixed traits`、`outfit variable traits`、scene 可変要素の責務分界

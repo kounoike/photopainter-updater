@@ -7,7 +7,7 @@
 
 ## Summary
 
-`Z-Image` 系モデル向けに、少数の参照画像からキャラクター LoRA を試作学習できる最小構成を定義する。対象は VRAM 12GB 程度のローカル環境での成立性確認であり、`SimpleTuner` を用いた量子化・offload 前提の学習条件、少数画像向けデータ準備方針、学習成果物の最小限の再利用確認手順、将来の ComfyUI 自動生成フローへ接続するための責務分界を成果物として整理する。既存の参照画像ベース差し替え workflow は検討 artifact として保持し、本 feature では個別 inpaint 前提ではないキャラクター恒常特徴の学習済み表現へ軸足を移す。
+`Z-Image` 系モデル向けに、少数の参照画像からキャラクター LoRA を試作学習できる最小構成を定義する。対象は VRAM 12GB 程度のローカル環境での成立性確認であり、Docker ベースの `SimpleTuner` 実行環境、量子化・offload 前提の学習条件、少数画像向けデータ準備方針、学習成果物の最小限の再利用確認手順、将来の ComfyUI 自動生成フローへ接続するための責務分界を成果物として整理する。既存の参照画像ベース差し替え workflow は検討 artifact として保持し、本 feature では個別 inpaint 前提ではない `character fixed traits` の学習済み表現へ軸足を移す。
 
 ## Technical Context
 
@@ -18,8 +18,8 @@
 -->
 
 **Language/Version**: Python 3.10-3.13、Bash (POSIX shell)、Markdown  
-**Primary Dependencies**: `SimpleTuner`、`bitsandbytes` または同等の量子化バックエンド、Hugging Face Hub、既存 ComfyUI / `Z-Image` 推論環境  
-**Storage**: ローカルファイル（参照画像セット、学習設定、キャッシュ、LoRA 成果物、validation 画像）  
+**Primary Dependencies**: Docker Engine / Docker Compose v2、NVIDIA Container Toolkit、`SimpleTuner`、`bitsandbytes` または同等の量子化バックエンド、Hugging Face Hub、既存 ComfyUI / `Z-Image` 推論環境  
+**Storage**: ローカルファイルと Docker bind mount（参照画像セット、学習設定、キャッシュ、LoRA 成果物、validation 画像）  
 **Testing**: 試作学習の手動実行、validation 画像による目視確認、学習成果物の最小限の再利用確認、手順書追従確認  
 **Target Platform**: ローカル Linux 開発環境、単一 GPU（VRAM 12GB 程度）、将来の ComfyUI ローカル運用環境  
 **Project Type**: ローカル学習試作基盤 + 運用手順 / 設定設計  
@@ -80,6 +80,7 @@ specs/024-zimage-character-lora/
 ├── scripts/
 │   ├── run-codex.sh
 │   └── run-claude.sh
+│   └── zimage-lora/
 ├── specs/
 │   └── 024-zimage-character-lora/
 ├── server/
@@ -134,7 +135,7 @@ specs/024-zimage-character-lora/
 2. `SimpleTuner` を前提にした 12GB 向け縮退条件を quickstart と research へ落とす
 3. 少数画像向けデータ準備方針と caption 方針を整理する
 4. LoRA 成果物の最小限の再利用確認手順を定義する
-5. 将来の ComfyUI 自動生成フローとは、scene 可変要素と character 恒常特徴の責務分界だけを残して今回のスコープを閉じる
+5. 将来の ComfyUI 自動生成フローとは、scene 可変要素、`character fixed traits`、`outfit variable traits` の責務分界だけを残して今回のスコープを閉じる
 
 ## Complexity Tracking
 

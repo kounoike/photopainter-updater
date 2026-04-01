@@ -63,9 +63,10 @@
 
 - Purpose: 学習済みキャラクター表現と将来の scene 可変要素の責務分界を表す。
 - Fields:
-  - `character_fixed_traits`: 顔、髪、衣装基調、付属特徴などの恒常要素。
+  - `character_fixed_traits`: 顔、髪、目、耳、しっぽ、体格などの恒常要素。
+  - `outfit_variable_traits`: 通常衣装、イベント衣装、季節小物など衣装側の可変要素。
   - `scene_variable_traits`: 日時、季節、イベント、天気、構図、ポーズなどの可変要素。
   - `outfit_mode`: `keep`, `adapt`, `replace` を想定する将来拡張点。
 - Validation Rules:
-  - `character_fixed_traits` と `scene_variable_traits` を同一責務として混在させない。
+  - `character_fixed_traits`、`outfit_variable_traits`、`scene_variable_traits` を同一責務として混在させない。
   - 今回の feature では `outfit_mode` の本格実装を含めない。
