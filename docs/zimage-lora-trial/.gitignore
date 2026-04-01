@@ -1,0 +1,8 @@
+# ローカルの試行メモや一時出力は追跡しない
+scratch/
+manual-notes/
+*.local.md
+*.private.md
+*.tmp
+.env
+.env.local

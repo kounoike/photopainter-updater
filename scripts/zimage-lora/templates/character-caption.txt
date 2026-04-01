@@ -1,0 +1,13 @@
+# character fixed traits only
+# One line, plain English, no trailing period.
+#
+# Example:
+# some_girl, blonde hair with blue streaks, pink eyes, animal ears, tail
+#
+# Avoid:
+# - pose
+# - framing
+# - background
+# - season
+# - weather
+# - camera terms
