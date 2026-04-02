@@ -25,9 +25,9 @@
 
 **Purpose**: upload 機能を追加できる依存とファイル構成を整える
 
-- [ ] T001 `server/Cargo.toml` に `axum` の `multipart` feature を追加し、upload 実装に必要な依存条件を更新する
-- [ ] T002 `server/src/main.rs` と `server/src/app.rs` の module 宣言・配線を見直し、upload 用モジュールを追加できる構成を整える
-- [ ] T003 [P] `server/README.md` に `POST /upload` を扱う予定の起動・運用前提を追記するための節を準備する
+- [x] T001 `server/Cargo.toml` に `axum` の `multipart` feature を追加し、upload 実装に必要な依存条件を更新する
+- [x] T002 `server/src/main.rs` と `server/src/app.rs` の module 宣言・配線を見直し、upload 用モジュールを追加できる構成を整える
+- [x] T003 [P] `server/README.md` に `POST /upload` を扱う予定の起動・運用前提を追記するための節を準備する
 
 ---
 
@@ -37,12 +37,12 @@
 
 **CRITICAL**: この phase 完了まで user story 実装を開始しない
 
-- [ ] T004 `server/src/config.rs` に upload 用のターゲット寸法定数、temporary path helper、関連メッセージ定数を追加する
-- [ ] T005 [P] `server/src/image_pipeline/upload.rs` を新規作成し、`UploadRequest`、`UploadCandidate`、`NormalizedImage`、`UploadResult` の基礎型を定義する
-- [ ] T006 [P] `server/src/image_pipeline/mod.rs` に upload モジュールの公開と既存 pipeline から参照する export を追加する
-- [ ] T007 `server/src/logging.rs` に `POST /upload` 用の outcome 分類を追加し、既存 request logging へ統合できるようにする
-- [ ] T008 `server/src/response.rs` に upload 成功・入力不正・保存失敗向け text response helper を追加する
-- [ ] T009 `specs/026-post-image-upload/contracts/upload-endpoint-contract.md` と `specs/026-post-image-upload/plan.md` を見直し、実装境界が Allowed Scope / Forbidden Scope から外れていないことを確認する
+- [x] T004 `server/src/config.rs` に upload 用のターゲット寸法定数、temporary path helper、関連メッセージ定数を追加する
+- [x] T005 [P] `server/src/image_pipeline/upload.rs` を新規作成し、`UploadRequest`、`UploadCandidate`、`NormalizedImage`、`UploadResult` の基礎型を定義する
+- [x] T006 [P] `server/src/image_pipeline/mod.rs` に upload モジュールの公開と既存 pipeline から参照する export を追加する
+- [x] T007 `server/src/logging.rs` に `POST /upload` 用の outcome 分類を追加し、既存 request logging へ統合できるようにする
+- [x] T008 `server/src/response.rs` に upload 成功・入力不正・保存失敗向け text response helper を追加する
+- [x] T009 `specs/026-post-image-upload/contracts/upload-endpoint-contract.md` と `specs/026-post-image-upload/plan.md` を見直し、実装境界が Allowed Scope / Forbidden Scope から外れていないことを確認する
 
 **Checkpoint**: upload の共通型、定数、response、logging 導線が揃っていること
 
@@ -56,17 +56,17 @@
 
 ### Verification for User Story 1
 
-- [ ] T010 [P] [US1] `server/src/image_pipeline/upload.rs` に PNG、JPG/JPEG、GIF、BMP、WebP の decode、PNG 正規化、480x800 中央クロップの単体テストを追加する
-- [ ] T011 [P] [US1] `server/src/routes.rs` に raw body と multipart/form-data の両方で `POST /upload` が成功し、`GET /image.bmp` と `GET /image.bin` に反映される HTTP テストを追加する
-- [ ] T012 [US1] `specs/026-post-image-upload/quickstart.md` に raw body と multipart の成功確認手順を実装に合わせて更新する
+- [x] T010 [P] [US1] `server/src/image_pipeline/upload.rs` に PNG、JPG/JPEG、GIF、BMP、WebP の decode、PNG 正規化、480x800 中央クロップの単体テストを追加する
+- [x] T011 [P] [US1] `server/src/routes.rs` に raw body と multipart/form-data の両方で `POST /upload` が成功し、`GET /image.bmp` と `GET /image.bin` に反映される HTTP テストを追加する
+- [x] T012 [US1] `specs/026-post-image-upload/quickstart.md` に raw body と multipart の成功確認手順を実装に合わせて更新する
 
 ### Implementation for User Story 1
 
-- [ ] T013 [P] [US1] `server/src/image_pipeline/upload.rs` に PNG、JPG/JPEG、GIF、BMP、WebP の受信バイト列 decode、形式判定、PNG encode を実装する
-- [ ] T014 [P] [US1] `server/src/image_pipeline/upload.rs` に 480x800 へのアスペクト比維持リサイズと中央クロップ処理を実装する
-- [ ] T015 [US1] `server/src/image_pipeline/upload.rs` に temporary file 経由で `image.png` を安全に置換する保存処理を実装する
-- [ ] T016 [US1] `server/src/routes.rs` に `POST /upload` handler を追加し、raw body と multipart/form-data を `Content-Type` に応じて受理できるようにする
-- [ ] T017 [US1] `server/src/routes.rs` と `server/src/response.rs` に upload 成功時の応答生成と既存 GET route 反映確認を実装する
+- [x] T013 [P] [US1] `server/src/image_pipeline/upload.rs` に PNG、JPG/JPEG、GIF、BMP、WebP の受信バイト列 decode、形式判定、PNG encode を実装する
+- [x] T014 [P] [US1] `server/src/image_pipeline/upload.rs` に 480x800 へのアスペクト比維持リサイズと中央クロップ処理を実装する
+- [x] T015 [US1] `server/src/image_pipeline/upload.rs` に temporary file 経由で `image.png` を安全に置換する保存処理を実装する
+- [x] T016 [US1] `server/src/routes.rs` に `POST /upload` handler を追加し、raw body と multipart/form-data を `Content-Type` に応じて受理できるようにする
+- [x] T017 [US1] `server/src/routes.rs` と `server/src/response.rs` に upload 成功時の応答生成と既存 GET route 反映確認を実装する
 
 **Checkpoint**: User Story 1 が単独で検証可能であり、upload 成功後に既存 GET route から更新結果を利用できること
 
@@ -80,16 +80,16 @@
 
 ### Verification for User Story 2
 
-- [ ] T018 [P] [US2] `server/src/routes.rs` に空 body と multipart 構造不正で `400`、対応外形式と decode 失敗で `415`、multipart の画像不足で `400` を検証する HTTP テストを追加する
-- [ ] T019 [P] [US2] `server/src/image_pipeline/upload.rs` に保存失敗時の rollback と既存画像維持を検証する単体テストを追加する
-- [ ] T020 [US2] `specs/026-post-image-upload/quickstart.md` に失敗系確認手順と期待結果を実装に合わせて更新する
+- [x] T018 [P] [US2] `server/src/routes.rs` に空 body と multipart 構造不正で `400`、対応外形式と decode 失敗で `415`、multipart の画像不足で `400` を検証する HTTP テストを追加する
+- [x] T019 [P] [US2] `server/src/image_pipeline/upload.rs` に保存失敗時の rollback と既存画像維持を検証する単体テストを追加する
+- [x] T020 [US2] `specs/026-post-image-upload/quickstart.md` に失敗系確認手順と期待結果を実装に合わせて更新する
 
 ### Implementation for User Story 2
 
-- [ ] T021 [P] [US2] `server/src/image_pipeline/upload.rs` に `400` / `415` / `500` へ対応する invalid payload、unsupported media、save failure の分類処理を実装する
-- [ ] T022 [US2] `server/src/response.rs` に upload 失敗時の `400` / `415` / `500` と判別可能な文言を返す処理を実装する
-- [ ] T023 [US2] `server/src/routes.rs` に multipart 内の画像 file 特定失敗、decode 失敗、空 body を失敗応答へ変換する処理を実装する
-- [ ] T024 [US2] `server/src/logging.rs` と `server/src/routes.rs` に upload 失敗時の outcome 記録を追加し、既存画像保護と同時にログで判別できるようにする
+- [x] T021 [P] [US2] `server/src/image_pipeline/upload.rs` に `400` / `415` / `500` へ対応する invalid payload、unsupported media、save failure の分類処理を実装する
+- [x] T022 [US2] `server/src/response.rs` に upload 失敗時の `400` / `415` / `500` と判別可能な文言を返す処理を実装する
+- [x] T023 [US2] `server/src/routes.rs` に multipart 内の画像 file 特定失敗、decode 失敗、空 body を失敗応答へ変換する処理を実装する
+- [x] T024 [US2] `server/src/logging.rs` と `server/src/routes.rs` に upload 失敗時の outcome 記録を追加し、既存画像保護と同時にログで判別できるようにする
 
 **Checkpoint**: User Story 2 が単独で検証可能であり、失敗時に `image.png` が維持されること
 
@@ -103,15 +103,15 @@
 
 ### Verification for User Story 3
 
-- [ ] T025 [P] [US3] `server/src/routes.rs` に連続 upload 後の GET route 反映を検証する HTTP テストを追加する
-- [ ] T026 [P] [US3] `server/src/image_pipeline/upload.rs` に 2 回連続更新時の最終保存結果と中央クロップ一貫性を検証する単体テストを追加する
-- [ ] T027 [US3] `specs/026-post-image-upload/quickstart.md` に連続更新と即時反映の確認手順を追加する
+- [x] T025 [P] [US3] `server/src/routes.rs` に連続 upload 後の GET route 反映を検証する HTTP テストを追加する
+- [x] T026 [P] [US3] `server/src/image_pipeline/upload.rs` に 2 回連続更新時の最終保存結果と中央クロップ一貫性を検証する単体テストを追加する
+- [x] T027 [US3] `specs/026-post-image-upload/quickstart.md` に連続更新と即時反映の確認手順を追加する
 
 ### Implementation for User Story 3
 
-- [ ] T028 [P] [US3] `server/src/image_pipeline/upload.rs` に既存画像の有無に依存しない初回保存と連続更新の置換処理を実装する
-- [ ] T029 [US3] `server/src/routes.rs` に upload 成功直後から既存 GET route が新しい `image.png` を参照する統合処理を仕上げる
-- [ ] T030 [US3] `server/src/logging.rs` と `server/src/routes.rs` に連続成功更新でも一貫した request log が残るよう調整する
+- [x] T028 [P] [US3] `server/src/image_pipeline/upload.rs` に既存画像の有無に依存しない初回保存と連続更新の置換処理を実装する
+- [x] T029 [US3] `server/src/routes.rs` に upload 成功直後から既存 GET route が新しい `image.png` を参照する統合処理を仕上げる
+- [x] T030 [US3] `server/src/logging.rs` と `server/src/routes.rs` に連続成功更新でも一貫した request log が残るよう調整する
 
 **Checkpoint**: すべての user story が独立検証可能であり、連続更新後も最後の成功結果だけが使われること
 
@@ -121,10 +121,10 @@
 
 **Purpose**: 複数 story にまたがる最終調整
 
-- [ ] T031 [P] `server/README.md` に `POST /upload` の request 形式、正規化規則、失敗時挙動を追記する
-- [ ] T032 `server/src/routes.rs`、`server/src/response.rs`、`server/src/logging.rs` のコード整理を行い、`GET /image.bmp` と `GET /image.bin` の既存契約を壊していないことを確認する
-- [ ] T033 [P] `specs/026-post-image-upload/contracts/upload-endpoint-contract.md` と `specs/026-post-image-upload/quickstart.md` を実装結果に合わせて仕上げる
-- [ ] T034 `server/README.md` と `specs/026-post-image-upload/quickstart.md` の手順どおりに手動確認し、必要なら文言を補正する
+- [x] T031 [P] `server/README.md` に `POST /upload` の request 形式、正規化規則、失敗時挙動を追記する
+- [x] T032 `server/src/routes.rs`、`server/src/response.rs`、`server/src/logging.rs` のコード整理を行い、`GET /image.bmp` と `GET /image.bin` の既存契約を壊していないことを確認する
+- [x] T033 [P] `specs/026-post-image-upload/contracts/upload-endpoint-contract.md` と `specs/026-post-image-upload/quickstart.md` を実装結果に合わせて仕上げる
+- [x] T034 `server/README.md` と `specs/026-post-image-upload/quickstart.md` の手順どおりに手動確認し、必要なら文言を補正する
 
 ---
 

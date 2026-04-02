@@ -23,8 +23,8 @@ cd /workspaces/photopainter-updater/server
 ```bash
 curl -i \
   -X POST \
-  -H 'Content-Type: image/jpeg' \
-  --data-binary @./testdata/upload-sample.jpg \
+  -H 'Content-Type: image/png' \
+  --data-binary @./contents/image.png \
   http://127.0.0.1:8000/upload
 ```
 
@@ -39,7 +39,7 @@ curl -i \
 ```bash
 curl -i \
   -X POST \
-  -F 'file=@./testdata/upload-sample.png' \
+  -F 'file=@./contents/image1.png' \
   http://127.0.0.1:8000/upload
 ```
 
@@ -48,6 +48,7 @@ curl -i \
 - `200 OK` が返る
 - `image.png` が更新される
 - 直後の GET で更新後画像が反映される
+- raw body / multipart のどちらでも同じ `POST /upload` を使える
 
 ## 4. 正規化結果を確認する
 
@@ -58,7 +59,7 @@ file ./contents/image.png
 確認:
 
 - 保存結果が PNG である
-- 実装テストまたは補助コマンドで 480x800 になっていることを確認できる
+- `file ./contents/image.png` の出力に PNG と `480 x 800` が含まれる
 - 画像が 480x800 以外でも、中央クロップ規則で正規化される
 
 ## 5. 既存 GET route への反映を確認する
@@ -86,5 +87,6 @@ printf 'not-an-image' | curl -i \
 確認:
 
 - `400` または `415` の失敗応答が返る
+- 空 body や multipart 構造不正は `400`、対応外形式や decode 不可は `415` になる
 - 既存の `image.png` が保持される
 - アクセスログで `POST /upload` の失敗が判別できる

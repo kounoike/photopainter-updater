@@ -26,6 +26,9 @@ pub enum LogOutcome {
     Success,
     InputMissing,
     TransformFailed,
+    UploadSuccess,
+    UploadInvalid,
+    UploadSaveFailed,
     NotFound,
     InternalError,
 }
@@ -36,6 +39,9 @@ impl fmt::Display for LogOutcome {
             Self::Success => write!(f, "success"),
             Self::InputMissing => write!(f, "input-missing"),
             Self::TransformFailed => write!(f, "transform-failed"),
+            Self::UploadSuccess => write!(f, "upload-success"),
+            Self::UploadInvalid => write!(f, "upload-invalid"),
+            Self::UploadSaveFailed => write!(f, "upload-save-failed"),
             Self::NotFound => write!(f, "not-found"),
             Self::InternalError => write!(f, "internal-error"),
         }

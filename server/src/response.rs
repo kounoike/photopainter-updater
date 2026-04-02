@@ -3,7 +3,9 @@ use axum::http::header::{CONTENT_LENGTH, CONTENT_TYPE, HeaderValue};
 use axum::http::{Response, StatusCode};
 
 use crate::config::{BINARY_CONTENT_TYPE, INPUT_IMAGE_NAME, OUTPUT_IMAGE_NAME};
-use crate::image_pipeline::{ImageLoadError, ResponseFormat, ResponsePayload, TransformError};
+use crate::image_pipeline::{
+    ImageLoadError, ResponseFormat, ResponsePayload, TransformError, UploadError, UploadSuccess,
+};
 
 pub fn response_from_payload(payload: ResponsePayload) -> Response<Body> {
     match payload {
@@ -55,6 +57,44 @@ pub fn transform_error_response(
                 format!("failed to encode {output_name}: {err}\n"),
             )
         }
+    }
+}
+
+pub fn upload_success_response(success: &UploadSuccess) -> Response<Body> {
+    let normalization = if success.normalized {
+        "normalized"
+    } else {
+        "stored"
+    };
+    text_response(
+        StatusCode::OK,
+        format!(
+            "updated image.png from {} input; {normalization} to {}x{}\n",
+            success.source_format, success.width, success.height
+        ),
+    )
+}
+
+pub fn upload_error_response(error: &UploadError) -> Response<Body> {
+    match error {
+        UploadError::EmptyBody => text_response(
+            StatusCode::BAD_REQUEST,
+            "request body is empty; send one image file\n",
+        ),
+        UploadError::InvalidMultipart(message) => {
+            text_response(StatusCode::BAD_REQUEST, format!("{message}\n"))
+        }
+        UploadError::UnsupportedMediaType(message) => {
+            text_response(StatusCode::UNSUPPORTED_MEDIA_TYPE, format!("{message}\n"))
+        }
+        UploadError::Decode(err) => text_response(
+            StatusCode::UNSUPPORTED_MEDIA_TYPE,
+            format!("failed to decode supported upload image: {err}\n"),
+        ),
+        UploadError::Save(path, err) => text_response(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("failed to save image.png at {}: {err}\n", path.display()),
+        ),
     }
 }
 

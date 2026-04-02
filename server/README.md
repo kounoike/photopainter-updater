@@ -19,6 +19,51 @@
 - `DITHER_DIFFUSION_RATE`: 数値。実装では `0.0..=1.0` に正規化
 - `DITHER_ZIGZAG`: `0/1` または `true/false`
 
+## 画像更新 API
+
+- Endpoint: `POST /upload`
+- 認証: なし
+- 受理形式:
+  - raw body
+  - `multipart/form-data`
+- 受理する画像形式:
+  - `PNG`
+  - `JPG` / `JPEG`
+  - `GIF`
+  - `BMP`
+  - `WebP`
+
+保存時の挙動:
+
+- 受理した画像は `image.png` へ正規化して保存する
+- 解像度が `480x800` でない場合は、アスペクト比を維持した拡大縮小と中央クロップで `480x800` に合わせる
+- 保存成功後は、既存の `GET /`、`GET /image.bmp`、`GET /image.bin` が新しい `image.png` を入力として返す
+
+失敗時の status:
+
+- `400 Bad Request`: 空 body、multipart 構造不正、multipart 内の画像不足
+- `415 Unsupported Media Type`: 対応外形式、decode 不能な画像データ
+- `500 Internal Server Error`: 保存失敗
+
+raw body の例:
+
+```bash
+curl -i \
+  -X POST \
+  -H 'Content-Type: image/png' \
+  --data-binary @./contents/image.png \
+  http://127.0.0.1:8000/upload
+```
+
+multipart の例:
+
+```bash
+curl -i \
+  -X POST \
+  -F 'file=@./contents/image.png' \
+  http://127.0.0.1:8000/upload
+```
+
 ## 比較実験の例
 
 baseline をそのまま表示:
@@ -54,4 +99,4 @@ COMPARE_SPLIT=horizontal \
 - `server/src/routes.rs`: router、handler、HTTP レベルの回帰テスト
 - `server/src/logging.rs`: `tracing` 初期化、アクセスログ形式
 - `server/src/response.rs`: HTTP response helper
-- `server/src/image_pipeline/`: 画像読込、ディザ、BMP/Binary 生成
+- `server/src/image_pipeline/`: 画像読込、upload 正規化と保存、ディザ、BMP/Binary 生成

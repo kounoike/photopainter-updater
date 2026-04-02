@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 use std::sync::atomic::AtomicU64;
 
-use crate::config::{BINARY_OUTPUT_NAME, OUTPUT_IMAGE_NAME, ServerConfig};
+use crate::config::{BINARY_OUTPUT_NAME, OUTPUT_IMAGE_NAME, ServerConfig, UPLOAD_ROUTE_PATH};
 use crate::logging::{AccessLogger, StdoutAccessLogger, init_tracing, log_startup_messages};
 use crate::routes::build_app;
 
@@ -66,6 +66,7 @@ pub fn startup_messages(config: &ServerConfig) -> Vec<String> {
         format!("Local:  http://127.0.0.1:{port}/ and http://127.0.0.1:{port}/image.bmp"),
         format!("LAN:    use this host's IP address with port {port} from other devices"),
         format!("Binary: http://127.0.0.1:{port}/{BINARY_OUTPUT_NAME} for firmware clients"),
+        format!("Upload: POST http://127.0.0.1:{port}{UPLOAD_ROUTE_PATH}"),
         format!(
             "Profile: {} ({})",
             config.render_options.profile.key(),
