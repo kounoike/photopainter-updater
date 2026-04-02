@@ -24,8 +24,8 @@
 |------|------|
 | service 名 | `ai-toolkit` |
 | image | `ostris/aitoolkit:latest` |
-| ports | Web UI 到達用ポートを公開する |
-| volumes | config / datasets / output / DB / cache の保存先を持つ |
+| ports | `${AI_TOOLKIT_PORT:-8675}:8675` で Web UI 到達用ポートを公開する |
+| volumes | config / datasets / output / cache に加えて DB 用ディレクトリの保存先を持つ |
 | restart | `unless-stopped` 相当を維持する |
 | GPU 前提 | 既存 compose 方針に沿って明示する |
 
@@ -33,9 +33,9 @@
 
 | 項目 | 契約 |
 |------|------|
-| UI ポート | `.env.example` に入口を持つ |
+| UI ポート | `AI_TOOLKIT_PORT` を `.env.example` に持つ |
 | 認証設定 | `AI_TOOLKIT_AUTH` を案内する |
-| 保存先 | AI Toolkit 用保存先の説明を持つ |
+| 保存先 | `AI_TOOLKIT_DATA_DIR` を入口にし、AI Toolkit 用保存先と DB 用ディレクトリの説明を持つ |
 
 ## 利用契約
 
@@ -51,7 +51,7 @@
 1. `docker compose config` が成功する
 2. `docker compose up -d ai-toolkit` でサービス起動できる
 3. `docker compose ps ai-toolkit` または同等手段で起動状態を把握できる
-4. 利用者が指定 URL へアクセスして Web UI 到達可否を判断できる
+4. 利用者が `http://localhost:${AI_TOOLKIT_PORT:-8675}` 相当の URL へアクセスして Web UI 到達可否を判断できる
 5. 再起動後も保存先の参照位置が維持される
 
 ## 非目標

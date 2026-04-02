@@ -35,3 +35,5 @@ Thumbs.db
 
 # ComfyUI Docker データディレクトリ
 comfyui-data/
+ollama-data/
+ai-toolkit-data/

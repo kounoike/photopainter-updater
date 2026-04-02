@@ -23,8 +23,8 @@
 
 **Purpose**: upstream `ostris/ai-toolkit` の compose 前提と本リポジトリの既存 Compose 構成との差分を固定する
 
-- [ ] T001 `compose.yml`、`.env.example`、`README.md` と `specs/025-ai-toolkit-env/plan.md` / `specs/025-ai-toolkit-env/research.md` の差分を確認する
-- [ ] T002 `specs/025-ai-toolkit-env/contracts/ai-toolkit-compose-contract.md` と `specs/025-ai-toolkit-env/quickstart.md` を実装前提に合わせて見直し、AI Toolkit の service 名、保存先、UI 到達条件を確定する
+- [X] T001 `compose.yml`、`.env.example`、`README.md` と `specs/025-ai-toolkit-env/plan.md` / `specs/025-ai-toolkit-env/research.md` の差分を確認する
+- [X] T002 `specs/025-ai-toolkit-env/contracts/ai-toolkit-compose-contract.md` と `specs/025-ai-toolkit-env/quickstart.md` を実装前提に合わせて見直し、AI Toolkit の service 名、保存先、UI 到達条件を確定する
 
 ---
 
@@ -34,10 +34,10 @@
 
 **CRITICAL**: この phase 完了まで user story 実装を開始しない
 
-- [ ] T003 `compose.yml` に追加する `ai-toolkit` service の image、ports、volumes、environment、restart 方針を設計どおりに整理する
-- [ ] T004 [P] `.env.example` に追加する AI Toolkit 用ポート、認証、保存先変数の候補を整理する
-- [ ] T005 [P] `README.md` と `specs/025-ai-toolkit-env/quickstart.md` の役割分担を整理し、入口と詳細手順の境界を確定する
-- [ ] T006 `specs/025-ai-toolkit-env/quickstart.md` に `compose-state` / `env-config` / `storage-path` の 3 系統復帰方針を最終反映する
+- [X] T003 `compose.yml` に追加する `ai-toolkit` service の image、ports、volumes、environment、restart 方針を設計どおりに整理する
+- [X] T004 [P] `.env.example` に追加する AI Toolkit 用ポート、認証、保存先変数の候補を整理する
+- [X] T005 [P] `README.md` と `specs/025-ai-toolkit-env/quickstart.md` の役割分担を整理し、入口と詳細手順の境界を確定する
+- [X] T006 `specs/025-ai-toolkit-env/quickstart.md` に `compose-state` / `env-config` / `storage-path` の 3 系統復帰方針を最終反映する
 
 **Checkpoint**: 基盤完了後に user story 実装へ進む
 
@@ -51,14 +51,14 @@
 
 ### Verification for User Story 1
 
-- [ ] T007 [US1] User Story 1 の手動確認手順を `specs/025-ai-toolkit-env/quickstart.md` に記載する
+- [X] T007 [US1] User Story 1 の手動確認手順を `specs/025-ai-toolkit-env/quickstart.md` に記載する
 
 ### Implementation for User Story 1
 
-- [ ] T008 [US1] `ai-toolkit` service を `compose.yml` に追加する
-- [ ] T009 [US1] AI Toolkit 用の入口説明と起動コマンドを `README.md` に追加する
-- [ ] T010 [US1] `docker compose up -d ai-toolkit` と Web UI 到達確認手順を `specs/025-ai-toolkit-env/quickstart.md` に具体化する
-- [ ] T011 [US1] AI Toolkit 起動に必要な主要環境変数を `.env.example` に追加する
+- [X] T008 [US1] `ai-toolkit` service を `compose.yml` に追加する
+- [X] T009 [US1] AI Toolkit 用の入口説明と起動コマンドを `README.md` に追加する
+- [X] T010 [US1] `docker compose up -d ai-toolkit` と Web UI 到達確認手順を `specs/025-ai-toolkit-env/quickstart.md` に具体化する
+- [X] T011 [US1] AI Toolkit 起動に必要な主要環境変数を `.env.example` に追加する
 
 **Checkpoint**: User Story 1 が独立して検証可能であること
 
@@ -72,14 +72,14 @@
 
 ### Verification for User Story 2
 
-- [ ] T012 [US2] User Story 2 の手動確認手順を `specs/025-ai-toolkit-env/quickstart.md` に記載する
+- [X] T012 [US2] User Story 2 の手動確認手順を `specs/025-ai-toolkit-env/quickstart.md` に記載する
 
 ### Implementation for User Story 2
 
-- [ ] T013 [US2] AI Toolkit 用の config / datasets / output / DB / cache の保存先を `compose.yml` に反映する
-- [ ] T014 [US2] 保存先と再起動前提を `.env.example` に反映する
-- [ ] T015 [US2] 保存先準備、停止、再起動、再開の手順を `specs/025-ai-toolkit-env/quickstart.md` に追加する
-- [ ] T016 [US2] 保存先維持の前提と対象範囲を `specs/025-ai-toolkit-env/contracts/ai-toolkit-compose-contract.md` に同期する
+- [X] T013 [US2] AI Toolkit 用の config / datasets / output / DB 用ディレクトリ / cache の保存先を `compose.yml` に反映する
+- [X] T014 [US2] 保存先と再起動前提を `.env.example` に反映する
+- [X] T015 [US2] 保存先準備、停止、再起動、再開の手順を `specs/025-ai-toolkit-env/quickstart.md` に追加する
+- [X] T016 [US2] 保存先維持の前提と対象範囲を `specs/025-ai-toolkit-env/contracts/ai-toolkit-compose-contract.md` に同期する
 
 **Checkpoint**: User Story 1 と 2 が独立検証可能であること
 
@@ -93,13 +93,13 @@
 
 ### Verification for User Story 3
 
-- [ ] T017 [US3] User Story 3 の手動確認手順を `specs/025-ai-toolkit-env/quickstart.md` または `README.md` に記載する
+- [X] T017 [US3] User Story 3 の手動確認手順を `specs/025-ai-toolkit-env/quickstart.md` または `README.md` に記載する
 
 ### Implementation for User Story 3
 
-- [ ] T018 [US3] 既存 ComfyUI / Ollama 導線を維持した説明へ `README.md` を調整する
-- [ ] T019 [US3] AI Toolkit が追加サービスであることと非目標を `specs/025-ai-toolkit-env/contracts/ai-toolkit-compose-contract.md` に反映する
-- [ ] T020 [US3] 既存サービスと独立して AI Toolkit を起動できる説明を `specs/025-ai-toolkit-env/quickstart.md` に追加する
+- [X] T018 [US3] 既存 ComfyUI / Ollama 導線を維持した説明へ `README.md` を調整する
+- [X] T019 [US3] AI Toolkit が追加サービスであることと非目標を `specs/025-ai-toolkit-env/contracts/ai-toolkit-compose-contract.md` に反映する
+- [X] T020 [US3] 既存サービスと独立して AI Toolkit を起動できる説明を `specs/025-ai-toolkit-env/quickstart.md` に追加する
 
 **Checkpoint**: すべての user story が独立検証可能であること
 
@@ -109,7 +109,7 @@
 
 **Purpose**: 複数 story にまたがる最終確認
 
-- [ ] T021 [P] `specs/025-ai-toolkit-env/spec.md`、`specs/025-ai-toolkit-env/plan.md`、`specs/025-ai-toolkit-env/tasks.md` の整合を最終確認する
+- [X] T021 [P] `specs/025-ai-toolkit-env/spec.md`、`specs/025-ai-toolkit-env/plan.md`、`specs/025-ai-toolkit-env/tasks.md` の整合を最終確認する
 - [ ] T022 `docker compose config` と `docker compose ps ai-toolkit` の確認結果に基づき `README.md`、`.env.example`、`specs/025-ai-toolkit-env/quickstart.md` の手順差分を修正する
 - [ ] T023 `specs/025-ai-toolkit-env/quickstart.md` の手順どおりに AI Toolkit Web UI 到達まで通し確認し、残リスクを `specs/025-ai-toolkit-env/quickstart.md` に反映する
 

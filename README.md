@@ -31,6 +31,23 @@ docker compose exec ollama ollama list
 詳細な手順（モデルの取得・永続化確認・ComfyUI との共存）は
 [specs/023-add-ollama-compose/quickstart.md](specs/023-add-ollama-compose/quickstart.md) を参照してください。
 
+## AI Toolkit 試用環境
+
+AI Toolkit は [`ostris/ai-toolkit`](https://github.com/ostris/ai-toolkit) を、このリポジトリの
+`compose.yml` から `ai-toolkit` サービスとして起動して試すための追加導線です。
+既存の ComfyUI 単独導線や Ollama 単独導線はそのまま残し、AI Toolkit は追加サービスとして共存します。
+
+```bash
+cp .env.example .env
+docker compose up -d ai-toolkit
+```
+
+ブラウザで `http://localhost:8675` を開き、AI Toolkit Web UI に到達できれば試用開始可と判断できます。
+認証を有効にしたい場合は `.env` の `AI_TOOLKIT_AUTH` を変更してください。
+
+詳細な前提条件、保存先、復帰方法、既存導線との境界は
+[specs/025-ai-toolkit-env/quickstart.md](specs/025-ai-toolkit-env/quickstart.md) を参照してください。
+
 ## Firmware
 
 ファームウェアの build、merged image 作成、書き込み手順は [docs/firmware.md](/workspaces/photopainter-updater/docs/firmware.md) を参照してください。

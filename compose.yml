@@ -22,6 +22,7 @@ services:
               count: all
               capabilities: [gpu]
     environment:
+      - TZ=Asia/Tokyo
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
       - CLI_ARGS=${COMFYUI_CLI_ARGS:---fast}
@@ -50,6 +51,34 @@ services:
     restart: unless-stopped
     networks:
       - photopainter
+
+  ai-toolkit:
+    image: ostris/aitoolkit:latest
+    container_name: photopainter-ai-toolkit
+    ports:
+      - "0.0.0.0:${AI_TOOLKIT_PORT:-8675}:8675"
+    volumes:
+      - ${AI_TOOLKIT_DATA_DIR:-./ai-toolkit-data}/cache/huggingface:/root/.cache/huggingface/hub
+      - ${AI_TOOLKIT_DATA_DIR:-./ai-toolkit-data}/db:/app/ai-toolkit/db
+      - ${AI_TOOLKIT_DATA_DIR:-./ai-toolkit-data}/datasets:/app/ai-toolkit/datasets
+      - ${AI_TOOLKIT_DATA_DIR:-./ai-toolkit-data}/output:/app/ai-toolkit/output
+      - ${AI_TOOLKIT_DATA_DIR:-./ai-toolkit-data}/config:/app/ai-toolkit/config
+    environment:
+      - TZ=Asia/Tokyo
+      - AI_TOOLKIT_AUTH=${AI_TOOLKIT_AUTH:-password}
+      - AI_TOOLKIT_DB=/app/ai-toolkit/db/aitk_db.db
+      - NODE_ENV=production
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
+    networks:
+      - photopainter
+    shm_size: "8gb"
 
 networks:
   photopainter:

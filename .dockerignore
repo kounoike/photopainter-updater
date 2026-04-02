@@ -7,6 +7,9 @@ Dockerfile*
 .dockerignore
 *.log*
 .env*
+comfyui-data/
+ollama-data/
+ai-toolkit-data/
 coverage/
 build/
 bin/
