@@ -9,14 +9,23 @@
   - multipart/form-data のみ受け付ける: curl や簡易クライアントからの送信が冗長になる。
   - 別 crate で typed multipart を導入する: 現状の `axum` だけで必要要件を満たせるため過剰。
 
-## Decision 2: 画像形式の判定と PNG 正規化は `image` crate に統一する
+## Decision 2: 画像形式の判定と PNG 正規化は `image` crate に統一し、受理対象は 5 形式へ固定する
 
-- Decision: 受信したバイト列は `image` crate で decode し、受理可能な一般的画像形式だけを通す。保存時は `write_to(..., ImageFormat::Png)` で `image.png` に正規化する。
-- Rationale: 既存 server crate はすでに `image` を使って入力画像 decode と変換を行っているため、同じ依存で upload 側も閉じられる。`image` の docs.rs には `ImageReader::new(...).with_guessed_format()` や `DynamicImage::write_to` があり、拡張子依存ではなく内容ベースで decode と再 encode を完結できる。
+- Decision: 受信したバイト列は `image` crate で decode し、受理対象を PNG、JPG/JPEG、GIF、BMP、WebP に固定する。保存時は `write_to(..., ImageFormat::Png)` で `image.png` に正規化する。
+- Rationale: 既存 server crate はすでに `image` を使って入力画像 decode と変換を行っているため、同じ依存で upload 側も閉じられる。`image` の docs.rs には `ImageReader::new(...).with_guessed_format()` や `DynamicImage::write_to` があり、拡張子依存ではなく内容ベースで decode と再 encode を完結できる。受理形式を 5 つに明示すると、必要な codec feature とテストデータを実装前に固定できる。
 - Alternatives considered:
-  - PNG 以外は拒否する: ユーザーが明示的に「入力を寛容に受け付ける」とした方針に反する。
+  - PNG だけ受け付ける: ユーザーが明示的に指定した 5 形式受理に反する。
   - 画像形式ごとに個別 crate を追加する: 依存が増え、既存パイプラインとの一貫性も落ちる。
   - 生バイトをそのまま保存して後段で decode する: 保存結果を常に `image.png` とする spec に反する。
+
+## Decision 2.5: upload 失敗時の status code を入力種別ごとに固定する
+
+- Decision: 空 body、multipart 構造不正、multipart 内の画像不足は `400 Bad Request`、PNG/JPG/JPEG/GIF/BMP/WebP 以外の対応外形式または decode 不可は `415 Unsupported Media Type`、保存失敗は `500 Internal Server Error` とする。
+- Rationale: contract test と HTTP handler の期待値を先に固定しないと、同じ失敗でも実装者ごとに status code がぶれる。入力不備と media/decode 問題、保存失敗を分けると、応答本文とログの両方で原因を切り分けやすい。
+- Alternatives considered:
+  - 失敗をすべて `400` に寄せる: decode 不可や対応外形式との区別が消える。
+  - `400` と `415` を実装者判断に任せる: contract が固定されず、テストが不安定になる。
+  - `422` を使う: 現行 contract と tasks の期待値を増やし、必要以上に分岐が増える。
 
 ## Decision 3: 480x800 正規化はアスペクト比維持の中央クロップ規則を固定する
 

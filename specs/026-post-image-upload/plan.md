@@ -12,13 +12,13 @@
 ## Technical Context
 
 **Language/Version**: Rust stable（edition 2024）  
-**Primary Dependencies**: `axum` 0.8（`multipart` feature を追加）、Tokio、`image` 0.25、`envconfig`、`tracing`、`tracing-subscriber`  
+**Primary Dependencies**: `axum` 0.8（`multipart` feature を追加）、Tokio、`image` 0.25（PNG/JPEG/GIF/BMP/WebP decode を有効化）、`envconfig`、`tracing`、`tracing-subscriber`  
 **Storage**: ローカルファイル（既定は `server/contents/image.png`）、永続 DB なし  
 **Testing**: `cargo test`、HTTP route の自動テスト、画像正規化の単体テスト、`curl` による手動アップロード確認  
 **Target Platform**: ローカル LAN 上で動く開発用 HTTP サーバ、Linux 系 devcontainer / ローカル実行環境  
 **Project Type**: 単一 Rust サーバへの機能追加  
 **Performance Goals**: 正常な更新要求 1 回で現在画像を置き換え、直後の取得要求から更新結果を返せること。失敗時は追加調査なしで応答本文とアクセスログから原因分類を判断できること  
-**Constraints**: 既存の `GET /`、`GET /image.bmp`、`GET /image.bin` の契約を維持する、更新 path は `POST /upload`、認証なし、外部ストレージや認証基盤を追加しない、保存結果は常に PNG かつ 480x800、`firmware/` と `xiaozhi-esp32/` は変更しない  
+**Constraints**: 既存の `GET /`、`GET /image.bmp`、`GET /image.bin` の契約を維持する、更新 path は `POST /upload`、認証なし、受理対象は PNG/JPG/JPEG/GIF/BMP/WebP に限定する、空 body や multipart 構造不正は `400`、対応外形式や decode 不可は `415`、保存失敗は `500` とする、外部ストレージや認証基盤を追加しない、保存結果は常に PNG かつ 480x800、`firmware/` と `xiaozhi-esp32/` は変更しない  
 **Scale/Scope**: 単一プロセス・単一現在画像・少数クライアント向けのローカル運用。対象は `server/` 配下のアップロード受理、画像正規化、応答/ログ更新、関連文書更新に限定する
 
 ## Constitution Check
@@ -75,10 +75,10 @@ server/
 
 - `POST /upload` は `Content-Type` に応じて raw body と multipart/form-data の処理を分ける
 - multipart 受理には `axum` の `multipart` feature を追加し、単一画像ファイルだけを保存候補として扱う
-- 画像形式の自動判定と PNG 正規化は `image` crate の decode / `guess_format` / PNG encode に統一する
+- 画像形式の自動判定と PNG 正規化は `image` crate の decode / `guess_format` / PNG encode に統一し、受理対象は PNG/JPG/JPEG/GIF/BMP/WebP に限定する
 - 480x800 正規化はアスペクト比維持の拡大縮小と中央クロップ規則を採用する
 - 保存時は一時ファイル経由の置換で現在画像を保護し、失敗時は既存 `image.png` を残す
-- `POST /upload` も既存アクセスログ導線へ統合し、成否と失敗分類を同じ確認経路で追えるようにする
+- `POST /upload` も既存アクセスログ導線へ統合し、成否と `400/415/500` の失敗分類を同じ確認経路で追えるようにする
 
 ## Phase 1: Design & Contracts
 

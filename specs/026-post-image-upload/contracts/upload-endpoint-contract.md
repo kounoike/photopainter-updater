@@ -23,7 +23,7 @@
 - Body:
   - 単一の画像データ
 - Behavior:
-  - サーバは本文を画像として decode し、受理可能なら PNG へ正規化する
+  - サーバは本文を画像として decode し、PNG、JPG/JPEG、GIF、BMP、WebP のいずれかなら PNG へ正規化する
 
 ### 2. multipart/form-data
 
@@ -34,6 +34,17 @@
 - Behavior:
   - サーバは保存対象となる単一画像 field を特定し、その中身を decode する
   - 有効な画像 file field を特定できない場合は失敗とする
+
+## Accepted Media Contract
+
+- Accepted formats:
+  - PNG
+  - JPG / JPEG
+  - GIF
+  - BMP
+  - WebP
+- Rejection rule:
+  - 上記以外の形式、または上記を名乗っていても decode 不能なデータは受理しない
 
 ## Normalization Contract
 
@@ -55,10 +66,15 @@
 
 ### Invalid image or malformed request
 
-- Status:
-  - `400 Bad Request` または `415 Unsupported Media Type` のいずれかで統一する
+- `400 Bad Request`:
+  - 空 body
+  - multipart 構造不正
+  - multipart 内に有効な画像 file field が存在しない
+- `415 Unsupported Media Type`:
+  - PNG/JPG/JPEG/GIF/BMP/WebP 以外の形式
+  - 対応対象形式として扱えず decode 不能な画像データ
 - Body expectations:
-  - 入力不正、画像 decode 不可、multipart 内の画像不足のいずれかを判別できる
+  - 入力不正、対応外形式、画像 decode 不可、multipart 内の画像不足のいずれかを判別できる
 - Preservation rule:
   - 既存の `image.png` を変更しない
 
