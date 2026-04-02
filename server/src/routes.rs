@@ -1,17 +1,19 @@
 use axum::Router;
-use axum::body::Body;
-use axum::extract::{Request, State};
-use axum::http::{Response, StatusCode};
-use axum::routing::{any, get};
+use axum::body::{Body, to_bytes};
+use axum::extract::{FromRequest, Multipart, Request, State};
+use axum::http::{Response, StatusCode, header};
+use axum::routing::{any, get, post};
 
 use crate::app::AppState;
 use crate::image_pipeline::{
     ResponseFormat, image_load_error_outcome, input_image_path_from_dir, load_input_image,
-    render_response, transform_error_outcome,
+    render_response, replace_input_image, transform_error_outcome, upload_error_outcome,
+    upload_success_outcome,
 };
 use crate::logging::{LogOutcome, extract_remote_addr, log_request};
 use crate::response::{
     image_load_error_response, response_from_payload, text_response, transform_error_response,
+    upload_error_response, upload_success_response,
 };
 
 pub fn build_app(state: AppState) -> Router {
@@ -19,6 +21,7 @@ pub fn build_app(state: AppState) -> Router {
         .route("/", get(serve_binary_image))
         .route("/image.bmp", get(serve_image))
         .route("/image.bin", get(serve_binary_image))
+        .route(crate::config::UPLOAD_ROUTE_PATH, post(upload_image))
         .fallback(any(serve_not_found))
         .with_state(state)
 }
@@ -98,6 +101,155 @@ async fn serve_not_found(State(state): State<AppState>, request: Request) -> Res
     response
 }
 
+async fn upload_image(State(state): State<AppState>, request: Request) -> Response<Body> {
+    let method = request.method().clone();
+    let path = request.uri().path().to_string();
+    let remote = extract_remote_addr(&request);
+    let is_multipart = request
+        .headers()
+        .get(header::CONTENT_TYPE)
+        .and_then(|value| value.to_str().ok())
+        .is_some_and(|value| value.starts_with("multipart/form-data"));
+
+    let image_bytes = if is_multipart {
+        match Multipart::from_request(request, &()).await {
+            Ok(multipart) => match extract_multipart_image(multipart).await {
+                Ok(bytes) => bytes,
+                Err(err) => {
+                    let response = upload_error_response(&err);
+                    record(
+                        &state,
+                        method,
+                        path,
+                        remote,
+                        response.status(),
+                        upload_error_outcome(&err),
+                    );
+                    return response;
+                }
+            },
+            Err(err) => {
+                let upload_error = crate::image_pipeline::UploadError::InvalidMultipart(format!(
+                    "invalid multipart request: {err}"
+                ));
+                let response = upload_error_response(&upload_error);
+                record(
+                    &state,
+                    method,
+                    path,
+                    remote,
+                    response.status(),
+                    upload_error_outcome(&upload_error),
+                );
+                return response;
+            }
+        }
+    } else {
+        match to_bytes(request.into_body(), usize::MAX).await {
+            Ok(bytes) => bytes.to_vec(),
+            Err(err) => {
+                let upload_error = crate::image_pipeline::UploadError::InvalidMultipart(format!(
+                    "failed to read request body: {err}"
+                ));
+                let response = upload_error_response(&upload_error);
+                record(
+                    &state,
+                    method,
+                    path,
+                    remote,
+                    response.status(),
+                    upload_error_outcome(&upload_error),
+                );
+                return response;
+            }
+        }
+    };
+
+    let (png_bytes, success) = match crate::image_pipeline::decode_upload_image(&image_bytes) {
+        Ok(value) => value,
+        Err(err) => {
+            let response = upload_error_response(&err);
+            record(
+                &state,
+                method,
+                path,
+                remote,
+                response.status(),
+                upload_error_outcome(&err),
+            );
+            return response;
+        }
+    };
+
+    if let Err(err) = replace_input_image(&state.content_dir, &png_bytes) {
+        let response = upload_error_response(&err);
+        record(
+            &state,
+            method,
+            path,
+            remote,
+            response.status(),
+            upload_error_outcome(&err),
+        );
+        return response;
+    }
+
+    let response = upload_success_response(&success);
+    record(
+        &state,
+        method,
+        path,
+        remote,
+        response.status(),
+        upload_success_outcome(),
+    );
+    response
+}
+
+async fn extract_multipart_image(
+    mut multipart: Multipart,
+) -> Result<Vec<u8>, crate::image_pipeline::UploadError> {
+    let mut image_bytes: Option<Vec<u8>> = None;
+
+    while let Some(field) = multipart.next_field().await.map_err(|err| {
+        crate::image_pipeline::UploadError::InvalidMultipart(format!(
+            "invalid multipart payload: {err}"
+        ))
+    })? {
+        let is_file_field = field.file_name().is_some()
+            || field
+                .content_type()
+                .is_some_and(|value| value.starts_with("image/"));
+        if !is_file_field {
+            continue;
+        }
+
+        let data = field.bytes().await.map_err(|err| {
+            crate::image_pipeline::UploadError::InvalidMultipart(format!(
+                "invalid multipart field payload: {err}"
+            ))
+        })?;
+
+        if data.is_empty() {
+            continue;
+        }
+
+        if image_bytes.is_some() {
+            return Err(crate::image_pipeline::UploadError::InvalidMultipart(
+                "multipart request must contain exactly one non-empty image file".to_string(),
+            ));
+        }
+
+        image_bytes = Some(data.to_vec());
+    }
+
+    image_bytes.ok_or_else(|| {
+        crate::image_pipeline::UploadError::InvalidMultipart(
+            "multipart request did not contain a valid image file".to_string(),
+        )
+    })
+}
+
 fn record(
     state: &AppState,
     method: axum::http::Method,
@@ -125,8 +277,9 @@ mod tests {
     use std::sync::Arc;
 
     use axum::body::to_bytes;
+    use axum::http::Method;
     use axum::http::header::{CONTENT_LENGTH, CONTENT_TYPE, HeaderValue};
-    use image::ImageFormat;
+    use image::{DynamicImage, ImageFormat};
     use image::{Rgb, RgbImage};
     use std::sync::Mutex;
     use tower::ServiceExt;
@@ -168,6 +321,21 @@ mod tests {
         image
             .save_with_format(path, ImageFormat::Png)
             .expect("write png fixture");
+    }
+
+    fn encoded_image_bytes(format: ImageFormat, width: u32, height: u32) -> Vec<u8> {
+        let mut image = RgbImage::from_pixel(width, height, Rgb([255, 255, 255]));
+        image.put_pixel(0, 0, Rgb([255, 0, 0]));
+        image.put_pixel(
+            width.saturating_sub(1),
+            height.saturating_sub(1),
+            Rgb([0, 0, 255]),
+        );
+        let mut cursor = std::io::Cursor::new(Vec::new());
+        DynamicImage::ImageRgb8(image)
+            .write_to(&mut cursor, format)
+            .expect("encode upload fixture");
+        cursor.into_inner()
     }
 
     fn create_content_dir(prefix: &str, pixels: &[(u32, u32, [u8; 3])]) -> PathBuf {
@@ -225,6 +393,41 @@ mod tests {
             .expect("build request");
         request.extensions_mut().insert(remote);
         request
+    }
+
+    fn request_with_body(
+        method: Method,
+        uri: &str,
+        remote: SocketAddr,
+        content_type: &'static str,
+        body: Vec<u8>,
+    ) -> Request<Body> {
+        let mut request = Request::builder()
+            .method(method)
+            .uri(uri)
+            .header(CONTENT_TYPE, content_type)
+            .body(Body::from(body))
+            .expect("build request with body");
+        request.extensions_mut().insert(remote);
+        request
+    }
+
+    fn multipart_body(
+        boundary: &str,
+        filename: &str,
+        content_type: &str,
+        payload: &[u8],
+    ) -> Vec<u8> {
+        let mut body = Vec::new();
+        body.extend_from_slice(format!("--{boundary}\r\n").as_bytes());
+        body.extend_from_slice(
+            format!("Content-Disposition: form-data; name=\"file\"; filename=\"{filename}\"\r\n")
+                .as_bytes(),
+        );
+        body.extend_from_slice(format!("Content-Type: {content_type}\r\n\r\n").as_bytes());
+        body.extend_from_slice(payload);
+        body.extend_from_slice(format!("\r\n--{boundary}--\r\n").as_bytes());
+        body
     }
 
     #[tokio::test]
@@ -507,6 +710,251 @@ mod tests {
         let entries = logged_entries(&logger);
         assert_eq!(entries.len(), 2);
         assert_ne!(entries[0].request_id, entries[1].request_id);
+
+        cleanup_dir(&dir);
+    }
+
+    #[tokio::test]
+    async fn upload_accepts_raw_and_updates_bmp_and_binary_routes() {
+        let dir = create_content_dir("upload-raw", &[(0, 0, [255, 0, 0])]);
+        let (state, logger) = test_state(dir.clone());
+        let router = build_app(state);
+
+        let upload = router
+            .clone()
+            .oneshot(request_with_body(
+                Method::POST,
+                crate::config::UPLOAD_ROUTE_PATH,
+                "192.168.0.50:43000".parse().expect("remote addr"),
+                "image/jpeg",
+                encoded_image_bytes(ImageFormat::Jpeg, 64, 96),
+            ))
+            .await
+            .expect("upload response");
+
+        assert_eq!(upload.status(), StatusCode::OK);
+        let upload_text = String::from_utf8(response_body(upload).await.to_vec()).expect("utf8");
+        assert!(upload_text.contains("updated image.png"));
+
+        let bmp = router
+            .clone()
+            .oneshot(request_with_remote(
+                "/image.bmp",
+                "192.168.0.51:43001".parse().expect("remote addr"),
+            ))
+            .await
+            .expect("bmp response");
+        let binary = router
+            .oneshot(request_with_remote(
+                "/image.bin",
+                "192.168.0.52:43002".parse().expect("remote addr"),
+            ))
+            .await
+            .expect("binary response");
+
+        assert_eq!(bmp.status(), StatusCode::OK);
+        assert_eq!(binary.status(), StatusCode::OK);
+        assert_eq!(&response_body(bmp).await[..2], b"BM");
+        assert_eq!(&response_body(binary).await[..4], b"PPBF");
+
+        let entries = logged_entries(&logger);
+        assert_eq!(entries.len(), 3);
+        assert_eq!(entries[0].path, crate::config::UPLOAD_ROUTE_PATH);
+        assert_eq!(entries[0].outcome, LogOutcome::UploadSuccess);
+
+        cleanup_dir(&dir);
+    }
+
+    #[tokio::test]
+    async fn upload_accepts_multipart_and_updates_current_image() {
+        let dir = create_content_dir("upload-multipart", &[(0, 0, [255, 0, 0])]);
+        let (state, logger) = test_state(dir.clone());
+        let router = build_app(state);
+        let boundary = "boundary123";
+        let payload = encoded_image_bytes(ImageFormat::Png, 80, 120);
+
+        let upload = router
+            .oneshot(request_with_body(
+                Method::POST,
+                crate::config::UPLOAD_ROUTE_PATH,
+                "192.168.0.53:43003".parse().expect("remote addr"),
+                "multipart/form-data; boundary=boundary123",
+                multipart_body(boundary, "image.png", "image/png", &payload),
+            ))
+            .await
+            .expect("multipart upload");
+
+        assert_eq!(upload.status(), StatusCode::OK);
+        let saved = crate::image_pipeline::load_input_image(&input_image_path_from_dir(&dir))
+            .expect("saved png");
+        assert_eq!(
+            saved.dimensions(),
+            (
+                crate::config::UPLOAD_IMAGE_WIDTH,
+                crate::config::UPLOAD_IMAGE_HEIGHT
+            )
+        );
+        let entries = logged_entries(&logger);
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].outcome, LogOutcome::UploadSuccess);
+
+        cleanup_dir(&dir);
+    }
+
+    #[tokio::test]
+    async fn upload_rejects_empty_body_with_bad_request() {
+        let dir = create_content_dir("upload-empty", &[(0, 0, [255, 0, 0])]);
+        let (state, logger) = test_state(dir.clone());
+        let router = build_app(state);
+
+        let response = router
+            .oneshot(request_with_body(
+                Method::POST,
+                crate::config::UPLOAD_ROUTE_PATH,
+                "192.168.0.54:43004".parse().expect("remote addr"),
+                "application/octet-stream",
+                Vec::new(),
+            ))
+            .await
+            .expect("empty upload");
+
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+        let entries = logged_entries(&logger);
+        assert_eq!(entries[0].outcome, LogOutcome::UploadInvalid);
+
+        cleanup_dir(&dir);
+    }
+
+    #[tokio::test]
+    async fn upload_rejects_unsupported_media_with_unsupported_media_type() {
+        let dir = create_content_dir("upload-invalid-media", &[(0, 0, [255, 0, 0])]);
+        let (state, logger) = test_state(dir.clone());
+        let router = build_app(state);
+
+        let response = router
+            .oneshot(request_with_body(
+                Method::POST,
+                crate::config::UPLOAD_ROUTE_PATH,
+                "192.168.0.55:43005".parse().expect("remote addr"),
+                "application/octet-stream",
+                b"not-a-real-image".to_vec(),
+            ))
+            .await
+            .expect("invalid media upload");
+
+        assert_eq!(response.status(), StatusCode::UNSUPPORTED_MEDIA_TYPE);
+        let entries = logged_entries(&logger);
+        assert_eq!(entries[0].outcome, LogOutcome::UploadInvalid);
+
+        cleanup_dir(&dir);
+    }
+
+    #[tokio::test]
+    async fn upload_rejects_multipart_without_file_with_bad_request() {
+        let dir = create_content_dir("upload-missing-file", &[(0, 0, [255, 0, 0])]);
+        let (state, logger) = test_state(dir.clone());
+        let router = build_app(state);
+        let boundary = "boundary456";
+        let body = format!(
+            "--{boundary}\r\nContent-Disposition: form-data; name=\"note\"\r\n\r\nhello\r\n--{boundary}--\r\n"
+        )
+        .into_bytes();
+
+        let response = router
+            .oneshot(request_with_body(
+                Method::POST,
+                crate::config::UPLOAD_ROUTE_PATH,
+                "192.168.0.56:43006".parse().expect("remote addr"),
+                "multipart/form-data; boundary=boundary456",
+                body,
+            ))
+            .await
+            .expect("missing file upload");
+
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+        let entries = logged_entries(&logger);
+        assert_eq!(entries[0].outcome, LogOutcome::UploadInvalid);
+
+        cleanup_dir(&dir);
+    }
+
+    #[tokio::test]
+    async fn upload_returns_internal_server_error_when_save_fails() {
+        let missing_dir = temp_path("upload-save-fail");
+        let (state, logger) = test_state(missing_dir.clone());
+        let router = build_app(state);
+
+        let response = router
+            .oneshot(request_with_body(
+                Method::POST,
+                crate::config::UPLOAD_ROUTE_PATH,
+                "192.168.0.57:43007".parse().expect("remote addr"),
+                "image/png",
+                encoded_image_bytes(ImageFormat::Png, 32, 32),
+            ))
+            .await
+            .expect("save failure response");
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        let entries = logged_entries(&logger);
+        assert_eq!(entries[0].outcome, LogOutcome::UploadSaveFailed);
+    }
+
+    #[tokio::test]
+    async fn upload_last_successful_request_wins() {
+        let dir = create_content_dir("upload-last-success", &[(0, 0, [255, 0, 0])]);
+        let (state, logger) = test_state(dir.clone());
+        let router = build_app(state);
+
+        let first = router
+            .clone()
+            .oneshot(request_with_body(
+                Method::POST,
+                crate::config::UPLOAD_ROUTE_PATH,
+                "192.168.0.58:43008".parse().expect("remote addr"),
+                "image/png",
+                encoded_image_bytes(ImageFormat::Png, 32, 64),
+            ))
+            .await
+            .expect("first upload");
+        assert_eq!(first.status(), StatusCode::OK);
+
+        let second = router
+            .clone()
+            .oneshot(request_with_body(
+                Method::POST,
+                crate::config::UPLOAD_ROUTE_PATH,
+                "192.168.0.59:43009".parse().expect("remote addr"),
+                "image/bmp",
+                encoded_image_bytes(ImageFormat::Bmp, 96, 48),
+            ))
+            .await
+            .expect("second upload");
+        assert_eq!(second.status(), StatusCode::OK);
+
+        let fetched = router
+            .oneshot(request_with_remote(
+                "/image.bmp",
+                "192.168.0.60:43010".parse().expect("remote addr"),
+            ))
+            .await
+            .expect("fetch updated image");
+        assert_eq!(fetched.status(), StatusCode::OK);
+
+        let saved = crate::image_pipeline::load_input_image(&input_image_path_from_dir(&dir))
+            .expect("saved png");
+        assert_eq!(
+            saved.dimensions(),
+            (
+                crate::config::UPLOAD_IMAGE_WIDTH,
+                crate::config::UPLOAD_IMAGE_HEIGHT
+            )
+        );
+        let entries = logged_entries(&logger);
+        assert_eq!(entries.len(), 3);
+        assert_eq!(entries[0].outcome, LogOutcome::UploadSuccess);
+        assert_eq!(entries[1].outcome, LogOutcome::UploadSuccess);
+        assert_eq!(entries[2].outcome, LogOutcome::Success);
 
         cleanup_dir(&dir);
     }

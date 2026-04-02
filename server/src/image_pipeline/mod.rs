@@ -2,6 +2,7 @@ pub mod binary;
 pub mod bmp;
 pub mod dither;
 pub mod load;
+pub mod upload;
 
 use std::path::{Path, PathBuf};
 
@@ -15,6 +16,10 @@ pub use binary::payload_checksum;
 pub use bmp::encode_bmp_24;
 pub use dither::{apply_reference_dither, boost_saturation, rotate_right_90};
 pub use load::load_input_image;
+pub use upload::{
+    UploadError, UploadSuccess, decode_upload_image, replace_input_image, upload_error_outcome,
+    upload_success_outcome,
+};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ResponseFormat {

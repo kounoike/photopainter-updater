@@ -5,6 +5,7 @@ use envconfig::Envconfig;
 pub const INPUT_IMAGE_NAME: &str = "image.png";
 pub const OUTPUT_IMAGE_NAME: &str = "image.bmp";
 pub const BINARY_OUTPUT_NAME: &str = "image.bin";
+pub const UPLOAD_ROUTE_PATH: &str = "/upload";
 pub const BINARY_CONTENT_TYPE: &str = "application/vnd.photopainter-frame";
 pub const BINARY_FRAME_MAGIC: [u8; 4] = *b"PPBF";
 pub const BINARY_FRAME_VERSION: u8 = 1;
@@ -12,6 +13,8 @@ pub const BINARY_FRAME_FLAGS: u8 = 0;
 pub const BINARY_HEADER_LENGTH: u16 = 20;
 pub const EPD_DISPLAY_WIDTH: usize = 800;
 pub const EPD_DISPLAY_HEIGHT: usize = 480;
+pub const UPLOAD_IMAGE_WIDTH: u32 = EPD_DISPLAY_HEIGHT as u32;
+pub const UPLOAD_IMAGE_HEIGHT: u32 = EPD_DISPLAY_WIDTH as u32;
 pub const SATURATION_SCALE: f32 = 1.52;
 pub const SATURATION_BIAS: f32 = 0.29;
 pub const VALUE_SCALE: f32 = 1.02;
@@ -230,6 +233,10 @@ pub fn default_content_dir() -> PathBuf {
 
 pub fn input_image_path_from_dir(content_dir: &Path) -> PathBuf {
     content_dir.join(INPUT_IMAGE_NAME)
+}
+
+pub fn input_image_temp_path_from_dir(content_dir: &Path) -> PathBuf {
+    content_dir.join(format!("{INPUT_IMAGE_NAME}.tmp"))
 }
 
 fn parse_diffusion_rate(raw: &str) -> Result<f32, String> {
