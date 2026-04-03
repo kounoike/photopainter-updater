@@ -26,7 +26,7 @@
 
 - [ ] T003 `server/Dockerfile` に multi-stage の HTTP サーバ build / run 基本構成を追加する
 - [ ] T004 [P] `compose.yml` に追加する `server` service の environment / volume / port / network 方針を `specs/029-compose-http-server/quickstart.md` と `contracts/compose-http-server-runtime-contract.md` に反映する
-- [ ] T005 [P] `.env.example` と `server/README.md` に compose 運用で引き継ぐ `SERVER_PORT`、`SERVER_CONTENT_DIR`、ログ導線の前提を整理する
+- [ ] T005 [P] `.env.example` と `server/README.md` に compose 運用で引き継ぐ `SERVER_EXPOSE_PORT`、`SERVER_CONTENT_DIR`、container 内 8000 固定、ログ導線の前提を整理する
 
 ---
 
@@ -44,7 +44,7 @@
 ### Implementation for User Story 1
 
 - [ ] T008 [US1] `compose.yml` に HTTP サーバ `server` service を追加する
-- [ ] T009 [US1] `server/Dockerfile`、`.env.example` と必要な ignore 設定で pinned base image、BuildKit cache、server image build / env 注入を実装する
+- [ ] T009 [US1] `server/Dockerfile`、`.env.example` と必要な ignore 設定で pinned base image、BuildKit cache、server image build、container 内 8000 固定 / host 側 `SERVER_EXPOSE_PORT` 公開を実装する
 - [ ] T010 [US1] `server/run.sh` の責務を compose / container 起動へ置き換えられるよう `server/README.md` を更新する
 
 ---

@@ -39,6 +39,13 @@
 - Docker named volume に移す: 既存ファイルの扱いが変わる
 - image を container 内へ bake-in する: upload 更新と相性が悪い
 
+## Decision 2a: container 内 port は 8000 固定、host 公開 port だけを設定可能にする
+
+**Decision**: server process の `PORT` は container 内で 8000 固定とし、host へ公開する port だけを `SERVER_EXPOSE_PORT` で切り替える。  
+**Rationale**: container 内 port まで可変にすると compose 設定と server process 設定が二重化しやすい。runtime の listen port は固定し、外部公開だけを変数化する方が運用が単純である。  
+**Alternatives considered**:
+- `SERVER_PORT` をそのまま container 内 `PORT` と host 側公開の両方に使う: 設定が混線しやすい
+
 ## Decision 3: server は compose 内でも独立起動可能にする
 
 **Decision**: `docker compose up -d server` で単体起動でき、必要なら他サービスと同時起動もできる形にする。  

@@ -66,7 +66,7 @@ server/
 └── src/
 ```
 
-**Structure Decision**: compose との統合点は root `compose.yml` に置き、HTTP サーバの container 化責務は `server/Dockerfile` に閉じ込める。既存配信データは `SERVER_CONTENT_DIR` で切り替え可能にしつつ既定値を `server/contents/` に保ち、`server/run.sh` は廃止対象とする。
+**Structure Decision**: compose との統合点は root `compose.yml` に置き、HTTP サーバの container 化責務は `server/Dockerfile` に閉じ込める。既存配信データは `SERVER_CONTENT_DIR` で切り替え可能にしつつ既定値を `server/contents/` に保ち、container 内 port は 8000 固定、host 公開 port は `SERVER_EXPOSE_PORT` で切り替える。`server/run.sh` は廃止対象とする。
 
 ## Phase 0: Research 成果物
 
@@ -80,7 +80,8 @@ server/
 - `server/Dockerfile` は multi-stage build とし、builder には pinned Rust official image、runtime には小さめの runtime image を使う
 - Docker BuildKit cache を使って Cargo registry / git / target の再利用を行う
 - 配信データは `${SERVER_CONTENT_DIR:-./server/contents}` を bind mount する
-- `.env.example` に `SERVER_PORT` と `SERVER_CONTENT_DIR` を追加し、compose から server process へ `PORT` と `CONTENT_DIR` を渡す
+- `.env.example` に `SERVER_EXPOSE_PORT` と `SERVER_CONTENT_DIR` を追加する
+- container 内の server process は `PORT=8000` 固定で起動し、compose の `ports` だけを `SERVER_EXPOSE_PORT` で切り替える
 - 既存 endpoint `/`、`/image.bmp`、`/image.bin`、`/upload` は変更しない
 
 ### Validation 設計

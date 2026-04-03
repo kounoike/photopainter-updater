@@ -7,13 +7,15 @@ cp .env.example .env
 docker compose up -d server
 ```
 
+`.env` では `SERVER_EXPOSE_PORT` で host 側公開ポートを、`SERVER_CONTENT_DIR` で配信元ディレクトリを変更できる。container 内の server は 8000 番で待ち受ける。
+
 ## 2. 起動確認
 
 ```bash
 docker compose logs --tail=200 server
-curl -I http://127.0.0.1:8000/
-curl -I http://127.0.0.1:8000/image.bmp
-curl -I http://127.0.0.1:8000/image.bin
+curl -I http://127.0.0.1:${SERVER_EXPOSE_PORT:-8000}/
+curl -I http://127.0.0.1:${SERVER_EXPOSE_PORT:-8000}/image.bmp
+curl -I http://127.0.0.1:${SERVER_EXPOSE_PORT:-8000}/image.bin
 ```
 
 ## 3. upload 確認
@@ -21,7 +23,7 @@ curl -I http://127.0.0.1:8000/image.bin
 ```bash
 curl -i -X POST -H 'Content-Type: image/png' \
   --data-binary @server/contents/image1.png \
-  http://127.0.0.1:8000/upload
+  http://127.0.0.1:${SERVER_EXPOSE_PORT:-8000}/upload
 ```
 
 ## 4. 他サービスと共存させる

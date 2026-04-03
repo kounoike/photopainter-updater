@@ -6,9 +6,9 @@
 |------|----|------|
 | `service_name` | string | compose 上の HTTP サーバ service 名 |
 | `image_build_context` | path | server image を build する context |
-| `port_mapping` | string | host と container の HTTP port 対応 |
+| `port_mapping` | string | host の `SERVER_EXPOSE_PORT` と container 内 8000 の HTTP port 対応 |
 | `content_mount` | path mapping | `server/contents` を runtime へ渡す bind mount |
-| `server_port_env` | string | `.env.example` の `SERVER_PORT` |
+| `server_expose_port_env` | string | `.env.example` の `SERVER_EXPOSE_PORT` |
 | `server_content_dir_env` | string | `.env.example` の `SERVER_CONTENT_DIR` |
 
 ### Invariants
@@ -16,7 +16,8 @@
 - 既存 endpoint 契約は維持する
 - server は単体起動可能である
 - 他 compose サービスと同居してもよい
-- `SERVER_PORT` と `SERVER_CONTENT_DIR` は利用者が上書き可能である
+- container 内 port は 8000 固定である
+- `SERVER_EXPOSE_PORT` と `SERVER_CONTENT_DIR` は利用者が上書き可能である
 
 ## 2. 配信コンテンツ
 
@@ -39,7 +40,7 @@
 | `stop_command` | command | 停止手順 |
 | `log_command` | command | ログ確認手順 |
 | `health_check` | action | 起動後の疎通確認 |
-| `env_template` | file | `.env.example` に記載する `SERVER_PORT` と `SERVER_CONTENT_DIR` |
+| `env_template` | file | `.env.example` に記載する `SERVER_EXPOSE_PORT` と `SERVER_CONTENT_DIR` |
 
 ### State
 
