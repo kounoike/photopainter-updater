@@ -8,6 +8,7 @@ services:
       # 必須: モデル・カスタムノード・pip依存ライブラリ・生成画像
       - ${COMFYUI_DATA_DIR:-./comfyui-data}/models:/root/ComfyUI/models
       - ${COMFYUI_DATA_DIR:-./comfyui-data}/custom_nodes:/root/ComfyUI/custom_nodes
+      - ./comfyui/custom_node/comfyui-photopainter-custom:/root/ComfyUI/custom_nodes/comfyui-photopainter-custom:ro
       - ${COMFYUI_DATA_DIR:-./comfyui-data}/dot-local:/root/.local
       - ${COMFYUI_DATA_DIR:-./comfyui-data}/output:/root/ComfyUI/output
       # 推奨: ユーザー設定・入力ファイル・ダウンロードキャッシュ

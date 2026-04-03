@@ -135,6 +135,8 @@ Use slash commands:
 - Rust stable（edition 2024） + `axum` 0.8（`multipart` feature を追加）、Tokio、`image` 0.25、`envconfig`、`tracing`、`tracing-subscriber` (026-post-image-upload)
 - Python 3.x（ComfyUI ランタイム同梱版） + ComfyUI custom node backend API（`NODE_CLASS_MAPPINGS` / `OUTPUT_NODE`）、Python 標準ライブラリ `urllib` / `io`、既存ランタイムに含まれる `Pillow`、`numpy` (027-comfyui-post-node)
 - ローカルファイル（repo 内 `comfyui/custom_node/comfyui-photopainter-custom/`、実行時 `comfyui-data/custom_nodes/`） (027-comfyui-post-node)
+- Docker Compose v2 YAML、Markdown + 既存 `compose.yml`、既存 `yanwk/comfyui-boot:cu128-slim`、既存 repo 配下 `comfyui/custom_node/comfyui-photopainter-custom` (028-auto-mount-comfyui-post-node)
+- bind mount（repo 内 custom node ディレクトリ、`${COMFYUI_DATA_DIR:-./comfyui-data}/custom_nodes`） (028-auto-mount-comfyui-post-node)
 
 ## Recent Changes
 - 002-add-run-script: Added Bash (POSIX shell) / Python 3 (実行環境) + Python 標準の HTTP 配信機能

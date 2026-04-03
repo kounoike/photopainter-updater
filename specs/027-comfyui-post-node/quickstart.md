@@ -6,28 +6,24 @@
 - 026 の upload server を使う場合は `server/run.sh` などで `POST /upload` が到達可能になっている
 - ComfyUI が Docker 内、server がホスト上で動く場合、送信先 URL は `localhost` ではなく ComfyUI から見えるホスト IP を使う
 
-## 1. ノードを ComfyUI に配置する
+## 1. ComfyUI を起動する
 
-repo 管理ソースは `comfyui/custom_node/comfyui-photopainter-custom/` にある。現在の
-compose では repo ルート自体は ComfyUI container に mount されていないため、
-repo 側を symlink しても container からは辿れない。runtime には copy で導入する。
+repo 管理ソース `comfyui/custom_node/comfyui-photopainter-custom/` は `compose.yml`
+により ComfyUI container の `custom_nodes` 探索先へ自動 mount される。
 
 ```bash
 docker compose up -d comfyui
-docker compose exec comfyui mkdir -p /root/ComfyUI/custom_nodes/comfyui-photopainter-custom
-docker compose cp comfyui/custom_node/comfyui-photopainter-custom/. \
-  comfyui:/root/ComfyUI/custom_nodes/comfyui-photopainter-custom
 ```
 
-## 2. ComfyUI を再起動する
+## 2. node が読み込まれることを確認する
 
 ```bash
-docker compose restart comfyui
 docker compose logs --tail=200 comfyui
 ```
 
 ComfyUI 起動ログに custom node 読み込み失敗が出ていないこと、UI の Add Node から
-`PhotoPainter PNG POST` が見えることを確認する。
+`PhotoPainter PNG POST` が見えることを確認する。既存の ComfyUI Manager や他の
+custom node が消えていないことも確認する。
 
 ## 3. 026 upload server を起動する
 
@@ -79,3 +75,11 @@ PY
 - `400` を返すテスト先を使う
 
 いずれも node が成功扱いにならず、実行エラーになることを確認する。
+
+## 7. node 更新を反映する
+
+repo 側の custom node ソースを編集したあとは ComfyUI を再起動する。
+
+```bash
+docker compose restart comfyui
+```

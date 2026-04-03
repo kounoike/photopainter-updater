@@ -27,15 +27,12 @@ http://192.168.1.10:8000/upload
 ## runtime への配置
 
 repo 管理ソースは `comfyui/custom_node/comfyui-photopainter-custom/` にあります。
-現在の compose では repo ルートが ComfyUI container に mount されていないため、
-repo 側を symlink しても container からは解決できません。runtime には copy で導入します。
+`compose.yml` がこのディレクトリを ComfyUI container の
+`/root/ComfyUI/custom_nodes/comfyui-photopainter-custom` に read-only mount するため、
+追加の copy は不要です。
 
 ```bash
 docker compose up -d comfyui
-docker compose exec comfyui mkdir -p /root/ComfyUI/custom_nodes/comfyui-photopainter-custom
-docker compose cp comfyui/custom_node/comfyui-photopainter-custom/. \
-  comfyui:/root/ComfyUI/custom_nodes/comfyui-photopainter-custom
-docker compose restart comfyui
 ```
 
 node 読み込み確認:
@@ -45,6 +42,12 @@ docker compose logs --tail=200 comfyui
 ```
 
 読み込み失敗がなければ ComfyUI の Add Node から `PhotoPainter PNG POST` を選べます。
+
+repo 側ソースを更新したあとは ComfyUI を再起動します。
+
+```bash
+docker compose restart comfyui
+```
 
 ## テスト
 
