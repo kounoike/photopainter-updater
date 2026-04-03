@@ -106,7 +106,7 @@
 **Purpose**: 実装結果を横断的に仕上げる
 
 - [ ] T024 [P] `specs/030-build-comfyui-image/plan.md`、`research.md`、`data-model.md`、`quickstart.md`、`contracts/comfyui-self-build-runtime-contract.md` の最終整合を確認し、差分があれば文書を更新する
-- [ ] T025 `docker compose config`、`docker compose build comfyui`、`docker compose up -d comfyui` の実施結果を確認し、失敗時は関連ファイルを修正する
+- [ ] T025 `docker compose config`、`docker compose build comfyui`、`docker compose up -d comfyui`、`docker compose restart comfyui`、`docker compose down && docker compose up -d comfyui`、troubleshooting 導線の実施結果を確認し、失敗時は関連ファイルを修正する
 - [ ] T026 `README.md`、`comfyui/custom_node/comfyui-photopainter-custom/README.md`、`specs/030-build-comfyui-image/quickstart.md` の手順文を最終確認し、重複や矛盾を解消する
 
 ---
