@@ -18,6 +18,10 @@ docker compose up
 詳細な手順（モデルの追加・カスタムノードのインストール・GPU 確認等）は
 [specs/022-add-comfyui-compose/quickstart.md](specs/022-add-comfyui-compose/quickstart.md) を参照してください。
 
+repo 管理の custom node は [`comfyui/custom_node/`](./comfyui/custom_node/) 配下に置きます。
+PhotoPainter 用の PNG POST ノードの導入と 026 upload server との接続例は
+[specs/027-comfyui-post-node/quickstart.md](specs/027-comfyui-post-node/quickstart.md) を参照してください。
+
 ## Ollama（LLM 推論）
 
 ComfyUI と同じ compose プロジェクト内で Ollama を起動できます。Ollama はホストへ公開せず、Compose 内ネットワーク（`http://ollama:11434`）からのみアクセス可能です。

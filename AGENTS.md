@@ -133,6 +133,8 @@ Use slash commands:
 - Docker Compose v2、YAML、Markdown + Docker Engine / Docker Compose v2、`ostris/aitoolkit:latest`、既存 `yanwk/comfyui-boot:cu128-slim`、既存 `ollama/ollama` (025-ai-toolkit-env)
 - ホスト bind mount または bind mount 相当のローカルパス（AI Toolkit 用 config / datasets / output / DB / Hugging Face cache）、feature 配下の Markdown 成果物 (025-ai-toolkit-env)
 - Rust stable（edition 2024） + `axum` 0.8（`multipart` feature を追加）、Tokio、`image` 0.25、`envconfig`、`tracing`、`tracing-subscriber` (026-post-image-upload)
+- Python 3.x（ComfyUI ランタイム同梱版） + ComfyUI custom node backend API（`NODE_CLASS_MAPPINGS` / `OUTPUT_NODE`）、Python 標準ライブラリ `urllib` / `io`、既存ランタイムに含まれる `Pillow`、`numpy` (027-comfyui-post-node)
+- ローカルファイル（repo 内 `comfyui/custom_node/comfyui-photopainter-custom/`、実行時 `comfyui-data/custom_nodes/`） (027-comfyui-post-node)
 
 ## Recent Changes
 - 002-add-run-script: Added Bash (POSIX shell) / Python 3 (実行環境) + Python 標準の HTTP 配信機能
