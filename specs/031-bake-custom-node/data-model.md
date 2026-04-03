@@ -45,7 +45,7 @@
 |------|----|------|
 | `build_command` | command | repo 管理 custom node 更新を取り込む build 手順 |
 | `start_command` | command | baked-in node を含む ComfyUI 起動手順 |
-| `restart_command` | command | user node の再走査を含む再起動手順 |
+| `restart_command` | command | baked-in node が維持されることを確認する再起動手順 |
 | `recreate_command` | command | baked-in node を保ったまま作り直す手順 |
 | `troubleshooting_entry` | action | build 失敗または node 未読込時の最初の確認先 |
 
