@@ -8,6 +8,29 @@
 - compose から host の `cargo run` を直接叩く: container 管理にならない
 - root に共通 Dockerfile を置く: server 専用責務がぼやける
 
+## Decision 1a: Dockerfile は multi-stage build を採用する
+
+**Decision**: builder と runtime を分けた multi-stage Dockerfile を採用する。  
+**Rationale**: Docker の公式 best practice は multi-stage build による build 環境と runtime 環境の分離を推奨している。Rust 向け Docker Docs も builder と最終 runtime を分けた構成を案内している。これに従うと final image を小さくでき、attack surface も下げやすい。  
+**Alternatives considered**:
+- 単一 stage で `cargo build --release` から直接実行する: image が大きくなり、build toolchain が runtime に残る
+
+## Decision 1b: builder には pinned Rust official image、runtime には小さめの runtime image を使う
+
+**Decision**: builder stage は version を固定した Rust official image 系、runtime stage は build tool を含まない小さめの runtime image を使う。  
+**Rationale**: Docker Docs は trusted source の base image と pinned version を推奨している。Rust 公式 image は妥当な builder 基盤であり、runtime を分離すると不要なツールを final image に持ち込まない。  
+**Alternatives considered**:
+- `latest` のような floating tag: 再現性が落ちる
+- builder と runtime に同じ大きい image を使う: final image が過大になる
+
+## Decision 1c: BuildKit cache と `.dockerignore` を活用する
+
+**Decision**: Dockerfile では BuildKit cache を使い、`.dockerignore` で不要ファイルを build context から除外する。  
+**Rationale**: Docker の best practice と Rust 向け公式 guide は cache の活用と `.dockerignore` を推奨している。Rust build は依存解決が重いので、Cargo registry / git / target cache の再利用は有効である。  
+**Alternatives considered**:
+- cache を使わない: 再 build が遅い
+- repo 全体を無差別に context へ含める: build が重くなり、不要ファイルも巻き込む
+
 ## Decision 2: 配信データは既存 `server/contents/` を bind mount で継続利用する
 
 **Decision**: image source / upload 保存先は `server/contents/` をそのまま compose service に渡す。  

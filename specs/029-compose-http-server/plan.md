@@ -12,13 +12,13 @@
 ## Technical Context
 
 **Language/Version**: Docker Compose v2 YAML、Dockerfile syntax、Rust stable（既存 server）  
-**Primary Dependencies**: 既存 `compose.yml`、既存 `server/` Rust server（`axum` / Tokio）、新規 `server/Dockerfile`  
-**Storage**: bind mount（`${SERVER_CONTENT_DIR:-./server/contents}`、必要に応じて build cache）  
+**Primary Dependencies**: 既存 `compose.yml`、既存 `server/` Rust server（`axum` / Tokio）、新規 `server/Dockerfile`、Docker BuildKit cache  
+**Storage**: bind mount（`${SERVER_CONTENT_DIR:-./server/contents}`）、Docker build cache、`.env.example`  
 **Testing**: `docker compose config`、HTTP サーバ単体起動の compose 手動確認、既存 endpoint 疎通確認、README / quickstart 整合確認  
 **Target Platform**: Docker Engine + Docker Compose v2 が使えるローカル開発環境  
 **Project Type**: Compose 設定更新 + server container 化 + 運用ドキュメント  
 **Performance Goals**: 既存 endpoint の体感応答を悪化させず、compose 起動だけで server 利用開始できる  
-**Constraints**: 既存 API 契約は変更しない、ComfyUI/Ollama/AI Toolkit 共存を壊さない、配信データは既存 `server/contents/` を継続利用する、`server/run.sh` は廃止する  
+**Constraints**: 既存 API 契約は変更しない、ComfyUI/Ollama/AI Toolkit 共存を壊さない、配信データは既存 `server/contents/` を継続利用する、`server/run.sh` は廃止する、Dockerfile は multi-stage・公式 base image・最小 runtime を優先する  
 **Scale/Scope**: 単一ホスト・単一 compose ファイル・単一 server service
 
 ## Constitution Check
@@ -77,7 +77,8 @@ server/
 ### Runtime 設計
 
 - `compose.yml` に `server` サービスを追加する
-- `server/Dockerfile` で Rust server を build / run できるようにする
+- `server/Dockerfile` は multi-stage build とし、builder には pinned Rust official image、runtime には小さめの runtime image を使う
+- Docker BuildKit cache を使って Cargo registry / git / target の再利用を行う
 - 配信データは `${SERVER_CONTENT_DIR:-./server/contents}` を bind mount する
 - `.env.example` に `SERVER_PORT` と `SERVER_CONTENT_DIR` を追加し、compose から server process へ `PORT` と `CONTENT_DIR` を渡す
 - 既存 endpoint `/`、`/image.bmp`、`/image.bin`、`/upload` は変更しない
