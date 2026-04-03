@@ -21,7 +21,7 @@ services:
       context: ./comfyui
       dockerfile: Dockerfile
       args:
-        COMFYUI_REF: ${COMFYUI_REF:-v0.9.2}
+        COMFYUI_REF: ${COMFYUI_REF:-v0.18.2}
         COMFYUI_MANAGER_REF: ${COMFYUI_MANAGER_REF:-4.1}
         COMFYUI_EASY_USE_REF: ${COMFYUI_EASY_USE_REF:-v1.3.6}
         COMFYUI_OLLAMA_NODE_REF: ${COMFYUI_OLLAMA_NODE_REF:-6db7560576e5a59488708e6be13e07b5aba2432a}

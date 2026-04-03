@@ -47,8 +47,8 @@ install_requirements_if_present() {
   fi
 }
 
-download_node_archive "Comfy-Org/ComfyUI-Manager" "tag" "${COMFYUI_MANAGER_REF}" "${CUSTOM_NODES_DIR}/comfyui-manager"
-install_requirements_if_present "${CUSTOM_NODES_DIR}/comfyui-manager"
+# download_node_archive "Comfy-Org/ComfyUI-Manager" "tag" "${COMFYUI_MANAGER_REF}" "${CUSTOM_NODES_DIR}/comfyui-manager"
+# install_requirements_if_present "${CUSTOM_NODES_DIR}/comfyui-manager"
 
 download_node_archive "yolain/ComfyUI-Easy-Use" "tag" "${COMFYUI_EASY_USE_REF}" "${CUSTOM_NODES_DIR}/ComfyUI-Easy-Use"
 install_requirements_if_present "${CUSTOM_NODES_DIR}/ComfyUI-Easy-Use"
