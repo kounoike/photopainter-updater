@@ -34,8 +34,18 @@
 
 ## Decision 5: repo 管理 node の責務はこのリポジトリ配下に限定する
 
-**Decision**: image に焼き込む対象はこのリポジトリで管理している custom node のみに限定し、第三者 node の自動導入は scope 外とする。  
-**Rationale**: feature の要求は repo 管理 node の baked-in 化であり、第三者 node まで扱うと download source、versioning、license、failure path が広がりすぎる。  
+**Decision**: third-party custom node は利用者指定の 4 件に限定し、`ComfyUI-Manager` は stable tag `4.1`、`ComfyUI-Easy-Use` は stable tag `v1.3.6`、`ComfyUI-Xz3r0-Nodes` は stable tag `v1.7.0`、`comfyui-ollama` は tag 不在のため commit `6db7560576e5a59488708e6be13e07b5aba2432a` で固定する。  
+**Rationale**: tag がある repo は tag 固定の方が更新点と rollback を追いやすい。一方で `comfyui-ollama` は tag が見当たらないため commit 固定が最も再現性が高い。指定 4 件だけに絞れば、scope と failure path をまだ管理できる。  
 **Alternatives considered**:
+- すべて HEAD 追従にする: build の再現性が落ちる
+- 4 件すべて commit 固定にする: tag がある repo でも人間にとって追跡しにくい
 - 任意の第三者 node も一緒に image へ含める: scope が過大
-- ComfyUI Manager 連携で一括導入する: runtime 依存と外部依存が増える
+
+## Decision 6: third-party custom node の依存は build 時に導入する
+
+**Decision**: 選定済み third-party custom node は Dockerfile 内で clone し、各 `requirements.txt` を `uv pip install --system` で導入する。`ComfyUI-Xz3r0-Nodes` 向けに `ffmpeg` を apt で追加する。  
+**Rationale**: `ComfyUI-Easy-Use`、`comfyui-ollama`、`ComfyUI-Manager`、`ComfyUI-Xz3r0-Nodes` は Python 依存を持つ。runtime に Manager で後入れさせると「最初から入っている」要求を満たさない。`Xz3r0` README は `ffmpeg` を system PATH 前提としているため、image 側へ含める必要がある。  
+**Alternatives considered**:
+- ComfyUI 起動後に Manager で入れる: runtime 可変になり要求を満たさない
+- requirements は無視して clone のみ行う: import 失敗リスクが高い
+- `ffmpeg` を host 依存にする: container 単体の再現性が落ちる

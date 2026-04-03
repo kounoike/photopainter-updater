@@ -14,7 +14,24 @@
 - repo 管理 custom node の反映条件は rebuild である
 - `PhotoPainter PNG POST` は baked-in node として起動直後に見える
 
-## 2. 追加 custom node
+## 2. 選定済み third-party custom node
+
+| 項目 | 型 | 説明 |
+|------|----|------|
+| `third_party_repo_id` | string | `comfyui-manager`、`ComfyUI-Easy-Use`、`comfyui-ollama`、`ComfyUI-Xz3r0-Nodes` |
+| `source_ref_type` | enum | `tag` または `commit` |
+| `source_ref` | string | build 時に clone する固定 ref |
+| `python_requirements` | path? | `requirements.txt` がある場合の導入元 |
+| `system_dependencies` | set[string] | `ffmpeg` など OS package 前提 |
+
+### Invariants
+
+- 選定済み third-party custom node は image build 時に取得される
+- tag がある repo は tag 固定、tag がない repo は commit 固定を使う
+- `comfyui-ollama` は Ollama service への接続を前提にするが、node 自体は起動時点で存在する
+- `ComfyUI-Xz3r0-Nodes` の `ffmpeg` 前提は image 側で満たす
+
+## 3. 追加 custom node
 
 | 項目 | 型 | 説明 |
 |------|----|------|
@@ -27,19 +44,20 @@
 - 追加 custom node は再作成後に残ることを保証しない
 - 文書はこの非永続性を明示する
 
-## 3. Runtime custom node view
+## 4. Runtime custom node view
 
 | 項目 | 型 | 説明 |
 |------|----|------|
 | `runtime_custom_nodes_dir` | path | ComfyUI が実際に探索する custom node directory |
 | `baked_repo_nodes` | set[path] | image 由来で常に存在する repo 管理 node |
+| `baked_third_party_nodes` | set[path] | image 由来で常に存在する選定済み third-party custom node |
 | `temporary_nodes` | set[path] | その場で追加されても再作成後の維持を保証しない node |
 
 ### State
 
 `built` → `running` → `restarted` または `recreated` → `running`
 
-## 4. 利用者向け運用入口
+## 5. 利用者向け運用入口
 
 | 項目 | 型 | 説明 |
 |------|----|------|
@@ -53,4 +71,5 @@
 
 - 利用開始導線は `docker compose build comfyui` と `docker compose up -d comfyui`
 - repo 管理 node 更新は rebuild を基本とする
+- 同梱 third-party node の更新も Dockerfile の pinned ref 更新と rebuild を基本とする
 - 公開 URL と service 名は既存の ComfyUI 導線を維持する
