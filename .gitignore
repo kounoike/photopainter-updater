@@ -28,6 +28,12 @@ out/
 *.log
 *.tmp
 *.swp
+__pycache__/
+*.pyc
+.venv/
+venv/
+dist/
+*.egg-info/
 .vscode/
 .idea/
 .DS_Store

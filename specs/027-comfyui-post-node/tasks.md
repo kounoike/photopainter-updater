@@ -16,9 +16,9 @@
 
 **Purpose**: カスタムノード実装の土台となる repo 配下の構成を作る
 
-- [ ] T001 `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` と `comfyui/custom_node/comfyui-photopainter-custom/README.md` の初期ファイル構成を作成する
-- [ ] T002 [P] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_contract.py` と `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` のテスト配置を作成する
-- [ ] T003 [P] `comfyui/custom_node/comfyui-photopainter-custom/tests/fixtures/` に PNG fixture 生成または保持方針を用意し、参照方法を `comfyui/custom_node/comfyui-photopainter-custom/README.md` に記載する
+- [X] T001 `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` と `comfyui/custom_node/comfyui-photopainter-custom/README.md` の初期ファイル構成を作成する
+- [X] T002 [P] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_contract.py` と `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` のテスト配置を作成する
+- [X] T003 [P] `comfyui/custom_node/comfyui-photopainter-custom/tests/fixtures/` に PNG fixture 生成または保持方針を用意し、参照方法を `comfyui/custom_node/comfyui-photopainter-custom/README.md` に記載する
 
 ---
 
@@ -28,11 +28,11 @@
 
 **CRITICAL**: この phase 完了まで user story 実装を開始しない
 
-- [ ] T004 `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に `PhotopainterPngPost` の node metadata、`INPUT_TYPES`、`RETURN_TYPES`、`OUTPUT_NODE`、`NODE_CLASS_MAPPINGS` の骨格を定義する
-- [ ] T005 [P] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に URL 検証ヘルパーと request 生成ヘルパーを追加し、`Content-Type: image/png` raw body 契約を共通化する
-- [ ] T006 [P] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に `IMAGE` tensor を単一 PNG bytes へ変換する共通ヘルパーを追加する
-- [ ] T007 [P] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` に URL 検証、単一画像制約、PNG bytes 変換の基礎テストを追加する
-- [ ] T008 `comfyui/custom_node/comfyui-photopainter-custom/README.md` に repo 配下ソースと `comfyui-data/custom_nodes/` runtime 配置の境界を記載する
+- [X] T004 `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に `PhotopainterPngPost` の node metadata、`INPUT_TYPES`、`RETURN_TYPES`、`OUTPUT_NODE`、`NODE_CLASS_MAPPINGS` の骨格を定義する
+- [X] T005 [P] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に URL 検証ヘルパーと request 生成ヘルパーを追加し、`Content-Type: image/png` raw body 契約を共通化する
+- [X] T006 [P] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に `IMAGE` tensor を単一 PNG bytes へ変換する共通ヘルパーを追加する
+- [X] T007 [P] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` に URL 検証、単一画像制約、PNG bytes 変換の基礎テストを追加する
+- [X] T008 `comfyui/custom_node/comfyui-photopainter-custom/README.md` に repo 配下ソースと `comfyui-data/custom_nodes/` runtime 配置の境界を記載する
 
 **Checkpoint**: node 骨格と共通 helper が揃い、story 実装へ進める
 
@@ -46,15 +46,15 @@
 
 ### Verification for User Story 1
 
-- [ ] T009 [P] [US1] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_contract.py` に `POST` / `Content-Type: image/png` / raw body / `200 OK` 成功判定の契約テストを追加する
-- [ ] T010 [US1] `specs/027-comfyui-post-node/quickstart.md` に 026 の `POST /upload` を使った成功確認手順を最終実装に合わせて更新する
+- [X] T009 [P] [US1] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_contract.py` に `POST` / `Content-Type: image/png` / raw body / `200 OK` 成功判定の契約テストを追加する
+- [X] T010 [US1] `specs/027-comfyui-post-node/quickstart.md` に 026 の `POST /upload` を使った成功確認手順を最終実装に合わせて更新する
 
 ### Implementation for User Story 1
 
-- [ ] T011 [US1] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に PNG raw body を送信する `POST` 実処理を実装する
-- [ ] T012 [US1] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に `200 OK` 成功時の UI summary 返却を実装する
-- [ ] T013 [US1] `comfyui/custom_node/comfyui-photopainter-custom/README.md` に node 名、入力項目、026 `POST /upload` との接続例を記載する
-- [ ] T014 [US1] `README.md` に repo 内カスタムノードの配置場所と `specs/027-comfyui-post-node/quickstart.md` への導線を追記する
+- [X] T011 [US1] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に PNG raw body を送信する `POST` 実処理を実装する
+- [X] T012 [US1] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に `200 OK` 成功時の UI summary 返却を実装する
+- [X] T013 [US1] `comfyui/custom_node/comfyui-photopainter-custom/README.md` に node 名、入力項目、026 `POST /upload` との接続例を記載する
+- [X] T014 [US1] `README.md` に repo 内カスタムノードの配置場所と `specs/027-comfyui-post-node/quickstart.md` への導線を追記する
 
 **Checkpoint**: User Story 1 が独立して検証可能であること
 
@@ -68,15 +68,15 @@
 
 ### Verification for User Story 2
 
-- [ ] T015 [P] [US2] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_contract.py` に不正 URL、network error、`200` 以外の status を失敗扱いにする契約テストを追加する
-- [ ] T016 [US2] `specs/027-comfyui-post-node/quickstart.md` に URL 不正、接続失敗、`400/500` 応答の失敗確認手順を更新する
+- [X] T015 [P] [US2] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_contract.py` に不正 URL、network error、`200` 以外の status を失敗扱いにする契約テストを追加する
+- [X] T016 [US2] `specs/027-comfyui-post-node/quickstart.md` に URL 不正、接続失敗、`400/500` 応答の失敗確認手順を更新する
 
 ### Implementation for User Story 2
 
-- [ ] T017 [US2] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に URL 不正と入力不足を即時エラー化する検証処理を実装する
-- [ ] T018 [US2] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に network error と `200` 以外の HTTP 応答を `RuntimeError` へ変換する処理を実装する
-- [ ] T019 [US2] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に status と本文要約を含む失敗メッセージ整形を実装する
-- [ ] T020 [US2] `comfyui/custom_node/comfyui-photopainter-custom/README.md` に失敗時に workflow がエラー終了する前提と代表的な失敗パターンを記載する
+- [X] T017 [US2] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に URL 不正と入力不足を即時エラー化する検証処理を実装する
+- [X] T018 [US2] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に network error と `200` 以外の HTTP 応答を `RuntimeError` へ変換する処理を実装する
+- [X] T019 [US2] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に status と本文要約を含む失敗メッセージ整形を実装する
+- [X] T020 [US2] `comfyui/custom_node/comfyui-photopainter-custom/README.md` に失敗時に workflow がエラー終了する前提と代表的な失敗パターンを記載する
 
 **Checkpoint**: User Story 2 が独立して検証可能であること
 
@@ -90,14 +90,14 @@
 
 ### Verification for User Story 3
 
-- [ ] T021 [P] [US3] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` に複数回実行時の再送と複数画像バッチ拒否のテストを追加する
-- [ ] T022 [US3] `specs/027-comfyui-post-node/quickstart.md` に symlink/copy 配置と ComfyUI 再起動、URL 切り替え再実行の確認手順を更新する
+- [X] T021 [P] [US3] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` に複数回実行時の再送と複数画像バッチ拒否のテストを追加する
+- [X] T022 [US3] `specs/027-comfyui-post-node/quickstart.md` に copy 配置と ComfyUI 再起動、node discovery、URL 切り替え再実行の確認手順を更新する
 
 ### Implementation for User Story 3
 
-- [ ] T023 [US3] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に単一画像のみ許可し、複数画像バッチを拒否する処理を実装する
-- [ ] T024 [US3] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に URL 入力ごとに独立送信する再実行前提の node 実行ロジックを仕上げる
-- [ ] T025 [US3] `comfyui/custom_node/comfyui-photopainter-custom/README.md` に `comfyui-data/custom_nodes/comfyui-photopainter-custom` への symlink/copy 配置手順を記載する
+- [X] T023 [US3] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に単一画像のみ許可し、複数画像バッチを拒否する処理を実装する
+- [X] T024 [US3] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に URL 入力ごとに独立送信する再実行前提の node 実行ロジックを仕上げる
+- [X] T025 [US3] `comfyui/custom_node/comfyui-photopainter-custom/README.md` に `comfyui-data/custom_nodes/comfyui-photopainter-custom` への copy 配置手順を記載する
 
 **Checkpoint**: すべての user story が独立検証可能であること
 
@@ -107,10 +107,10 @@
 
 **Purpose**: 最終確認と横断調整
 
-- [ ] T026 [P] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_contract.py` と `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` を最終仕様に合わせて整理する
-- [ ] T027 `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` の import、例外文言、コメントを整理して可読性を整える
-- [ ] T028 `specs/027-comfyui-post-node/quickstart.md` の手順を実際の最終ファイル構成に合わせて通し確認する
-- [ ] T029 `README.md` と `comfyui/custom_node/comfyui-photopainter-custom/README.md` の説明が重複や矛盾なく整合していることを確認する
+- [X] T026 [P] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_contract.py` と `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` を最終仕様に合わせて整理する
+- [X] T027 `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` の import、例外文言、コメントを整理して可読性を整える
+- [X] T028 `specs/027-comfyui-post-node/quickstart.md` の手順を実際の最終ファイル構成と node discovery 確認手順に合わせて通し確認する
+- [X] T029 `README.md` と `comfyui/custom_node/comfyui-photopainter-custom/README.md` の説明が重複や矛盾なく整合していることを確認する
 
 ---
 

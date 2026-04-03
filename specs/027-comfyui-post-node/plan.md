@@ -61,15 +61,19 @@ comfyui/
     └── comfyui-photopainter-custom/
         ├── __init__.py
         └── README.md
+        └── tests/
+            ├── test_contract.py
+            ├── test_node_logic.py
+            └── fixtures/
 
 comfyui-data/
 └── custom_nodes/
-    └── comfyui-photopainter-custom -> ../../comfyui/custom_node/comfyui-photopainter-custom
+    └── comfyui-photopainter-custom/   # runtime copy 先
 
 README.md
 ```
 
-**Structure Decision**: ユーザー要求どおり repo 管理下のソースは `comfyui/custom_node/comfyui-photopainter-custom` に置く。一方で ComfyUI の実行時探索先は既存 compose の `comfyui-data/custom_nodes` なので、実装では repo 側ソースを symlink または copy で取り込む前提を quickstart に明記する。
+**Structure Decision**: ユーザー要求どおり repo 管理下のソースは `comfyui/custom_node/comfyui-photopainter-custom` に置く。一方で ComfyUI の実行時探索先は既存 compose の `comfyui-data/custom_nodes` なので、repo ルートが mount されていない現在の compose では copy ベースで runtime へ導入する前提を quickstart に明記する。
 
 ## Phase 0: Research 成果物
 
@@ -83,7 +87,7 @@ README.md
 | HTTP 実装 | Python 標準ライブラリ `urllib.request` | 追加依存なしで `POST`、header、timeout、error handling を満たせる |
 | 画像変換 | ComfyUI `IMAGE` tensor を `numpy` + `Pillow` で PNG bytes 化 | ComfyUI 慣習に沿い、026 の raw PNG body 契約に直結する |
 | 成功/失敗の表現 | 成功時は UI 用 summary を返し、失敗時は例外を投げる | workflow で失敗を見逃さない要件に合致する |
-| 配置方式 | repo 内ソース + 実行時 `custom_nodes` への symlink/copy | 既存 compose を変えずにユーザー要求のパスを守れる |
+| 配置方式 | repo 内ソース + 実行時 `custom_nodes` への copy | 既存 compose を変えずにユーザー要求のパスを守れる |
 
 ## Phase 1: Design
 
@@ -110,8 +114,8 @@ README.md
 
 - repo 内実装先は `comfyui/custom_node/comfyui-photopainter-custom/`
 - ComfyUI 実行時は `comfyui-data/custom_nodes/comfyui-photopainter-custom/` に配置されている必要がある
-- 開発時は symlink を推奨する
-  - 変更即反映と Git 管理の両立が容易なため
+- 導入は `docker compose cp` などによる copy を推奨する
+  - 現在の compose では repo ルートが container に mount されていないため
 - zip 配布や registry 対応は対象外
 
 ### Validation 設計
