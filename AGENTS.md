@@ -137,6 +137,8 @@ Use slash commands:
 - ローカルファイル（repo 内 `comfyui/custom_node/comfyui-photopainter-custom/`、実行時 `comfyui-data/custom_nodes/`） (027-comfyui-post-node)
 - Docker Compose v2 YAML、Markdown + 既存 `compose.yml`、既存 `yanwk/comfyui-boot:cu128-slim`、既存 repo 配下 `comfyui/custom_node/comfyui-photopainter-custom` (028-auto-mount-comfyui-post-node)
 - bind mount（repo 内 custom node ディレクトリ、`${COMFYUI_DATA_DIR:-./comfyui-data}/custom_nodes`） (028-auto-mount-comfyui-post-node)
+- Docker Compose v2 YAML、Dockerfile syntax、Rust stable（既存 server） + 既存 `compose.yml`、既存 `server/` Rust server（`axum` / Tokio）、新規 `server/Dockerfile` (029-compose-http-server)
+- bind mount（`server/contents/`） (029-compose-http-server)
 
 ## Recent Changes
 - 002-add-run-script: Added Bash (POSIX shell) / Python 3 (実行環境) + Python 標準の HTTP 配信機能

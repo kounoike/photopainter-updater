@@ -15,8 +15,8 @@
 
 **Purpose**: server compose 統合の前提確認
 
-- [ ] T001 `compose.yml`、`server/run.sh`、`server/README.md`、`README.md` の現行導線と server 起動条件を確認する
-- [ ] T002 [P] `server/Dockerfile` の設計前提に合わせて `server/.dockerignore` の要否と既存 `.dockerignore`、`.env.example` の不足項目を確認する
+- [x] T001 `compose.yml`、`server/run.sh`、`server/README.md`、`README.md` の現行導線と server 起動条件を確認する
+- [x] T002 [P] `server/Dockerfile` の設計前提に合わせて `server/.dockerignore` の要否と既存 `.dockerignore`、`.env.example` の不足項目を確認する
 
 ---
 
@@ -24,9 +24,9 @@
 
 **Purpose**: server container 化の基盤を整える
 
-- [ ] T003 `server/Dockerfile` に multi-stage の HTTP サーバ build / run 基本構成を追加する
-- [ ] T004 [P] `compose.yml` に追加する `server` service の environment / volume / port / network 方針を `specs/029-compose-http-server/quickstart.md` と `contracts/compose-http-server-runtime-contract.md` に反映する
-- [ ] T005 [P] `.env.example` と `server/README.md` に compose 運用で引き継ぐ `SERVER_EXPOSE_PORT`、`SERVER_CONTENT_DIR`、container 内 8000 固定、ログ導線の前提を整理する
+- [x] T003 `server/Dockerfile` に multi-stage の HTTP サーバ build / run 基本構成を追加する
+- [x] T004 [P] `compose.yml` に追加する `server` service の environment / volume / port / network 方針を `specs/029-compose-http-server/quickstart.md` と `contracts/compose-http-server-runtime-contract.md` に反映する
+- [x] T005 [P] `.env.example` と `server/README.md` に compose 運用で引き継ぐ `SERVER_EXPOSE_PORT`、`SERVER_CONTENT_DIR`、container 内 8000 固定、ログ導線の前提を整理する
 
 ---
 
@@ -38,14 +38,14 @@
 
 ### Verification for User Story 1
 
-- [ ] T006 [US1] `specs/029-compose-http-server/quickstart.md` に server 単体起動、ログ確認、基本 endpoint 確認手順を確定する
+- [x] T006 [US1] `specs/029-compose-http-server/quickstart.md` に server 単体起動、ログ確認、基本 endpoint 確認手順を確定する
 - [ ] T007 [P] [US1] 手動確認: `docker compose config` と `docker compose up -d server`、`curl` による `/`、`/image.bmp`、`/image.bin`、`/upload` の疎通を確認する
 
 ### Implementation for User Story 1
 
-- [ ] T008 [US1] `compose.yml` に HTTP サーバ `server` service を追加する
-- [ ] T009 [US1] `server/Dockerfile`、`.env.example` と必要な ignore 設定で pinned base image、BuildKit cache、server image build、container 内 8000 固定 / host 側 `SERVER_EXPOSE_PORT` 公開を実装する
-- [ ] T010 [US1] `server/run.sh` の責務を compose / container 起動へ置き換えられるよう `server/README.md` を更新する
+- [x] T008 [US1] `compose.yml` に HTTP サーバ `server` service を追加する
+- [x] T009 [US1] `server/Dockerfile`、`.env.example` と必要な ignore 設定で pinned base image、BuildKit cache、server image build、container 内 8000 固定 / host 側 `SERVER_EXPOSE_PORT` 公開を実装する
+- [x] T010 [US1] `server/run.sh` の責務を compose / container 起動へ置き換えられるよう `server/README.md` を更新する
 
 ---
 
@@ -57,13 +57,13 @@
 
 ### Verification for User Story 2
 
-- [ ] T011 [US2] `specs/029-compose-http-server/contracts/compose-http-server-runtime-contract.md` と `compose.yml` の service / network / volume 定義が一致していることを確認する
+- [x] T011 [US2] `specs/029-compose-http-server/contracts/compose-http-server-runtime-contract.md` と `compose.yml` の service / network / volume 定義が一致していることを確認する
 - [ ] T012 [P] [US2] 手動確認: 既存 `comfyui` / `ollama` / `ai-toolkit` 定義を壊さず `docker compose config` が通ることを確認する
 
 ### Implementation for User Story 2
 
-- [ ] T013 [US2] `compose.yml` の既存サービス定義を壊さない形で `server` service を統合する
-- [ ] T014 [US2] `README.md` に server 単体起動と既存サービス併用起動の compose 導線を追記する
+- [x] T013 [US2] `compose.yml` の既存サービス定義を壊さない形で `server` service を統合する
+- [x] T014 [US2] `README.md` に server 単体起動と既存サービス併用起動の compose 導線を追記する
 
 ---
 
@@ -75,13 +75,13 @@
 
 ### Verification for User Story 3
 
-- [ ] T015 [US3] `README.md`、`server/README.md`、`specs/029-compose-http-server/quickstart.md` の導線が compose 前提で整合していることを確認する
+- [x] T015 [US3] `README.md`、`server/README.md`、`specs/029-compose-http-server/quickstart.md` の導線が compose 前提で整合していることを確認する
 
 ### Implementation for User Story 3
 
-- [ ] T016 [US3] `server/run.sh` を削除し、必要な説明を `server/README.md` と `specs/029-compose-http-server/quickstart.md` に移す
-- [ ] T017 [US3] `README.md` の HTTP サーバ導線を compose 起動前提に更新する
-- [ ] T018 [US3] `specs/029-compose-http-server/quickstart.md` に起動、停止、ログ確認、upload 確認の最終手順を反映する
+- [x] T016 [US3] `server/run.sh` を削除し、必要な説明を `server/README.md` と `specs/029-compose-http-server/quickstart.md` に移す
+- [x] T017 [US3] `README.md` の HTTP サーバ導線を compose 起動前提に更新する
+- [x] T018 [US3] `specs/029-compose-http-server/quickstart.md` に起動、停止、ログ確認、upload 確認の最終手順を反映する
 
 ---
 
@@ -89,8 +89,8 @@
 
 **Purpose**: 最終整合と残作業の明確化
 
-- [ ] T019 [P] `specs/029-compose-http-server/tasks.md` を完了状態へ更新し、文書と実装のズレがないことを確認する
-- [ ] T020 `README.md`、`server/README.md`、`specs/029-compose-http-server/quickstart.md` に Docker 未実施環境での未確認事項があれば明記する
+- [x] T019 [P] `specs/029-compose-http-server/tasks.md` を完了状態へ更新し、文書と実装のズレがないことを確認する
+- [x] T020 `README.md`、`server/README.md`、`specs/029-compose-http-server/quickstart.md` に Docker 未実施環境での未確認事項があれば明記する
 
 ## Dependencies & Execution Order
 
