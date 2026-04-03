@@ -25,6 +25,17 @@ docker compose logs --tail=200 comfyui
 - ComfyUI Manager や既存 custom node が引き続き見えることを確認する
 - `comfyui-data/custom_nodes` 内の既存ファイルが消えていないことを確認する
 
+## 3.5 compose 設定を確認する
+
+```bash
+docker compose config
+```
+
+`/root/ComfyUI/custom_nodes/comfyui-photopainter-custom` への bind mount が出力に含まれることを確認する。
+
+この repository 作業環境では `docker` コマンドが無かったため、この確認は利用者の
+ComfyUI 実行環境で行う前提とする。
+
 ## 4. 更新反映
 
 repo 内 `comfyui/custom_node/comfyui-photopainter-custom` を更新したあと:

@@ -15,7 +15,7 @@
 
 **Purpose**: compose 自動登録の前提確認
 
-- [ ] T001 `compose.yml`、`README.md`、`specs/027-comfyui-post-node/quickstart.md` の現行 custom node 導線を確認する
+- [X] T001 `compose.yml`、`README.md`、`specs/027-comfyui-post-node/quickstart.md` の現行 custom node 導線を確認する
 
 ---
 
@@ -23,8 +23,8 @@
 
 **Purpose**: 自動登録 mount の基盤を整える
 
-- [ ] T002 `compose.yml` の `comfyui` service に repo 管理 custom node 用 bind mount を追加する
-- [ ] T003 [P] `specs/028-auto-mount-comfyui-post-node/quickstart.md` に compose volume 契約と確認方法を反映する
+- [X] T002 `compose.yml` の `comfyui` service に repo 管理 custom node 用 bind mount を追加する
+- [X] T003 [P] `specs/028-auto-mount-comfyui-post-node/quickstart.md` に compose volume 契約と確認方法を反映する
 
 ---
 
@@ -36,12 +36,12 @@
 
 ### Verification for User Story 1
 
-- [ ] T004 [US1] `specs/028-auto-mount-comfyui-post-node/quickstart.md` に `docker compose up -d comfyui` から node discovery までの確認手順を確定する
+- [X] T004 [US1] `specs/028-auto-mount-comfyui-post-node/quickstart.md` に `docker compose up -d comfyui` から node discovery までの確認手順を確定する
 
 ### Implementation for User Story 1
 
-- [ ] T005 [US1] `README.md` の custom node 導線を manual copy なしの compose 自動登録前提へ更新する
-- [ ] T006 [US1] `comfyui/custom_node/comfyui-photopainter-custom/README.md` の導入手順を compose 自動 mount 前提へ更新する
+- [X] T005 [US1] `README.md` の custom node 導線を manual copy なしの compose 自動登録前提へ更新する
+- [X] T006 [US1] `comfyui/custom_node/comfyui-photopainter-custom/README.md` の導入手順を compose 自動 mount 前提へ更新する
 
 ---
 
@@ -53,12 +53,12 @@
 
 ### Verification for User Story 2
 
-- [ ] T007 [US2] `specs/028-auto-mount-comfyui-post-node/contracts/comfyui-custom-node-mount-contract.md` と `compose.yml` の volume 定義が一致していることを確認する
+- [X] T007 [US2] `specs/028-auto-mount-comfyui-post-node/contracts/comfyui-custom-node-mount-contract.md` と `compose.yml` の volume 定義が一致していることを確認する
 
 ### Implementation for User Story 2
 
-- [ ] T008 [US2] `specs/027-comfyui-post-node/quickstart.md` から manual copy 前提を除去し、既存 custom_nodes と併存する compose 導線へ更新する
-- [ ] T009 [US2] `README.md` と `specs/028-auto-mount-comfyui-post-node/quickstart.md` に既存 custom node / ComfyUI Manager を壊さない前提を明記する
+- [X] T008 [US2] `specs/027-comfyui-post-node/quickstart.md` から manual copy 前提を除去し、既存 custom_nodes と併存する compose 導線へ更新する
+- [X] T009 [US2] `README.md` と `specs/028-auto-mount-comfyui-post-node/quickstart.md` に既存 custom node / ComfyUI Manager を壊さない前提を明記する
 
 ---
 
@@ -70,12 +70,12 @@
 
 ### Verification for User Story 3
 
-- [ ] T010 [US3] `README.md`、`specs/027-comfyui-post-node/quickstart.md`、`specs/028-auto-mount-comfyui-post-node/quickstart.md` の導線が自動登録前提で整合していることを確認する
+- [X] T010 [US3] `README.md`、`specs/027-comfyui-post-node/quickstart.md`、`specs/028-auto-mount-comfyui-post-node/quickstart.md` の導線が自動登録前提で整合していることを確認する
 
 ### Implementation for User Story 3
 
-- [ ] T011 [US3] `specs/028-auto-mount-comfyui-post-node/quickstart.md` の更新反映手順を compose 再起動前提へ整理する
-- [ ] T012 [US3] `specs/028-auto-mount-comfyui-post-node/tasks.md` と最終文書内容を整合させる
+- [X] T011 [US3] `specs/028-auto-mount-comfyui-post-node/quickstart.md` の更新反映手順を compose 再起動前提へ整理する
+- [X] T012 [US3] `specs/028-auto-mount-comfyui-post-node/tasks.md` と最終文書内容を整合させる
 
 ---
 
@@ -83,8 +83,8 @@
 
 **Purpose**: 最終確認
 
-- [ ] T013 [P] `docker compose config` を実行して `compose.yml` の volume 定義が妥当であることを確認する
-- [ ] T014 `specs/028-auto-mount-comfyui-post-node/quickstart.md` に実施できた確認結果と未実施手動確認の境界を反映する
+- [X] T013 [P] `docker compose config` を実行して `compose.yml` の volume 定義が妥当であることを確認する
+- [X] T014 `specs/028-auto-mount-comfyui-post-node/quickstart.md` に実施できた確認結果と未実施手動確認の境界を反映する
 
 ## Dependencies & Execution Order
 

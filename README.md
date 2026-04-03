@@ -18,7 +18,8 @@ docker compose up
 詳細な手順（モデルの追加・カスタムノードのインストール・GPU 確認等）は
 [specs/022-add-comfyui-compose/quickstart.md](specs/022-add-comfyui-compose/quickstart.md) を参照してください。
 
-repo 管理の custom node は [`comfyui/custom_node/`](./comfyui/custom_node/) 配下に置きます。
+repo 管理の custom node は [`comfyui/custom_node/`](./comfyui/custom_node/) 配下に置き、
+`docker compose up -d comfyui` 時に自動で ComfyUI container へ mount されます。
 PhotoPainter 用の PNG POST ノードの導入と 026 upload server との接続例は
 [specs/027-comfyui-post-node/quickstart.md](specs/027-comfyui-post-node/quickstart.md) を参照してください。
 
