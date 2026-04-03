@@ -7,7 +7,6 @@ __pycache__/
 .DS_Store
 Thumbs.db
 .env*
-custom_node/
 models/
 output/
 input/

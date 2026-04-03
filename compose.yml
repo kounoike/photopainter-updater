@@ -22,14 +22,16 @@ services:
       dockerfile: Dockerfile
       args:
         COMFYUI_REF: ${COMFYUI_REF:-v0.9.2}
+        COMFYUI_MANAGER_REF: ${COMFYUI_MANAGER_REF:-4.1}
+        COMFYUI_EASY_USE_REF: ${COMFYUI_EASY_USE_REF:-v1.3.6}
+        COMFYUI_OLLAMA_NODE_REF: ${COMFYUI_OLLAMA_NODE_REF:-6db7560576e5a59488708e6be13e07b5aba2432a}
+        COMFYUI_XZ3R0_NODES_REF: ${COMFYUI_XZ3R0_NODES_REF:-v1.7.0}
     container_name: photopainter-comfyui
     ports:
       - "0.0.0.0:${COMFYUI_PORT:-18188}:8188"
     volumes:
-      # 必須: モデル・カスタムノード・uv/pip依存ライブラリ・生成画像
+      # 必須: モデル・uv/pip依存ライブラリ・生成画像
       - ${COMFYUI_DATA_DIR:-./comfyui-data}/models:/root/ComfyUI/models
-      - ${COMFYUI_DATA_DIR:-./comfyui-data}/custom_nodes:/root/ComfyUI/custom_nodes
-      - ./comfyui/custom_node/comfyui-photopainter-custom:/root/ComfyUI/custom_nodes/comfyui-photopainter-custom:ro
       - ${COMFYUI_DATA_DIR:-./comfyui-data}/dot-local:/root/.local
       - ${COMFYUI_DATA_DIR:-./comfyui-data}/output:/root/ComfyUI/output
       # 推奨: ユーザー設定・入力ファイル・ダウンロードキャッシュ

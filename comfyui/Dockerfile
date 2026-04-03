@@ -6,12 +6,20 @@ ARG COMFYUI_REPO=https://github.com/Comfy-Org/ComfyUI.git
 ARG COMFYUI_REF=v0.18.2
 ARG UV_VERSION=0.11.3
 ARG UV_TORCH_BACKEND=cu128
+ARG COMFYUI_MANAGER_REF=4.1
+ARG COMFYUI_EASY_USE_REF=v1.3.6
+ARG COMFYUI_OLLAMA_NODE_REF=6db7560576e5a59488708e6be13e07b5aba2432a
+ARG COMFYUI_XZ3R0_NODES_REF=v1.7.0
 
 ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     UV_SYSTEM_PYTHON=1 \
     COMFYUI_HOME=/root/ComfyUI \
-    UV_TORCH_BACKEND=${UV_TORCH_BACKEND}
+    UV_TORCH_BACKEND=${UV_TORCH_BACKEND} \
+    COMFYUI_MANAGER_REF=${COMFYUI_MANAGER_REF} \
+    COMFYUI_EASY_USE_REF=${COMFYUI_EASY_USE_REF} \
+    COMFYUI_OLLAMA_NODE_REF=${COMFYUI_OLLAMA_NODE_REF} \
+    COMFYUI_XZ3R0_NODES_REF=${COMFYUI_XZ3R0_NODES_REF}
 
 WORKDIR /root
 
@@ -19,6 +27,7 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
       ca-certificates \
       curl \
+      ffmpeg \
       git \
       libglib2.0-0 \
       libgl1 \
@@ -35,6 +44,10 @@ RUN git clone --branch "${COMFYUI_REF}" --depth 1 "${COMFYUI_REPO}" "${COMFYUI_H
 
 WORKDIR ${COMFYUI_HOME}
 
+COPY custom_node/comfyui-photopainter-custom ${COMFYUI_HOME}/custom_nodes/comfyui-photopainter-custom
+COPY install-custom-nodes.sh /usr/local/bin/install-custom-nodes
+COPY entrypoint.sh /usr/local/bin/photopainter-comfyui-entrypoint
+
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv pip install --system \
       torch \
@@ -42,12 +55,11 @@ RUN --mount=type=cache,target=/root/.cache/uv \
       torchaudio \
       --torch-backend "${UV_TORCH_BACKEND}" && \
     uv pip install --system -r requirements.txt && \
-    uv pip install --system -r manager_requirements.txt
+    uv pip install --system -r manager_requirements.txt && \
+    chmod +x /usr/local/bin/install-custom-nodes /usr/local/bin/photopainter-comfyui-entrypoint && \
+    /usr/local/bin/install-custom-nodes
 
-COPY entrypoint.sh /usr/local/bin/photopainter-comfyui-entrypoint
-
-RUN chmod +x /usr/local/bin/photopainter-comfyui-entrypoint && \
-    mkdir -p \
+RUN mkdir -p \
       /root/.cache \
       /root/.local \
       ${COMFYUI_HOME}/custom_nodes \

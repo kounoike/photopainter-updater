@@ -24,7 +24,7 @@ Docker 利用可能な環境で行ってください。
 ## ComfyUI（画像生成）
 
 NVIDIA GPU 搭載の環境で ComfyUI を Docker Compose から self-build して起動できます。
-この構成は CUDA 対応 Python base image から ComfyUI を組み立て、依存は `uv` で導入します。PyTorch backend は Docker build 時に `cu128` へ固定し、`auto` 判定には依存しません。
+この構成は CUDA 対応 Python base image から ComfyUI を組み立て、依存は `uv` で導入します。PyTorch backend は Docker build 時に `cu128` へ固定し、`auto` 判定には依存しません。repo 管理 custom node と pinned third-party custom node は image に焼き込まれます。
 
 ```bash
 cp .env.example .env   # 必要に応じてポート・データパス・ref を編集
@@ -41,7 +41,7 @@ docker compose logs --tail=200 comfyui
 [specs/030-build-comfyui-image/quickstart.md](specs/030-build-comfyui-image/quickstart.md) を参照してください。
 
 repo 管理の custom node は [`comfyui/custom_node/`](./comfyui/custom_node/) 配下に置き、
-`docker compose up -d comfyui` 時に自動で ComfyUI container へ mount されます。
+`docker compose build comfyui` 時に ComfyUI image へ焼き込まれます。third-party custom node の導入処理は [install-custom-nodes.sh](/home/kounoike/ghq/github.com/kounoike/photopainter-updater/comfyui/install-custom-nodes.sh) にまとめてあり、既定では `ComfyUI-Manager@4.1`、`ComfyUI-Easy-Use@v1.3.6`、`comfyui-ollama@6db7560576e5a59488708e6be13e07b5aba2432a`、`ComfyUI-Xz3r0-Nodes@v1.7.0` を同梱します。repo 側 custom node や pinned ref を更新した場合は再 build が必要です。追加 custom node を手元で試すことはできても、再作成後の維持は保証しません。
 PhotoPainter 用の PNG POST ノードの導入と HTTP サーバとの接続例は
 [specs/027-comfyui-post-node/quickstart.md](specs/027-comfyui-post-node/quickstart.md) を参照してください。
 

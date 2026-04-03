@@ -27,9 +27,9 @@ http://192.168.1.10:8000/upload
 ## runtime への配置
 
 repo 管理ソースは `comfyui/custom_node/comfyui-photopainter-custom/` にあります。
-`compose.yml` がこのディレクトリを ComfyUI container の
-`/root/ComfyUI/custom_nodes/comfyui-photopainter-custom` に read-only mount するため、
-追加の copy は不要です。
+`comfyui/Dockerfile` がこのディレクトリを ComfyUI image の
+`/root/ComfyUI/custom_nodes/comfyui-photopainter-custom` に copy するため、
+container 起動時の追加 mount や copy は不要です。third-party custom node の clone と依存導入は `comfyui/install-custom-nodes.sh` にまとめています。
 
 ```bash
 docker compose build comfyui
@@ -44,10 +44,11 @@ docker compose logs --tail=200 comfyui
 
 読み込み失敗がなければ ComfyUI の Add Node から `PhotoPainter PNG POST` を選べます。
 
-repo 側ソースを更新したあとは ComfyUI を再起動します。
+repo 側ソースを更新したあとは ComfyUI image を再 build します。
 
 ```bash
-docker compose restart comfyui
+docker compose build comfyui
+docker compose up -d comfyui
 ```
 
 container を作り直して確認したい場合:

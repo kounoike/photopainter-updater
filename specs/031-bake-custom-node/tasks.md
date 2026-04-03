@@ -16,8 +16,8 @@
 
 **Purpose**: custom node 同梱へ向けた変更境界と前提を揃える
 
-- [ ] T001 `specs/031-bake-custom-node/spec.md`、`plan.md`、`research.md` を確認し、repo 管理 custom node と指定 4 件の third-party custom node を image に焼き込み、追加 custom node は維持対象外とする前提を実装境界として確定する
-- [ ] T002 `compose.yml`、`comfyui/Dockerfile`、`comfyui/entrypoint.sh`、`README.md`、`specs/030-build-comfyui-image/quickstart.md`、`comfyui/custom_node/comfyui-photopainter-custom/README.md` の現行 custom node 導線を確認し、変更対象を整理する
+- [x] T001 `specs/031-bake-custom-node/spec.md`、`plan.md`、`research.md` を確認し、repo 管理 custom node と指定 4 件の third-party custom node を image に焼き込み、追加 custom node は維持対象外とする前提を実装境界として確定する
+- [x] T002 `compose.yml`、`comfyui/Dockerfile`、`comfyui/entrypoint.sh`、`README.md`、`specs/030-build-comfyui-image/quickstart.md`、`comfyui/custom_node/comfyui-photopainter-custom/README.md` の現行 custom node 導線を確認し、変更対象を整理する
 
 ---
 
@@ -27,12 +27,12 @@
 
 **CRITICAL**: この phase 完了まで user story 実装を開始しない
 
-- [ ] T003 `comfyui/Dockerfile` に repo 管理 custom node copy、third-party custom node clone、pinned ref、依存導入、`ffmpeg` 追加の build 手順を実装し、ComfyUI image に baked-in される起点を定義する
-- [ ] T004 [P] `compose.yml` の `comfyui` service から repo 管理 custom node bind mount と `${COMFYUI_DATA_DIR}/custom_nodes` bind mount を外し、既存 model / output / input / user 導線を維持する
-- [ ] T005 [P] `comfyui/entrypoint.sh` を見直し、repo 管理 custom node を baked-in 前提で利用する最小起動処理へ確定する
-- [ ] T006 [P] `.env.example` の ComfyUI コメントを更新し、repo 管理 / third-party custom node は image 同梱・追加 custom node は維持対象外であることを明示する
-- [ ] T007 [P] `specs/031-bake-custom-node/contracts/comfyui-baked-custom-node-contract.md` と `specs/031-bake-custom-node/data-model.md` の runtime / storage 契約に沿って compose・Dockerfile・entrypoint の責務を整合確認する
-- [ ] T008 Allowed Scope / Forbidden Scope に沿って変更対象を `compose.yml`、`comfyui/`、`.env.example`、README 群、feature 文書に限定することを確認する
+- [x] T003 `comfyui/Dockerfile` に repo 管理 custom node copy、third-party custom node clone、pinned ref、依存導入、`ffmpeg` 追加の build 手順を実装し、ComfyUI image に baked-in される起点を定義する
+- [x] T004 [P] `compose.yml` の `comfyui` service から repo 管理 custom node bind mount と `${COMFYUI_DATA_DIR}/custom_nodes` bind mount を外し、既存 model / output / input / user 導線を維持する
+- [x] T005 [P] `comfyui/entrypoint.sh` を見直し、repo 管理 custom node を baked-in 前提で利用する最小起動処理へ確定する
+- [x] T006 [P] `.env.example` の ComfyUI コメントを更新し、repo 管理 / third-party custom node は image 同梱・追加 custom node は維持対象外であることを明示する
+- [x] T007 [P] `specs/031-bake-custom-node/contracts/comfyui-baked-custom-node-contract.md` と `specs/031-bake-custom-node/data-model.md` の runtime / storage 契約に沿って compose・Dockerfile・entrypoint の責務を整合確認する
+- [x] T008 Allowed Scope / Forbidden Scope に沿って変更対象を `compose.yml`、`comfyui/`、`.env.example`、README 群、feature 文書に限定することを確認する
 
 **Checkpoint**: repo 管理 custom node を image に焼き込む基盤が揃っていること
 
@@ -46,14 +46,14 @@
 
 ### Verification for User Story 1
 
-- [ ] T009 [US1] `specs/031-bake-custom-node/quickstart.md` に build・起動・node 確認・third-party node 一覧・失敗時の最初の確認先を完成形で記載する
-- [ ] T010 [US1] `specs/031-bake-custom-node/contracts/comfyui-baked-custom-node-contract.md` の build / start 契約と、`PhotoPainter PNG POST` と third-party node の確認観点を手動検証手順として整合確認する
+- [x] T009 [US1] `specs/031-bake-custom-node/quickstart.md` に build・起動・node 確認・third-party node 一覧・失敗時の最初の確認先を完成形で記載する
+- [x] T010 [US1] `specs/031-bake-custom-node/contracts/comfyui-baked-custom-node-contract.md` の build / start 契約と、`PhotoPainter PNG POST` と third-party node の確認観点を手動検証手順として整合確認する
 
 ### Implementation for User Story 1
 
-- [ ] T011 [US1] `comfyui/Dockerfile` に repo 管理 custom node copy、third-party custom node clone、依存導入と起動時 discovery に必要な配置を実装し、build 後の image に `PhotoPainter PNG POST` と third-party node が含まれるようにする
-- [ ] T012 [US1] `compose.yml` の `comfyui` service を更新し、repo mount なしで baked-in custom node を使う起動定義へ切り替える
-- [ ] T013 [US1] `README.md` の ComfyUI セクションを更新し、repo 管理 custom node と pinned third-party custom node が image 同梱であることと build 導線を案内する
+- [x] T011 [US1] `comfyui/Dockerfile` に repo 管理 custom node copy、third-party custom node clone、依存導入と起動時 discovery に必要な配置を実装し、build 後の image に `PhotoPainter PNG POST` と third-party node が含まれるようにする
+- [x] T012 [US1] `compose.yml` の `comfyui` service を更新し、repo mount なしで baked-in custom node を使う起動定義へ切り替える
+- [x] T013 [US1] `README.md` の ComfyUI セクションを更新し、repo 管理 custom node と pinned third-party custom node が image 同梱であることと build 導線を案内する
 
 **Checkpoint**: User Story 1 が独立して検証可能であること
 
@@ -67,14 +67,14 @@
 
 ### Verification for User Story 2
 
-- [ ] T014 [US2] `specs/031-bake-custom-node/quickstart.md` に restart / recreate の確認手順と rebuild が必要な条件、pinned ref 更新条件を記載する
-- [ ] T015 [US2] `specs/031-bake-custom-node/data-model.md` の runtime state と運用入口が restart / recreate 手順に一致していることを確認する
+- [x] T014 [US2] `specs/031-bake-custom-node/quickstart.md` に restart / recreate の確認手順と rebuild が必要な条件、pinned ref 更新条件を記載する
+- [x] T015 [US2] `specs/031-bake-custom-node/data-model.md` の runtime state と運用入口が restart / recreate 手順に一致していることを確認する
 
 ### Implementation for User Story 2
 
-- [ ] T016 [US2] `comfyui/entrypoint.sh` の restart / recreate 挙動を検証し、baked-in custom node 維持に追加修正が必要な場合のみ反映する
-- [ ] T017 [US2] `README.md` と `specs/030-build-comfyui-image/quickstart.md` を更新し、baked-in custom node 前提の restart / recreate 導線と third-party node 同梱説明へ統一する
-- [ ] T018 [US2] `comfyui/custom_node/comfyui-photopainter-custom/README.md` を更新し、runtime 配置説明を build 時同梱と rebuild 前提へ切り替える
+- [x] T016 [US2] `comfyui/entrypoint.sh` の restart / recreate 挙動を検証し、baked-in custom node 維持に追加修正が必要な場合のみ反映する
+- [x] T017 [US2] `README.md` と `specs/030-build-comfyui-image/quickstart.md` を更新し、baked-in custom node 前提の restart / recreate 導線と third-party node 同梱説明へ統一する
+- [x] T018 [US2] `comfyui/custom_node/comfyui-photopainter-custom/README.md` を更新し、runtime 配置説明を build 時同梱と rebuild 前提へ切り替える
 
 **Checkpoint**: User Story 2 が独立して検証可能であること
 
@@ -88,14 +88,14 @@
 
 ### Verification for User Story 3
 
-- [ ] T019 [US3] `specs/031-bake-custom-node/contracts/comfyui-baked-custom-node-contract.md` の documentation contract に沿って、運用条件の説明観点を確認する
-- [ ] T020 [US3] `specs/031-bake-custom-node/quickstart.md` に追加 custom node 非永続、third-party node 同梱方針、troubleshooting を明記する
+- [x] T019 [US3] `specs/031-bake-custom-node/contracts/comfyui-baked-custom-node-contract.md` の documentation contract に沿って、運用条件の説明観点を確認する
+- [x] T020 [US3] `specs/031-bake-custom-node/quickstart.md` に追加 custom node 非永続、third-party node 同梱方針、troubleshooting を明記する
 
 ### Implementation for User Story 3
 
-- [ ] T021 [US3] `.env.example` と `README.md` を更新し、追加 custom node は維持対象外であることと third-party node は pinned ref 同梱であることを明示する
-- [ ] T022 [US3] `specs/030-build-comfyui-image/quickstart.md` と `comfyui/custom_node/comfyui-photopainter-custom/README.md` を更新し、旧 mount 前提の説明を除去する
-- [ ] T023 [US3] `compose.yml` の custom node 関連 volume を最終確認し、repo 管理 node baked-in と既存 model / output / input / user mount の境界を維持する
+- [x] T021 [US3] `.env.example` と `README.md` を更新し、追加 custom node は維持対象外であることと third-party node は pinned ref 同梱であることを明示する
+- [x] T022 [US3] `specs/030-build-comfyui-image/quickstart.md` と `comfyui/custom_node/comfyui-photopainter-custom/README.md` を更新し、旧 mount 前提の説明を除去する
+- [x] T023 [US3] `compose.yml` の custom node 関連 volume を最終確認し、repo 管理 node baked-in と既存 model / output / input / user mount の境界を維持する
 
 **Checkpoint**: すべての user story が独立検証可能であること
 
@@ -105,9 +105,9 @@
 
 **Purpose**: 実装結果を横断的に仕上げる
 
-- [ ] T024 [P] `specs/031-bake-custom-node/plan.md`、`research.md`、`data-model.md`、`quickstart.md`、`contracts/comfyui-baked-custom-node-contract.md` の最終整合を確認し、差分があれば文書を更新する
-- [ ] T025 `docker compose config`、`docker compose build comfyui`、`docker compose up -d comfyui`、`docker compose restart comfyui`、`docker compose down && docker compose up -d comfyui`、repo 管理 / third-party custom node の visible 状態、troubleshooting 導線の実施結果を確認し、失敗時は関連ファイルを修正する
-- [ ] T026 `README.md`、`specs/030-build-comfyui-image/quickstart.md`、`comfyui/custom_node/comfyui-photopainter-custom/README.md`、`specs/031-bake-custom-node/quickstart.md` の手順文を最終確認し、焼き込み前提と非永続前提の矛盾を解消する
+- [x] T024 [P] `specs/031-bake-custom-node/plan.md`、`research.md`、`data-model.md`、`quickstart.md`、`contracts/comfyui-baked-custom-node-contract.md` の最終整合を確認し、差分があれば文書を更新する
+- [x] T025 `docker compose config`、`docker compose build comfyui`、`docker compose up -d comfyui`、`docker compose restart comfyui`、`docker compose down && docker compose up -d comfyui`、repo 管理 / third-party custom node の visible 状態、troubleshooting 導線の実施結果を確認し、失敗時は関連ファイルを修正する
+- [x] T026 `README.md`、`specs/030-build-comfyui-image/quickstart.md`、`comfyui/custom_node/comfyui-photopainter-custom/README.md`、`specs/031-bake-custom-node/quickstart.md` の手順文を最終確認し、焼き込み前提と非永続前提の矛盾を解消する
 
 ---
 
