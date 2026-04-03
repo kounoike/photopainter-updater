@@ -37,7 +37,7 @@
 
 ### State
 
-`built` → `running` → `restart_scanned` または `recreated` → `running`
+`built` → `running` → `restarted` または `recreated` → `running`
 
 ## 4. 利用者向け運用入口
 

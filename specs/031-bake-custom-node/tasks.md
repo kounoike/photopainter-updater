@@ -29,7 +29,7 @@
 
 - [ ] T003 `comfyui/Dockerfile` に repo 管理 custom node を image へ copy する build 手順を追加し、ComfyUI image に baked-in される起点を定義する
 - [ ] T004 [P] `compose.yml` の `comfyui` service から repo 管理 custom node bind mount と `${COMFYUI_DATA_DIR}/custom_nodes` bind mount を外し、既存 model / output / input / user 導線を維持する
-- [ ] T005 [P] `comfyui/entrypoint.sh` を見直し、repo 管理 custom node を baked-in 前提で利用する最小起動処理へ揃える
+- [ ] T005 [P] `comfyui/entrypoint.sh` を見直し、repo 管理 custom node を baked-in 前提で利用する最小起動処理へ確定する
 - [ ] T006 [P] `.env.example` の ComfyUI コメントを更新し、custom node は image 同梱・追加 custom node は維持対象外であることを明示する
 - [ ] T007 [P] `specs/031-bake-custom-node/contracts/comfyui-baked-custom-node-contract.md` と `specs/031-bake-custom-node/data-model.md` の runtime / storage 契約に沿って compose・Dockerfile・entrypoint の責務を整合確認する
 - [ ] T008 Allowed Scope / Forbidden Scope に沿って変更対象を `compose.yml`、`comfyui/`、`.env.example`、README 群、feature 文書に限定することを確認する
@@ -72,7 +72,7 @@
 
 ### Implementation for User Story 2
 
-- [ ] T016 [US2] `comfyui/entrypoint.sh` を調整し、restart / recreate 後も baked-in custom node を同じ探索先で読み込めるようにする
+- [ ] T016 [US2] `comfyui/entrypoint.sh` の restart / recreate 挙動を検証し、baked-in custom node 維持に追加修正が必要な場合のみ反映する
 - [ ] T017 [US2] `README.md` と `specs/030-build-comfyui-image/quickstart.md` を更新し、baked-in custom node 前提の restart / recreate 導線へ統一する
 - [ ] T018 [US2] `comfyui/custom_node/comfyui-photopainter-custom/README.md` を更新し、runtime 配置説明を build 時同梱と rebuild 前提へ切り替える
 
