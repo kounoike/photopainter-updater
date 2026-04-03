@@ -8,18 +8,21 @@
 | `image_build_context` | path | server image を build する context |
 | `port_mapping` | string | host と container の HTTP port 対応 |
 | `content_mount` | path mapping | `server/contents` を runtime へ渡す bind mount |
+| `server_port_env` | string | `.env.example` の `SERVER_PORT` |
+| `server_content_dir_env` | string | `.env.example` の `SERVER_CONTENT_DIR` |
 
 ### Invariants
 
 - 既存 endpoint 契約は維持する
 - server は単体起動可能である
 - 他 compose サービスと同居してもよい
+- `SERVER_PORT` と `SERVER_CONTENT_DIR` は利用者が上書き可能である
 
 ## 2. 配信コンテンツ
 
 | 項目 | 型 | 説明 |
 |------|----|------|
-| `content_dir` | path | host 側 `server/contents/` |
+| `content_dir` | path | host 側 `${SERVER_CONTENT_DIR:-./server/contents}` |
 | `input_image` | file | `image.png` |
 | `derived_outputs` | files | `image.bmp`、`image.bin` |
 
@@ -36,6 +39,7 @@
 | `stop_command` | command | 停止手順 |
 | `log_command` | command | ログ確認手順 |
 | `health_check` | action | 起動後の疎通確認 |
+| `env_template` | file | `.env.example` に記載する `SERVER_PORT` と `SERVER_CONTENT_DIR` |
 
 ### State
 

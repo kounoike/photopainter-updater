@@ -13,7 +13,7 @@
 
 **Language/Version**: Docker Compose v2 YAML、Dockerfile syntax、Rust stable（既存 server）  
 **Primary Dependencies**: 既存 `compose.yml`、既存 `server/` Rust server（`axum` / Tokio）、新規 `server/Dockerfile`  
-**Storage**: bind mount（`server/contents/`、必要に応じて server source / Cargo cache）  
+**Storage**: bind mount（`${SERVER_CONTENT_DIR:-./server/contents}`、必要に応じて build cache）  
 **Testing**: `docker compose config`、HTTP サーバ単体起動の compose 手動確認、既存 endpoint 疎通確認、README / quickstart 整合確認  
 **Target Platform**: Docker Engine + Docker Compose v2 が使えるローカル開発環境  
 **Project Type**: Compose 設定更新 + server container 化 + 運用ドキュメント  
@@ -57,6 +57,7 @@ specs/029-compose-http-server/
 compose.yml
 .env.example
 README.md
+.env.example
 server/
 ├── Dockerfile
 ├── README.md
@@ -65,7 +66,7 @@ server/
 └── src/
 ```
 
-**Structure Decision**: compose との統合点は root `compose.yml` に置き、HTTP サーバの container 化責務は `server/Dockerfile` に閉じ込める。既存配信データと server source は `server/` 配下を継続利用し、`server/run.sh` は廃止対象とする。
+**Structure Decision**: compose との統合点は root `compose.yml` に置き、HTTP サーバの container 化責務は `server/Dockerfile` に閉じ込める。既存配信データは `SERVER_CONTENT_DIR` で切り替え可能にしつつ既定値を `server/contents/` に保ち、`server/run.sh` は廃止対象とする。
 
 ## Phase 0: Research 成果物
 
@@ -77,8 +78,8 @@ server/
 
 - `compose.yml` に `server` サービスを追加する
 - `server/Dockerfile` で Rust server を build / run できるようにする
-- 配信データは `server/contents` を bind mount する
-- `PORT` と `CONTENT_DIR` は compose から server process へ渡す
+- 配信データは `${SERVER_CONTENT_DIR:-./server/contents}` を bind mount する
+- `.env.example` に `SERVER_PORT` と `SERVER_CONTENT_DIR` を追加し、compose から server process へ `PORT` と `CONTENT_DIR` を渡す
 - 既存 endpoint `/`、`/image.bmp`、`/image.bin`、`/upload` は変更しない
 
 ### Validation 設計
