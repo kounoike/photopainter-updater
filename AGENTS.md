@@ -141,6 +141,8 @@ Use slash commands:
 - bind mount（`server/contents/`） (029-compose-http-server)
 - Docker Compose v2 YAML、Dockerfile syntax、Bash（補助手順）、既存 ComfyUI runtime + 既存 `compose.yml`、新規 `comfyui/Dockerfile`、既存 `comfyui/custom_node/comfyui-photopainter-custom`、Docker BuildKit、NVIDIA Container Toolkit (030-build-comfyui-image)
 - bind mount（`${COMFYUI_DATA_DIR:-./comfyui-data}` 配下）、repo 内 `comfyui/` build context、`.env.example` (030-build-comfyui-image)
+- Docker Compose v2 YAML、Dockerfile syntax、Bash、Python 3.13、既存 ComfyUI runtime + 既存 `compose.yml`、既存 `comfyui/Dockerfile`、既存 `comfyui/entrypoint.sh`、`uv`、ComfyUI upstream manual install 手順、repo 管理 `comfyui/custom_node/comfyui-photopainter-custom` (031-bake-custom-node)
+- bind mount（`${COMFYUI_DATA_DIR:-./comfyui-data}` 配下の models / output / input / user 設定）、image に焼き込む repo 管理 custom node、`.env.example` (031-bake-custom-node)
 
 ## Recent Changes
 - 002-add-run-script: Added Bash (POSIX shell) / Python 3 (実行環境) + Python 標準の HTTP 配信機能
