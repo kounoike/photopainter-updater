@@ -1,4 +1,21 @@
 services:
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: photopainter-server
+    ports:
+      - "0.0.0.0:${SERVER_EXPOSE_PORT:-8000}:8000"
+    volumes:
+      - ${SERVER_CONTENT_DIR:-./server/contents}:/app/contents
+    environment:
+      - PORT=8000
+      - CONTENT_DIR=/app/contents
+      - TZ=Asia/Tokyo
+    restart: unless-stopped
+    networks:
+      - photopainter
+
   comfyui:
     image: yanwk/comfyui-boot:cu128-slim
     container_name: photopainter-comfyui

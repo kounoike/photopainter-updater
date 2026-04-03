@@ -1,0 +1,5 @@
+target/
+contents/
+*.log
+.env*
+run.sh

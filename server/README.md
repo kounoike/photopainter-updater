@@ -4,12 +4,22 @@
 
 ## 起動方法
 
-`server/run.sh [CONTENT_DIR]` を使います。引数を省略すると `server/contents` を使います。
+Docker Compose を使います。
+
+```bash
+cp .env.example .env
+docker compose up -d server
+docker compose logs --tail=200 server
+```
+
+既定では host 側 `127.0.0.1:8000` で待ち受けます。container 内の listen port は常に
+`8000` 固定で、host 側公開ポートは `.env` の `SERVER_EXPOSE_PORT` で変更します。
+配信元ディレクトリは `.env` の `SERVER_CONTENT_DIR` で変更できます。
 
 ## 設定項目
 
-- `PORT`: 待受ポート。既定値は `8000`
-- `CONTENT_DIR`: 入力画像 `image.png` を読むディレクトリ。既定値は `server/contents`
+- `SERVER_EXPOSE_PORT`: host 側へ公開する HTTP ポート。既定値は `8000`
+- `SERVER_CONTENT_DIR`: 入力画像 `image.png` を読む host 側ディレクトリ。既定値は `./server/contents`
 - `IMAGE_PROFILE`: `baseline` / `no-sat-boost` / `color-priority` / `hue-guard` / `color-priority-hue-guard`
 - `COMPARE_WITH_BASELINE`: `0/1` または `true/false`
 - `COMPARE_PROFILE`: 比較相手の profile。指定時は `baseline` 以外とも比較できる
@@ -51,8 +61,8 @@ raw body の例:
 curl -i \
   -X POST \
   -H 'Content-Type: image/png' \
-  --data-binary @./contents/image.png \
-  http://127.0.0.1:8000/upload
+  --data-binary @./server/contents/image.png \
+  http://127.0.0.1:${SERVER_EXPOSE_PORT:-8000}/upload
 ```
 
 multipart の例:
@@ -60,36 +70,20 @@ multipart の例:
 ```bash
 curl -i \
   -X POST \
-  -F 'file=@./contents/image.png' \
-  http://127.0.0.1:8000/upload
+  -F 'file=@./server/contents/image.png' \
+  http://127.0.0.1:${SERVER_EXPOSE_PORT:-8000}/upload
 ```
 
-## 比較実験の例
-
-baseline をそのまま表示:
+## 起動確認
 
 ```bash
-./run.sh
+curl -I http://127.0.0.1:${SERVER_EXPOSE_PORT:-8000}/
+curl -I http://127.0.0.1:${SERVER_EXPOSE_PORT:-8000}/image.bmp
+curl -I http://127.0.0.1:${SERVER_EXPOSE_PORT:-8000}/image.bin
 ```
 
-`color-priority` を baseline と左右比較:
-
-```bash
-IMAGE_PROFILE=color-priority \
-COMPARE_WITH_BASELINE=1 \
-COMPARE_SPLIT=vertical \
-./run.sh
-```
-
-`hue-guard` と `color-priority` を上下比較:
-
-```bash
-IMAGE_PROFILE=hue-guard \
-COMPARE_PROFILE=color-priority \
-COMPARE_SPLIT=horizontal \
-./run.sh
-```
-
+この repository 作業環境では `docker` コマンドが使えない場合がある。その場合、Compose
+起動確認は Docker 利用可能な実行環境で実施する。
 
 ## 責務分割後の変更対象
 
