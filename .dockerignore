@@ -11,6 +11,12 @@ comfyui-data/
 ollama-data/
 ai-toolkit-data/
 coverage/
+__pycache__/
+*.pyc
+.venv/
+venv/
+dist/
+*.egg-info/
 build/
 bin/
 obj/

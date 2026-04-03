@@ -23,17 +23,22 @@ Docker 利用可能な環境で行ってください。
 
 ## ComfyUI（画像生成）
 
-NVIDIA GPU 搭載の環境で ComfyUI を Docker Compose で起動できます。
+NVIDIA GPU 搭載の環境で ComfyUI を Docker Compose から self-build して起動できます。
+この構成は CUDA 対応 Python base image から ComfyUI を組み立て、依存は `uv` で導入します。PyTorch backend は Docker build 時に `cu128` へ固定し、`auto` 判定には依存しません。
 
 ```bash
-cp .env.example .env   # 必要に応じてポート・データパスを編集
-docker compose up
+cp .env.example .env   # 必要に応じてポート・データパス・ref を編集
+docker compose build comfyui
+docker compose up -d comfyui
+docker compose logs --tail=200 comfyui
 ```
 
-ブラウザで `http://localhost:18188` にアクセスすると ComfyUI Web UI が開きます。
+ブラウザで `http://localhost:18188` にアクセスすると ComfyUI Web UI が開きます。既定の起動フラグには `--listen 0.0.0.0` を含め、host 側公開ポートから到達できる前提にしています。
+再起動確認は `docker compose restart comfyui`、再作成確認は `docker compose down && docker compose up -d comfyui` です。
+ローカルでは `COMFYUI_DATA_DIR/models` をそのまま使い、RunPod Serverless を意識する場合は `.env` で `COMFYUI_MODEL_ROOT` を `/runpod-volume/models` のような永続領域へ向けられます。
 
-詳細な手順（モデルの追加・カスタムノードのインストール・GPU 確認等）は
-[specs/022-add-comfyui-compose/quickstart.md](specs/022-add-comfyui-compose/quickstart.md) を参照してください。
+詳細な手順（build、起動、再起動、再作成、troubleshooting、GPU 確認等）は
+[specs/030-build-comfyui-image/quickstart.md](specs/030-build-comfyui-image/quickstart.md) を参照してください。
 
 repo 管理の custom node は [`comfyui/custom_node/`](./comfyui/custom_node/) 配下に置き、
 `docker compose up -d comfyui` 時に自動で ComfyUI container へ mount されます。

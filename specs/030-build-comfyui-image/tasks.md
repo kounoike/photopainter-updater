@@ -16,8 +16,8 @@
 
 **Purpose**: ComfyUI 自前 build へ向けた作業入口を揃える
 
-- [ ] T001 既存 `compose.yml`、`.env.example`、`README.md` の ComfyUI 現行導線を確認し、変更境界を `specs/030-build-comfyui-image/plan.md` と照合する
-- [ ] T002 `comfyui/` 配下に build 資産を置く前提で `comfyui/Dockerfile` と `comfyui/entrypoint.sh` の配置方針を確定する
+- [X] T001 既存 `compose.yml`、`.env.example`、`README.md` の ComfyUI 現行導線を確認し、変更境界を `specs/030-build-comfyui-image/plan.md` と照合する
+- [X] T002 `comfyui/` 配下に build 資産を置く前提で `comfyui/Dockerfile` と `comfyui/entrypoint.sh` の配置方針を確定する
 
 ---
 
@@ -27,12 +27,12 @@
 
 **CRITICAL**: この phase 完了まで user story 実装を開始しない
 
-- [ ] T003 `comfyui/Dockerfile` を新規作成し、CUDA 対応 Python base image と `uv` を使った repo 管理 ComfyUI image build を定義する
-- [ ] T004 [P] `comfyui/entrypoint.sh` を新規作成し、ComfyUI の起動引数と runtime 入口を固定する
-- [ ] T005 [P] `compose.yml` の `comfyui` service を `image:` 直指定から `build:` 利用へ切り替え、既存 GPU・network・healthcheck・depends_on 条件を維持する
-- [ ] T006 [P] `compose.yml` の `comfyui` volumes と環境変数を見直し、`${COMFYUI_DATA_DIR:-./comfyui-data}` と repo 管理 custom node 導線の互換条件を維持する
-- [ ] T007 `.env.example` の ComfyUI 設定コメントを self-build 運用前提に更新し、既存 `COMFYUI_PORT`、`COMFYUI_DATA_DIR`、`COMFYUI_CLI_ARGS` の入口を維持する
-- [ ] T008 Allowed Scope / Forbidden Scope に沿って変更対象を `compose.yml`、`.env.example`、`README.md`、`comfyui/` 配下、関連 feature 文書に限定することを確認する
+- [X] T003 `comfyui/Dockerfile` を新規作成し、CUDA 対応 Python base image と `uv` を使った repo 管理 ComfyUI image build を定義する
+- [X] T004 [P] `comfyui/entrypoint.sh` を新規作成し、ComfyUI の起動引数と runtime 入口を固定する
+- [X] T005 [P] `compose.yml` の `comfyui` service を `image:` 直指定から `build:` 利用へ切り替え、既存 GPU・network・healthcheck・depends_on 条件を維持する
+- [X] T006 [P] `compose.yml` の `comfyui` volumes と環境変数を見直し、`${COMFYUI_DATA_DIR:-./comfyui-data}` と repo 管理 custom node 導線の互換条件を維持する
+- [X] T007 `.env.example` の ComfyUI 設定コメントを self-build 運用前提に更新し、既存 `COMFYUI_PORT`、`COMFYUI_DATA_DIR`、`COMFYUI_CLI_ARGS` の入口を維持する
+- [X] T008 Allowed Scope / Forbidden Scope に沿って変更対象を `compose.yml`、`.env.example`、`README.md`、`comfyui/` 配下、関連 feature 文書に限定することを確認する
 
 **Checkpoint**: repo 管理 ComfyUI image を build できる基盤が揃っていること
 
@@ -46,14 +46,14 @@
 
 ### Verification for User Story 1
 
-- [ ] T009 [US1] `specs/030-build-comfyui-image/quickstart.md` に build、起動、restart、recreate の確認手順と failure-path の最初の確認先を完成形で記載する
-- [ ] T010 [US1] `specs/030-build-comfyui-image/contracts/comfyui-self-build-runtime-contract.md` の build 入口・起動入口・Web UI 契約に沿って手動検証観点を整合確認する
+- [X] T009 [US1] `specs/030-build-comfyui-image/quickstart.md` に build、起動、restart、recreate の確認手順と failure-path の最初の確認先を完成形で記載する
+- [X] T010 [US1] `specs/030-build-comfyui-image/contracts/comfyui-self-build-runtime-contract.md` の build 入口・起動入口・Web UI 契約に沿って手動検証観点を整合確認する
 
 ### Implementation for User Story 1
 
-- [ ] T011 [US1] `comfyui/Dockerfile` に ComfyUI upstream manual install 手順、`uv` による依存導入、PyTorch CUDA wheel 導入を反映し、コンテナ再作成後も同じ起点へ戻れるようにする
-- [ ] T012 [US1] `compose.yml` の `comfyui` service 起動定義を調整し、self-build image を使った `up`、`restart`、`down && up` で同じ service 名と到達 URL を維持する
-- [ ] T013 [US1] `README.md` の ComfyUI セクションを pull 前提から build・起動・再起動・再作成前提へ更新する
+- [X] T011 [US1] `comfyui/Dockerfile` に ComfyUI upstream manual install 手順、`uv` による依存導入、PyTorch CUDA wheel 導入を反映し、コンテナ再作成後も同じ起点へ戻れるようにする
+- [X] T012 [US1] `compose.yml` の `comfyui` service 起動定義を調整し、self-build image を使った `up`、`restart`、`down && up` で同じ service 名と到達 URL を維持する
+- [X] T013 [US1] `README.md` の ComfyUI セクションを pull 前提から build・起動・再起動・再作成前提へ更新する
 
 **Checkpoint**: User Story 1 が独立して検証可能であること
 
@@ -67,14 +67,14 @@
 
 ### Verification for User Story 2
 
-- [ ] T014 [US2] `specs/030-build-comfyui-image/quickstart.md` に新規 clone 環境からの build 導線、20 分以内の到達目安、困ったときの確認先を明記する
-- [ ] T015 [US2] `specs/030-build-comfyui-image/data-model.md` の build 入力と運用導線が、repo 管理 Dockerfile と compose build 実装に一致していることを確認する
+- [X] T014 [US2] `specs/030-build-comfyui-image/quickstart.md` に新規 clone 環境からの build 導線、20 分以内の到達目安、困ったときの確認先を明記する
+- [X] T015 [US2] `specs/030-build-comfyui-image/data-model.md` の build 入力と運用導線が、repo 管理 Dockerfile と compose build 実装に一致していることを確認する
 
 ### Implementation for User Story 2
 
-- [ ] T016 [US2] `comfyui/Dockerfile` と `comfyui/entrypoint.sh` を整え、repo 内 build context だけで ComfyUI image を再生成できるようにする
-- [ ] T017 [US2] `compose.yml` と `.env.example` を更新し、`docker compose build comfyui` と `docker compose up -d comfyui` の入口を repo 管理構成へ揃える
-- [ ] T018 [US2] `README.md` と `specs/030-build-comfyui-image/quickstart.md` を更新し、事前構築済み container に依存しない再現手順へ統一する
+- [X] T016 [US2] `comfyui/Dockerfile` と `comfyui/entrypoint.sh` を整え、repo 内 build context だけで ComfyUI image を再生成できるようにする
+- [X] T017 [US2] `compose.yml` と `.env.example` を更新し、`docker compose build comfyui` と `docker compose up -d comfyui` の入口を repo 管理構成へ揃える
+- [X] T018 [US2] `README.md` と `specs/030-build-comfyui-image/quickstart.md` を更新し、事前構築済み container に依存しない再現手順へ統一する
 
 **Checkpoint**: User Story 2 が独立して検証可能であること
 
@@ -88,14 +88,14 @@
 
 ### Verification for User Story 3
 
-- [ ] T019 [US3] `specs/030-build-comfyui-image/contracts/comfyui-self-build-runtime-contract.md` の storage 契約と documentation 契約に沿って保持対象を確認する
-- [ ] T020 [US3] `specs/030-build-comfyui-image/quickstart.md` に既存データ移行不要と custom node 維持確認の手順を反映する
+- [X] T019 [US3] `specs/030-build-comfyui-image/contracts/comfyui-self-build-runtime-contract.md` の storage 契約と documentation 契約に沿って保持対象を確認する
+- [X] T020 [US3] `specs/030-build-comfyui-image/quickstart.md` に既存データ移行不要と custom node 維持確認の手順を反映する
 
 ### Implementation for User Story 3
 
-- [ ] T021 [US3] `compose.yml` の `comfyui` volumes と repo 管理 custom node mount を調整し、`${COMFYUI_DATA_DIR:-./comfyui-data}` 配下の既存データと node 導線を維持する
-- [ ] T022 [US3] `README.md` と `comfyui/custom_node/comfyui-photopainter-custom/README.md` を更新し、self-build 後も repo 管理 custom node と既存データ保存先が継続利用できることを明示する
-- [ ] T023 [US3] `compose.yml` の `comfyui` service が既存 `ollama`、`server`、`ai-toolkit` と共存する前提を壊していないか確認し、必要な文言を `README.md` に反映する
+- [X] T021 [US3] `compose.yml` の `comfyui` volumes と repo 管理 custom node mount を調整し、`${COMFYUI_DATA_DIR:-./comfyui-data}` 配下の既存データと node 導線を維持する
+- [X] T022 [US3] `README.md` と `comfyui/custom_node/comfyui-photopainter-custom/README.md` を更新し、self-build 後も repo 管理 custom node と既存データ保存先が継続利用できることを明示する
+- [X] T023 [US3] `compose.yml` の `comfyui` service が既存 `ollama`、`server`、`ai-toolkit` と共存する前提を壊していないか確認し、必要な文言を `README.md` に反映する
 
 **Checkpoint**: すべての user story が独立検証可能であること
 
@@ -105,9 +105,9 @@
 
 **Purpose**: 実装結果を横断的に仕上げる
 
-- [ ] T024 [P] `specs/030-build-comfyui-image/plan.md`、`research.md`、`data-model.md`、`quickstart.md`、`contracts/comfyui-self-build-runtime-contract.md` の最終整合を確認し、差分があれば文書を更新する
-- [ ] T025 `docker compose config`、`docker compose build comfyui`、`docker compose up -d comfyui`、`docker compose restart comfyui`、`docker compose down && docker compose up -d comfyui`、troubleshooting 導線の実施結果を確認し、失敗時は関連ファイルを修正する
-- [ ] T026 `README.md`、`comfyui/custom_node/comfyui-photopainter-custom/README.md`、`specs/030-build-comfyui-image/quickstart.md` の手順文を最終確認し、重複や矛盾を解消する
+- [X] T024 [P] `specs/030-build-comfyui-image/plan.md`、`research.md`、`data-model.md`、`quickstart.md`、`contracts/comfyui-self-build-runtime-contract.md` の最終整合を確認し、差分があれば文書を更新する
+- [X] T025 `docker compose config`、`docker compose build comfyui`、`docker compose up -d comfyui`、`docker compose restart comfyui`、`docker compose down && docker compose up -d comfyui`、troubleshooting 導線の実施結果を確認し、失敗時は関連ファイルを修正する
+- [X] T026 `README.md`、`comfyui/custom_node/comfyui-photopainter-custom/README.md`、`specs/030-build-comfyui-image/quickstart.md` の手順文を最終確認し、重複や矛盾を解消する
 
 ---
 

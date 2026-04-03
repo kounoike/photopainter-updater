@@ -17,6 +17,7 @@
 - `${COMFYUI_DATA_DIR:-./comfyui-data}` を引き続き永続データ親ディレクトリとして使う
 - `models`、`custom_nodes`、`dot-local`、`output`、`user`、`input`、`dot-cache` の主要導線を壊さない
 - container 再作成後も host 側の既存データを継続利用できる
+- 必要に応じて `COMFYUI_MODEL_ROOT` / `MODEL_ROOT` で model 実体の参照先だけを差し替えられる
 
 ## 3. Repo-managed Runtime Contract
 
@@ -28,4 +29,5 @@
 
 - root README は ComfyUI の build、起動、再起動、再作成の導線を案内する
 - feature quickstart は `docker compose build comfyui` を含む
+- host 側公開ポートから到達できる既定起動フラグを説明する
 - 既存の ComfyUI 利用者が、起動 URL と主要設定入口の継続を理解できること

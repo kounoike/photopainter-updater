@@ -4,6 +4,7 @@
 
 - Docker Engine と Docker Compose v2（`docker compose`）が使えること
 - NVIDIA GPU、ドライバ、NVIDIA Container Toolkit が利用可能であること
+- 今回の構成は NVIDIA / CUDA 前提であり、CPU / AMD / Intel 向けではないこと
 - `.env.example` を起点に ComfyUI の既存設定を流用できること
 
 ## 2. 設定ファイルを用意する
@@ -12,7 +13,7 @@
 cp .env.example .env
 ```
 
-必要に応じて `COMFYUI_PORT`、`COMFYUI_DATA_DIR`、`COMFYUI_CLI_ARGS` を編集する。
+必要に応じて `COMFYUI_PORT`、`COMFYUI_REF`、`COMFYUI_DATA_DIR`、`COMFYUI_MODEL_ROOT`、`COMFYUI_CLI_ARGS` を編集する。
 
 ## 3. ComfyUI image を build する
 
@@ -20,7 +21,7 @@ cp .env.example .env
 docker compose build comfyui
 ```
 
-repo 管理 Dockerfile を使って ComfyUI image を生成する。base runtime や repo 管理構成を更新した場合も、この手順で再 build する。
+repo 管理 Dockerfile を使って ComfyUI image を生成する。CUDA 対応 Python base image 上に、ComfyUI upstream manual install 手順を `uv` で固定した runtime を構築する。PyTorch backend は `cu128` 固定とし、Docker build 時の `auto` 判定には依存しない。base ref や repo 管理構成を更新した場合も、この手順で再 build する。
 
 ## 4. ComfyUI を起動する
 
@@ -29,7 +30,7 @@ docker compose up -d comfyui
 docker compose logs --tail=200 comfyui
 ```
 
-ブラウザで `http://localhost:${COMFYUI_PORT:-18188}` を開き、ComfyUI Web UI 到達可否を確認する。
+ブラウザで `http://localhost:${COMFYUI_PORT:-18188}` を開き、ComfyUI Web UI 到達可否を確認する。既定では `--listen 0.0.0.0 --fast --enable-manager` を使い、host 側公開ポートからの到達と Manager UI を使った custom node 運用を継続できる。
 
 ## 5. 再起動と再作成を確認する
 
@@ -44,6 +45,8 @@ docker compose logs --tail=200 comfyui
 
 再起動後と再作成後の両方で、同じ URL から UI 到達可否を確認する。
 
+`COMFYUI_MODEL_ROOT` を未指定なら既存どおり `COMFYUI_DATA_DIR/models` を使う。RunPod Serverless を前提にする場合は `/runpod-volume/models` のような永続領域を指定し、entrypoint が `ComfyUI/models` 配下へ symlink して吸収する。
+
 ## 6. repo 管理 custom node を確認する
 
 `PhotoPainter PNG POST` が Add Node から選べること、また既存の `COMFYUI_DATA_DIR/custom_nodes` 配下の custom node が見えなくなっていないことを確認する。
@@ -54,6 +57,9 @@ docker compose logs --tail=200 comfyui
 - runtime 起動失敗時: `docker compose logs --tail=200 comfyui`
 - GPU 疎通確認: `docker exec photopainter-comfyui nvidia-smi`
 - compose 展開確認: `docker compose config`
+- `Torch not compiled with CUDA enabled` が出る場合: image を rebuild し、Dockerfile の PyTorch CUDA wheel 導入ログを確認する
+- NVIDIA driver / CUDA mismatch が出る場合: `cu128` 固定のまま `nvidia-smi` と container log を見て、host driver と NVIDIA Container Toolkit 側を確認する
+- 新規 clone から 20 分以内に build と起動判断まで到達できることを、README とこの quickstart を使って確認する
 
 ## 8. 備考
 

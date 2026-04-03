@@ -1,0 +1,17 @@
+.git
+__pycache__/
+*.pyc
+*.pyo
+*.tmp
+*.swp
+.DS_Store
+Thumbs.db
+.env*
+custom_node/
+models/
+output/
+input/
+user/
+custom_nodes/
+dot-cache/
+dot-local/

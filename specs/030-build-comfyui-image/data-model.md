@@ -8,6 +8,7 @@
 | `dockerfile_path` | path | repo 管理の ComfyUI Dockerfile |
 | `base_runtime_ref` | string | CUDA 対応 Python base image の参照値 |
 | `entrypoint_path` | path | ComfyUI 起動を固定する repo 管理 entrypoint |
+| `model_root` | path | ComfyUI 既定 models path に見せるモデル実体の参照先 |
 | `repo_custom_node_path` | path | repo 管理 custom node ソース |
 | `compose_service_name` | string | compose 上で継続利用する service 名 |
 
@@ -18,6 +19,7 @@
 - base runtime は floating 参照ではなく固定参照を前提にする
 - Python 依存は `uv` を通じて導入する
 - NVIDIA/CUDA 前提の PyTorch 導入経路を明示する
+- `model_root` 未指定時は `/root/ComfyUI/models` と等価に扱い、指定時のみ entrypoint が symlink で吸収する
 
 ## 2. ComfyUI 永続データ
 
@@ -60,6 +62,7 @@
 |------|----|------|
 | `COMFYUI_PORT` | env | Web UI 公開ポート |
 | `COMFYUI_DATA_DIR` | env | 永続データ親ディレクトリ |
+| `COMFYUI_MODEL_ROOT` | env | model 実体を参照する追加入口 |
 | `COMFYUI_CLI_ARGS` | env | ComfyUI 起動フラグ |
 
 ### Invariants

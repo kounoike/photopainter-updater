@@ -17,12 +17,16 @@ services:
       - photopainter
 
   comfyui:
-    image: yanwk/comfyui-boot:cu128-slim
+    build:
+      context: ./comfyui
+      dockerfile: Dockerfile
+      args:
+        COMFYUI_REF: ${COMFYUI_REF:-v0.9.2}
     container_name: photopainter-comfyui
     ports:
       - "0.0.0.0:${COMFYUI_PORT:-18188}:8188"
     volumes:
-      # 必須: モデル・カスタムノード・pip依存ライブラリ・生成画像
+      # 必須: モデル・カスタムノード・uv/pip依存ライブラリ・生成画像
       - ${COMFYUI_DATA_DIR:-./comfyui-data}/models:/root/ComfyUI/models
       - ${COMFYUI_DATA_DIR:-./comfyui-data}/custom_nodes:/root/ComfyUI/custom_nodes
       - ./comfyui/custom_node/comfyui-photopainter-custom:/root/ComfyUI/custom_nodes/comfyui-photopainter-custom:ro
@@ -39,11 +43,13 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
+    gpus: all
     environment:
       - TZ=Asia/Tokyo
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
-      - CLI_ARGS=${COMFYUI_CLI_ARGS:---fast}
+      - MODEL_ROOT=${COMFYUI_MODEL_ROOT:-/root/ComfyUI/models}
+      - CLI_ARGS=${COMFYUI_CLI_ARGS:---listen 0.0.0.0 --fast --enable-manager}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8188/system_stats"]

@@ -13,7 +13,7 @@
 
 **Language/Version**: Docker Compose v2 YAML、Dockerfile syntax、Bash（補助手順）、Python 3.13、既存 ComfyUI runtime  
 **Primary Dependencies**: 既存 `compose.yml`、新規 `comfyui/Dockerfile`、新規 `comfyui/entrypoint.sh`、`uv`、ComfyUI upstream manual install 手順、PyTorch CUDA wheel、既存 `comfyui/custom_node/comfyui-photopainter-custom`、Docker BuildKit、NVIDIA Container Toolkit  
-**Storage**: bind mount（`${COMFYUI_DATA_DIR:-./comfyui-data}` 配下）、repo 内 `comfyui/` build context、`.env.example`  
+**Storage**: bind mount（`${COMFYUI_DATA_DIR:-./comfyui-data}` 配下）、環境差し替え可能な `MODEL_ROOT` / `COMFYUI_MODEL_ROOT`、repo 内 `comfyui/` build context、`.env.example`  
 **Testing**: `docker compose config`、`docker compose build comfyui`、`docker compose up -d comfyui`、UI 到達確認、`docker compose restart comfyui` / `docker compose down && docker compose up -d comfyui` の手動確認、README / quickstart 整合確認  
 **Target Platform**: Docker Engine + Docker Compose v2 + NVIDIA GPU が使えるローカル Linux 系環境  
 **Project Type**: Compose 設定更新 + ComfyUI image build 資産追加 + 運用ドキュメント更新  
@@ -67,7 +67,7 @@ specs/
 └── 022-add-comfyui-compose/
 ```
 
-**Structure Decision**: ComfyUI 用 image build 資産は `comfyui/` 配下へ集約し、compose の build context もそこへ寄せる。`comfyui/Dockerfile` で CUDA 対応 Python base から image を組み、`uv` で PyTorch CUDA wheel と ComfyUI / requirements を導入し、`comfyui/entrypoint.sh` で起動入口を固定する。repo ルートには既存どおり `compose.yml` と README を置き、利用者の起動入口は `docker compose` に統一する。既存の `COMFYUI_DATA_DIR` はそのまま親ディレクトリとして使い、`models`、`custom_nodes`、`output`、`user`、`input`、`dot-cache`、`dot-local` を継続利用対象として扱う。
+**Structure Decision**: ComfyUI 用 image build 資産は `comfyui/` 配下へ集約し、compose の build context もそこへ寄せる。`comfyui/Dockerfile` で CUDA 対応 Python base から image を組み、`uv` で PyTorch CUDA wheel と ComfyUI / requirements を導入し、`comfyui/entrypoint.sh` で起動入口を固定する。repo ルートには既存どおり `compose.yml` と README を置き、利用者の起動入口は `docker compose` に統一する。既存の `COMFYUI_DATA_DIR` はそのまま親ディレクトリとして使い、`models`、`custom_nodes`、`output`、`user`、`input`、`dot-cache`、`dot-local` を継続利用対象として扱う。RunPod Serverless のように model 実体だけ別永続領域へ逃がしたい場合は、`MODEL_ROOT` で `ComfyUI/models` への見え方だけ差し替える。
 
 ## Phase 0: Research 成果物
 
@@ -79,7 +79,7 @@ specs/
 
 - `compose.yml` の `comfyui` service は `image:` 直指定ではなく repo 管理 Dockerfile の `build:` を使う
 - build 対象 image は CUDA 対応 Python base を土台にし、ComfyUI upstream manual install 手順を Dockerfile へ固定する
-- Python 依存は `uv` で導入し、PyTorch は CUDA wheel index を明示した NVIDIA 専用構成とする
+- Python 依存は `uv` で導入し、PyTorch は `--torch-backend=cu128` を明示した NVIDIA 専用構成とする
 - `docker compose up -d comfyui` で build 済み image を起動でき、必要に応じて `docker compose build comfyui` で明示再 build できるようにする
 - 既存の `COMFYUI_PORT`、`COMFYUI_DATA_DIR`、GPU 設定、healthcheck、`photopainter` network、`depends_on: ollama` は互換条件として扱う
 - repo 管理 custom node は引き続き runtime から見えるようにし、既存の利用者 custom node 全体保存先も保持する

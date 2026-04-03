@@ -24,13 +24,14 @@
 - `pip install` をそのまま使う: 要件に合わない
 - Poetry や別の tool を導入する: 今回の scope 外
 
-## Decision 2b: NVIDIA 専用 image として PyTorch CUDA wheel を明示する
+## Decision 2b: NVIDIA 専用 image として PyTorch backend を `cu128` へ固定する
 
-**Decision**: 今回は NVIDIA/CUDA 専用 image とし、PyTorch は ComfyUI README の NVIDIA 手順を踏まえた CUDA wheel index を使って導入する。  
-**Rationale**: repo の既存 compose も NVIDIA GPU 前提であり、AMD/Intel まで同時対応すると設計と検証が拡散する。ComfyUI README でも GPU 種別ごとに導入手順が分かれているため、今回は NVIDIA に限定する方が plan の単純性に合う。  
+**Decision**: 今回は NVIDIA/CUDA 専用 image とし、PyTorch は `uv pip install --torch-backend=cu128` で導入する。  
+**Rationale**: repo の既存 compose も NVIDIA GPU 前提であり、AMD/Intel まで同時対応すると設計と検証が拡散する。Docker build 時の `auto` 判定は host GPU 検出に依存して再現性が落ちるため、backend を `cu128` に固定する方が実機検証と整合しやすい。  
 **Alternatives considered**:
 - GPU ベンダー共通 image を狙う: 検証軸が増えすぎる
 - CPU fallback を含める: 現行の ComfyUI 運用方針とずれる
+- `--torch-backend=auto` を使う: Docker build 時の自動判定が不安定になりうる
 
 ## Decision 3: runtime で変化しやすい初期状態は Dockerfile と entrypoint へ寄せる
 
