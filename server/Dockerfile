@@ -4,18 +4,13 @@ FROM rust:1.86-bookworm AS builder
 WORKDIR /app
 
 COPY Cargo.toml Cargo.lock ./
-RUN mkdir src && printf 'fn main() {}\n' > src/main.rs
-RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/usr/local/cargo/git \
-    --mount=type=cache,target=/app/target \
-    cargo build --release
-
 COPY src ./src
+
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/local/cargo/git \
     --mount=type=cache,target=/app/target \
-    cargo build --release && \
-    cp /app/target/release/http-bmp-server /usr/local/bin/http-bmp-server
+    cargo build --locked --release && \
+    install -m 0755 /app/target/release/http-bmp-server /usr/local/bin/http-bmp-server
 
 FROM debian:bookworm-slim AS runtime
 RUN apt-get update && \
