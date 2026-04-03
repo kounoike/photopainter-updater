@@ -6,7 +6,8 @@
 |------|----|------|
 | `build_context` | path | `docker compose build comfyui` が参照する repo 内 build context |
 | `dockerfile_path` | path | repo 管理の ComfyUI Dockerfile |
-| `base_runtime_ref` | string | pinned upstream runtime の参照値 |
+| `base_runtime_ref` | string | CUDA 対応 Python base image の参照値 |
+| `entrypoint_path` | path | ComfyUI 起動を固定する repo 管理 entrypoint |
 | `repo_custom_node_path` | path | repo 管理 custom node ソース |
 | `compose_service_name` | string | compose 上で継続利用する service 名 |
 
@@ -15,6 +16,8 @@
 - build 入力は repo 内に存在し、git 履歴で追跡できる
 - `compose_service_name` は `comfyui` を維持する
 - base runtime は floating 参照ではなく固定参照を前提にする
+- Python 依存は `uv` を通じて導入する
+- NVIDIA/CUDA 前提の PyTorch 導入経路を明示する
 
 ## 2. ComfyUI 永続データ
 
@@ -45,6 +48,7 @@
 | `recreate_command` | command | ComfyUI 再作成手順 |
 | `log_command` | command | ログ確認手順 |
 | `health_check` | action | UI 到達や healthcheck を使った確認手順 |
+| `troubleshooting_entry` | action | build 失敗や CUDA 不整合時の最初の確認先 |
 
 ### State
 

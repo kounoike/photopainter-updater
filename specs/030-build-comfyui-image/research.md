@@ -8,17 +8,33 @@
 - `image:` で公開 image を使い続ける: runtime 側の差分が残りやすい
 - 手元で修正した container を commit/push して使い回す: 再現性とレビュー性が低い
 
-## Decision 2: 自前 image でも upstream base は pinned な既知ランタイムを土台にする
+## Decision 2: base image は CUDA 対応 Python image にする
 
-**Decision**: 自前 image は既知の upstream ComfyUI ランタイムを土台にし、tag を固定したうえで repo 管理の構成だけを追加する。  
-**Rationale**: ComfyUI 本体と CUDA/PyTorch まで完全自作すると scope が急拡大する。安定した既知ランタイムを pinned base として使い、その上に repo 管理の初期構成と依存固定を重ねる方が、今回の目的である「再構築可能性」と「運用単純性」に合う。  
+**Decision**: 自前 image は公開 ComfyUI runtime image ではなく、CUDA 対応の Python base image から組み立てる。  
+**Rationale**: 問題の中心は upstream runtime image 任せの不透明さにあり、Python base から組み立てる方が ComfyUI / PyTorch / 追加依存の導入順序を repo 側で明示できる。ComfyUI upstream README の manual install 手順を Dockerfile 化することで、再構築性を高めつつ手順の根拠も upstream と揃えられる。  
 **Alternatives considered**:
-- CUDA / PyTorch / ComfyUI 本体まで完全自作する: 保守範囲が大きすぎる
-- `latest` 系の floating tag を使う: build ごとの差分原因が増える
+- 既存の ComfyUI runtime image を pinned 利用する: image 内状態の差分要因を repo 側で制御しにくい
+- CUDA / Python まで完全自作する: scope が過大
 
-## Decision 3: runtime で変化しやすい初期状態は Dockerfile へ寄せる
+## Decision 2a: Python 依存は `uv` で管理する
 
-**Decision**: 起動前提となる repo 管理構成や初期導線は container 起動後の手作業ではなく Dockerfile 側で整える。  
+**Decision**: Python 依存の導入は `pip` 直接ではなく `uv` を使う。  
+**Rationale**: user 指示どおり `uv` 管理へ寄せることで、Python 環境の再現性と Docker build 時の導入速度を改善しやすい。ComfyUI upstream manual install の `pip install` 手順は、Dockerfile では `uv` ベースに読み替えて固定する。  
+**Alternatives considered**:
+- `pip install` をそのまま使う: 要件に合わない
+- Poetry や別の tool を導入する: 今回の scope 外
+
+## Decision 2b: NVIDIA 専用 image として PyTorch CUDA wheel を明示する
+
+**Decision**: 今回は NVIDIA/CUDA 専用 image とし、PyTorch は ComfyUI README の NVIDIA 手順を踏まえた CUDA wheel index を使って導入する。  
+**Rationale**: repo の既存 compose も NVIDIA GPU 前提であり、AMD/Intel まで同時対応すると設計と検証が拡散する。ComfyUI README でも GPU 種別ごとに導入手順が分かれているため、今回は NVIDIA に限定する方が plan の単純性に合う。  
+**Alternatives considered**:
+- GPU ベンダー共通 image を狙う: 検証軸が増えすぎる
+- CPU fallback を含める: 現行の ComfyUI 運用方針とずれる
+
+## Decision 3: runtime で変化しやすい初期状態は Dockerfile と entrypoint へ寄せる
+
+**Decision**: 起動前提となる repo 管理構成や初期導線は container 起動後の手作業ではなく Dockerfile と entrypoint 側で整える。  
 **Rationale**: 問題の本質は「container を作り直すと同じ状態へ戻らない」ことにある。build 時に固定できる要素を Dockerfile へ寄せると、再起動だけでなく再 build・再作成でも同じ起点を得やすい。  
 **Alternatives considered**:
 - 初回起動後に毎回手作業で調整する: 人依存が残る
