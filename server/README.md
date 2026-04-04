@@ -77,13 +77,16 @@ curl -i \
 ## 起動確認
 
 ```bash
+curl -i http://127.0.0.1:${SERVER_EXPOSE_PORT:-8000}/ping
 curl -i http://127.0.0.1:${SERVER_EXPOSE_PORT:-8000}/hello
 curl -I http://127.0.0.1:${SERVER_EXPOSE_PORT:-8000}/
 curl -I http://127.0.0.1:${SERVER_EXPOSE_PORT:-8000}/image.bmp
 curl -I http://127.0.0.1:${SERVER_EXPOSE_PORT:-8000}/image.bin
 ```
 
+- まず `GET /ping` が `200 OK` と空 body を返すことを確認する
 - まず `GET /hello` が `200 OK` と本文 `hello` を返すことを確認する
+- `/ping` は最小の到達性確認、`/hello` は本文付きの疎通確認として使い分けられる
 - `image.png` が未配置でも `/hello` は疎通確認に使える
 - その後に `/image.bmp` や `/image.bin` を確認すると、server 疎通と画像処理の問題を切り分けやすい
 - 未定義 path は引き続き `404` と本文 `route not found` を返し、access log でも `not-found` として記録される

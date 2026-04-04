@@ -15,7 +15,7 @@
 
 **Purpose**: `/ping` の契約と変更範囲を固定する
 
-- [ ] T001 `specs/035-add-ping-endpoint/spec.md` と `specs/035-add-ping-endpoint/contracts/ping-endpoint-contract.md` を照合し、`/ping` が `200 OK` と空 body を返す契約を実装前提として確定する
+- [X] T001 `specs/035-add-ping-endpoint/spec.md` と `specs/035-add-ping-endpoint/contracts/ping-endpoint-contract.md` を照合し、`/ping` が `200 OK` と空 body を返す契約を実装前提として確定する
 
 ---
 
@@ -25,8 +25,8 @@
 
 **CRITICAL**: この phase 完了まで user story 実装を開始しない
 
-- [ ] T002 `server/src/routes.rs` の router 構成と既存 `/hello` test を確認し、`/ping` の追加位置と回帰確認対象を明確化する
-- [ ] T003 `server/README.md` と `specs/035-add-ping-endpoint/quickstart.md` の起動確認導線を確認し、`/ping` を追記する更新範囲を整理する
+- [X] T002 `server/src/routes.rs` の router 構成と既存 `/hello` test を確認し、`/ping` の追加位置と回帰確認対象を明確化する
+- [X] T003 `server/README.md` と `specs/035-add-ping-endpoint/quickstart.md` の起動確認導線を確認し、`/ping` を追記する更新範囲を整理する
 
 **Checkpoint**: route 追加位置、文書更新範囲、回帰確認対象が確定していること
 
@@ -40,14 +40,14 @@
 
 ### Verification for User Story 1
 
-- [ ] T004 [P] [US1] `/ping` の `200 OK` と空 body、logging を検証する route test を `server/src/routes.rs` に追加する
-- [ ] T005 [US1] 画像未配置状態でも `/ping` が成功し既存 image route と切り分けられる route test を `server/src/routes.rs` に追加する
+- [X] T004 [P] [US1] `/ping` の `200 OK` と空 body、logging を検証する route test を `server/src/routes.rs` に追加する
+- [X] T005 [US1] 画像未配置状態でも `/ping` が成功し既存 image route と切り分けられる route test を `server/src/routes.rs` に追加する
 
 ### Implementation for User Story 1
 
-- [ ] T006 [US1] `GET /ping` route と空 body の handler を `server/src/routes.rs` に実装する
-- [ ] T007 [US1] `/ping` の成功応答を既存 logging 経路へ統合し `server/src/routes.rs` に反映する
-- [ ] T008 [US1] `cargo test` を `server/` で実行し `/ping` 追加後も route test 一式が成功することを確認する
+- [X] T006 [US1] `GET /ping` route と空 body の handler を `server/src/routes.rs` に実装する
+- [X] T007 [US1] `/ping` の成功応答を既存 logging 経路へ統合し `server/src/routes.rs` に反映する
+- [X] T008 [US1] `cargo test` を `server/` で実行し `/ping` 追加後も route test 一式が成功することを確認する
 
 **Checkpoint**: `/ping` が独立して検証可能であり、画像状態に依存せず成功すること
 
@@ -61,12 +61,12 @@
 
 ### Verification for User Story 2
 
-- [ ] T009 [US2] `/ping` を使った手動確認手順と期待結果を `specs/035-add-ping-endpoint/quickstart.md` に反映する
+- [X] T009 [US2] `/ping` を使った手動確認手順と期待結果を `specs/035-add-ping-endpoint/quickstart.md` に反映する
 
 ### Implementation for User Story 2
 
-- [ ] T010 [US2] 起動確認セクションへ `/ping` の使い方を追記する内容を `server/README.md` に実装する
-- [ ] T011 [US2] `/ping` の後に `/hello` や画像 route を確認する切り分け手順を `specs/035-add-ping-endpoint/quickstart.md` に実装する
+- [X] T010 [US2] 起動確認セクションへ `/ping` の使い方を追記する内容を `server/README.md` に実装する
+- [X] T011 [US2] `/ping` の後に `/hello` や画像 route を確認する切り分け手順を `specs/035-add-ping-endpoint/quickstart.md` に実装する
 
 **Checkpoint**: 利用者が `/ping` を最小の疎通確認手順として辿れること
 
@@ -80,12 +80,12 @@
 
 ### Verification for User Story 3
 
-- [ ] T012 [US3] 既存 route と fallback の回帰確認観点を `specs/035-add-ping-endpoint/quickstart.md` に整理する
+- [X] T012 [US3] 既存 route と fallback の回帰確認観点を `specs/035-add-ping-endpoint/quickstart.md` に整理する
 
 ### Implementation for User Story 3
 
-- [ ] T013 [US3] `/ping` 追加後も unknown path の `404` 契約が変わらないことを `server/src/routes.rs` の既存 test 群で維持または必要最小限更新する
-- [ ] T014 [US3] `/ping` 追加後も `/hello`、`/`、`/image.bmp`、`/image.bin`、`/upload` の既存回帰が通ることを `server/src/routes.rs` と `server/README.md` で担保する
+- [X] T013 [US3] `/ping` 追加後も unknown path の `404` 契約が変わらないことを `server/src/routes.rs` の既存 test 群で維持または必要最小限更新する
+- [X] T014 [US3] `/ping` 追加後も `/hello`、`/`、`/image.bmp`、`/image.bin`、`/upload` の既存回帰が通ることを `server/src/routes.rs` と `server/README.md` で担保する
 
 **Checkpoint**: 既存 endpoint と fallback の期待挙動が維持されていること
 
@@ -95,8 +95,8 @@
 
 **Purpose**: 最終整合と静的検証を行う
 
-- [ ] T015 [P] `specs/035-add-ping-endpoint/plan.md`、`specs/035-add-ping-endpoint/contracts/ping-endpoint-contract.md`、`specs/035-add-ping-endpoint/tasks.md` の記述整合を確認する
-- [ ] T016 `specs/035-add-ping-endpoint/quickstart.md` と `server/README.md` の手順差分がないことを確認する
+- [X] T015 [P] `specs/035-add-ping-endpoint/plan.md`、`specs/035-add-ping-endpoint/contracts/ping-endpoint-contract.md`、`specs/035-add-ping-endpoint/tasks.md` の記述整合を確認する
+- [X] T016 `specs/035-add-ping-endpoint/quickstart.md` と `server/README.md` の手順差分がないことを確認する
 
 ---
 
