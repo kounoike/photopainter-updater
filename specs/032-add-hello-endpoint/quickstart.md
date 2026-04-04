@@ -30,6 +30,7 @@ curl -i http://127.0.0.1:${SERVER_EXPOSE_PORT:-8000}/hello
 - 成功 status が返る
 - body が `hello` である
 - この確認は `image.png` の有無に依存しない
+- access log では `path=/hello` と成功 outcome を確認できる
 
 ## 3. 画像未配置でも `/hello` が使えることを確認する
 
@@ -53,6 +54,7 @@ curl -I http://127.0.0.1:${SERVER_EXPOSE_PORT:-8000}/image.bin
 
 - `/hello` 追加後も既存 endpoint の確認手順を継続できる
 - 既存 endpoint の成功・失敗は従来どおり画像状態に依存する
+- `/upload` の利用方法や期待挙動は変更しない
 
 ## 5. 未定義 path の挙動を確認する
 
@@ -63,4 +65,6 @@ curl -i http://127.0.0.1:${SERVER_EXPOSE_PORT:-8000}/not-found
 確認:
 
 - 未定義 path は引き続き not found になる
+- 本文は `route not found` のままである
+- access log では `LogOutcome::NotFound` 相当の not found 記録を維持する
 - `/hello` 追加が fallback 契約を壊していない

@@ -15,7 +15,7 @@
 
 **Purpose**: 現状の route / documentation / test 変更点を今回 feature 向けに固定する
 
-- [ ] T001 `specs/032-add-hello-endpoint/spec.md`、`specs/032-add-hello-endpoint/plan.md`、`specs/032-add-hello-endpoint/contracts/hello-endpoint-contract.md` を照合し、`/hello` が `text/plain` で `hello` を返す契約を実装方針として確定する
+- [X] T001 `specs/032-add-hello-endpoint/spec.md`、`specs/032-add-hello-endpoint/plan.md`、`specs/032-add-hello-endpoint/contracts/hello-endpoint-contract.md` を照合し、`/hello` が `text/plain` で `hello` を返す契約を実装方針として確定する
 
 ---
 
@@ -25,8 +25,8 @@
 
 **CRITICAL**: この phase 完了まで user story 実装を開始しない
 
-- [ ] T002 `server/src/routes.rs` の router 構成、fallback、既存 route test の配置を確認し、`/hello` 追加位置と回帰確認対象を明確化する
-- [ ] T003 `server/README.md` と `specs/032-add-hello-endpoint/quickstart.md` の起動確認導線を確認し、`/hello` を先頭確認手順に差し替える更新範囲を整理する
+- [X] T002 `server/src/routes.rs` の router 構成、fallback、既存 route test の配置を確認し、`/hello` 追加位置と回帰確認対象を明確化する
+- [X] T003 `server/README.md` と `specs/032-add-hello-endpoint/quickstart.md` の起動確認導線を確認し、`/hello` を先頭確認手順に差し替える更新範囲を整理する
 
 **Checkpoint**: route 追加位置、文書更新範囲、回帰確認対象が確定していること
 
@@ -40,14 +40,14 @@
 
 ### Verification for User Story 1
 
-- [ ] T004 [US1] `/hello` の成功応答と logging を検証する route テストを `server/src/routes.rs` に追加する
-- [ ] T005 [US1] 画像未配置状態でも `/hello` が成功し既存 image route と切り分けられることを検証する route テストを `server/src/routes.rs` に追加する
+- [X] T004 [US1] `/hello` の成功応答と logging を検証する route テストを `server/src/routes.rs` に追加する
+- [X] T005 [US1] 画像未配置状態でも `/hello` が成功し既存 image route と切り分けられることを検証する route テストを `server/src/routes.rs` に追加する
 
 ### Implementation for User Story 1
 
-- [ ] T006 [US1] `GET /hello` を router に追加し固定本文 `hello` を返す handler を `server/src/routes.rs` に実装する
-- [ ] T007 [US1] `/hello` の成功応答で既存 `record` と `text_response` を再利用し、access log と content type を既存方針に合わせて `server/src/routes.rs` に統合する
-- [ ] T008 [US1] `cargo test` を `server/` で実行し、`/hello` の追加後も route テスト一式が成功することを確認する
+- [X] T006 [US1] `GET /hello` を router に追加し固定本文 `hello` を返す handler を `server/src/routes.rs` に実装する
+- [X] T007 [US1] `/hello` の成功応答で既存 `record` と `text_response` を再利用し、access log と content type を既存方針に合わせて `server/src/routes.rs` に統合する
+- [X] T008 [US1] `cargo test` を `server/` で実行し、`/hello` の追加後も route テスト一式が成功することを確認する
 
 **Checkpoint**: `/hello` が独立して検証可能であり、画像状態に依存せず成功すること
 
@@ -61,12 +61,12 @@
 
 ### Verification for User Story 2
 
-- [ ] T009 [US2] `/hello` を使った手動確認手順と期待結果を `specs/032-add-hello-endpoint/quickstart.md` に反映し、body が `hello` である確認点を明記する
+- [X] T009 [US2] `/hello` を使った手動確認手順と期待結果を `specs/032-add-hello-endpoint/quickstart.md` に反映し、body が `hello` である確認点を明記する
 
 ### Implementation for User Story 2
 
-- [ ] T010 [US2] 起動確認セクションと troubleshooting 導線を `/hello` 優先に更新する内容を `server/README.md` に実装する
-- [ ] T011 [US2] `/hello` と既存 `/image.bmp` `/image.bin` を段階的に確認する利用手順を `specs/032-add-hello-endpoint/quickstart.md` に実装する
+- [X] T010 [US2] 起動確認セクションと troubleshooting 導線を `/hello` 優先に更新する内容を `server/README.md` に実装する
+- [X] T011 [US2] `/hello` と既存 `/image.bmp` `/image.bin` を段階的に確認する利用手順を `specs/032-add-hello-endpoint/quickstart.md` に実装する
 
 **Checkpoint**: 利用者が `/hello` を最初の確認手順として迷わず辿れること
 
@@ -80,12 +80,12 @@
 
 ### Verification for User Story 3
 
-- [ ] T012 [US3] 既存 route の回帰確認観点と fallback の `404` / `route not found` / logging 維持条件を `specs/032-add-hello-endpoint/quickstart.md` に整理する
+- [X] T012 [US3] 既存 route の回帰確認観点と fallback の `404` / `route not found` / logging 維持条件を `specs/032-add-hello-endpoint/quickstart.md` に整理する
 
 ### Implementation for User Story 3
 
-- [ ] T013 [US3] `/hello` 追加が unknown path の `404` / `route not found` 本文 / `LogOutcome::NotFound` を壊さないことを検証する既存 not found test の期待値を `server/src/routes.rs` で維持または必要最小限更新する
-- [ ] T014 [US3] `/hello` 追加後も `/image.bmp`、`/image.bin`、`/upload` の既存回帰が通ることを `server/src/routes.rs` の既存 test 群と `server/README.md` の確認手順で担保する
+- [X] T013 [US3] `/hello` 追加が unknown path の `404` / `route not found` 本文 / `LogOutcome::NotFound` を壊さないことを検証する既存 not found test の期待値を `server/src/routes.rs` で維持または必要最小限更新する
+- [X] T014 [US3] `/hello` 追加後も `/image.bmp`、`/image.bin`、`/upload` の既存回帰が通ることを `server/src/routes.rs` の既存 test 群と `server/README.md` の確認手順で担保する
 
 **Checkpoint**: 既存 endpoint と fallback の期待挙動が維持されていること
 
@@ -95,8 +95,8 @@
 
 **Purpose**: 複数 story にまたがる最終整合と検証
 
-- [ ] T015 [P] `specs/032-add-hello-endpoint/contracts/hello-endpoint-contract.md`、`specs/032-add-hello-endpoint/plan.md`、`specs/032-add-hello-endpoint/tasks.md` の記述整合を確認する
-- [ ] T016 `specs/032-add-hello-endpoint/quickstart.md` の手順どおりに実施した想定で `server/README.md` と実装結果の齟齬がないことを確認する
+- [X] T015 [P] `specs/032-add-hello-endpoint/contracts/hello-endpoint-contract.md`、`specs/032-add-hello-endpoint/plan.md`、`specs/032-add-hello-endpoint/tasks.md` の記述整合を確認する
+- [X] T016 `specs/032-add-hello-endpoint/quickstart.md` の手順どおりに実施した想定で `server/README.md` と実装結果の齟齬がないことを確認する
 
 ---
 
