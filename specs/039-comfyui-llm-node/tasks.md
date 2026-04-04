@@ -15,7 +15,7 @@
 
 **Purpose**: 再設計後の成果物と実装境界を固定する
 
-- [ ] T001 `specs/039-comfyui-llm-node/spec.md`、`plan.md`、`research.md`、`data-model.md`、`contracts/comfyui-local-llm-node-contract.md` を照合し、documented think control と generation-time structured output を実装開始条件として確定する
+- [X] T001 `specs/039-comfyui-llm-node/spec.md`、`plan.md`、`research.md`、`data-model.md`、`contracts/comfyui-local-llm-node-contract.md` を照合し、documented think control と generation-time structured output を実装開始条件として確定する
 
 ---
 
@@ -25,11 +25,11 @@
 
 **CRITICAL**: この phase 完了まで user story 実装を開始しない
 
-- [ ] T002 `comfyui/Dockerfile` に `lm-format-enforcer` を追加し、既存 `transformers`、`llama-cpp-python`、`jsonschema` と同居できる build 手順へ更新する
-- [ ] T003 [P] `compose.yml` と `.env.example` に `COMFYUI_LLM_MODEL_CACHE_DIR` の runtime 注入契約を整理し、ComfyUI container へ安定して渡せるようにする
-- [ ] T004 `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に node 入力正規化、`model_id` / `model_file` validation、`think_mode` enum、共通 error kind の基盤を実装する
-- [ ] T005 `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に `COMFYUI_LLM_MODEL_CACHE_DIR` と backend 既定保存先の解決 helper を実装する
-- [ ] T006 `comfyui/custom_node/comfyui-photopainter-custom/tests/test_contract.py` に node metadata、入力 widget、`model_id` / `model_file`、`think_mode`、環境変数契約の検証を追加する
+- [X] T002 `comfyui/Dockerfile` に `lm-format-enforcer` を追加し、既存 `transformers`、`llama-cpp-python`、`jsonschema` と同居できる build 手順へ更新する
+- [X] T003 [P] `compose.yml` と `.env.example` に `COMFYUI_LLM_MODEL_CACHE_DIR` の runtime 注入契約を整理し、ComfyUI container へ安定して渡せるようにする
+- [X] T004 `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に node 入力正規化、`model_id` / `model_file` validation、`think_mode` enum、共通 error kind の基盤を実装する
+- [X] T005 `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に `COMFYUI_LLM_MODEL_CACHE_DIR` と backend 既定保存先の解決 helper を実装する
+- [X] T006 `comfyui/custom_node/comfyui-photopainter-custom/tests/test_contract.py` に node metadata、入力 widget、`model_id` / `model_file`、`think_mode`、環境変数契約の検証を追加する
 
 **Checkpoint**: 依存関係、環境変数契約、入力契約が整い、US1 以降の実装を開始できる
 
@@ -43,15 +43,15 @@
 
 ### Verification for User Story 1
 
-- [ ] T007 [US1] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` に text mode の `transformers` backend、`llama-cpp` backend、`model_id` / `model_file` 解決、単一 `STRING` 出力を検証する unit test を追加する
-- [ ] T008 [US1] `specs/039-comfyui-llm-node/quickstart.md` に `transformers + Qwen3.5 + think_mode=off` の smoke 手順を反映し、手動確認基準を固定する
+- [X] T007 [US1] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` に text mode の `transformers` backend、`llama-cpp` backend、`model_id` / `model_file` 解決、単一 `STRING` 出力を検証する unit test を追加する
+- [X] T008 [US1] `specs/039-comfyui-llm-node/quickstart.md` に `transformers + Qwen3.5 + think_mode=off` の smoke 手順を反映し、手動確認基準を固定する
 
 ### Implementation for User Story 1
 
-- [ ] T009 [US1] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に `transformers` backend adapter を実装し、text mode の単発推論と documented think off 制御を返せるようにする
-- [ ] T010 [US1] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に `llama-cpp` backend adapter を実装し、`model_id` + `model_file` で text mode の単発推論を返せるようにする
-- [ ] T011 [US1] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に `PhotoPainter LLM Generate` node 本体を実装し、backend 切替と単一 `STRING` 出力契約を成立させる
-- [ ] T012 [US1] `comfyui/custom_node/comfyui-photopainter-custom/README.md` に backend 選択、`model_id` / `model_file`、`COMFYUI_LLM_MODEL_CACHE_DIR`、smoke 実行の基本利用手順を追記する
+- [X] T009 [US1] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に `transformers` backend adapter を実装し、text mode の単発推論と documented think off 制御を返せるようにする
+- [X] T010 [US1] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に `llama-cpp` backend adapter を実装し、`model_id` + `model_file` で text mode の単発推論を返せるようにする
+- [X] T011 [US1] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に `PhotoPainter LLM Generate` node 本体を実装し、backend 切替と単一 `STRING` 出力契約を成立させる
+- [X] T012 [US1] `comfyui/custom_node/comfyui-photopainter-custom/README.md` に backend 選択、`model_id` / `model_file`、`COMFYUI_LLM_MODEL_CACHE_DIR`、smoke 実行の基本利用手順を追記する
 
 **Checkpoint**: text mode の local LLM 推論が独立して検証可能であること
 
@@ -65,15 +65,15 @@
 
 ### Verification for User Story 2
 
-- [ ] T013 [US2] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_contract.py` に `json_output`、`json_schema`、単一 `STRING` 出力、structured output 契約の検証を追加する
-- [ ] T014 [US2] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` に constrained JSON 成功、schema 成功、schema 不正、constraint 非対応 backend/path の明示 failure、constraint なし text mode 非適用を検証する unit test を追加する
-- [ ] T015 [US2] `specs/039-comfyui-llm-node/quickstart.md` に JSON mode、schema 指定、generation-time constraint の確認手順を反映する
+- [X] T013 [US2] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_contract.py` に `json_output`、`json_schema`、単一 `STRING` 出力、structured output 契約の検証を追加する
+- [X] T014 [US2] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` に constrained JSON 成功、schema 成功、schema 不正、constraint 非対応 backend/path の明示 failure、constraint なし text mode 非適用を検証する unit test を追加する
+- [X] T015 [US2] `specs/039-comfyui-llm-node/quickstart.md` に JSON mode、schema 指定、generation-time constraint の確認手順を反映する
 
 ### Implementation for User Story 2
 
-- [ ] T016 [US2] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に `lm-format-enforcer` を使った generation-time structured output helper を実装し、対応 backend/path ではそれを使い、非対応経路では明示 failure にする
-- [ ] T017 [US2] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に `json_output=true` 時の JSON parse、`json_schema` parse、`jsonschema` validation、成功時の単一 `STRING` 返却を実装する
-- [ ] T018 [US2] `comfyui/custom_node/comfyui-photopainter-custom/README.md` に JSON mode、schema 指定、structured output 制約、成功条件を追記する
+- [X] T016 [US2] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に `lm-format-enforcer` を使った generation-time structured output helper を実装し、対応 backend/path ではそれを使い、非対応経路では明示 failure にする
+- [X] T017 [US2] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に `json_output=true` 時の JSON parse、`json_schema` parse、`jsonschema` validation、成功時の単一 `STRING` 返却を実装する
+- [X] T018 [US2] `comfyui/custom_node/comfyui-photopainter-custom/README.md` に JSON mode、schema 指定、structured output 制約、成功条件を追記する
 
 **Checkpoint**: JSON mode と schema 検証が heuristic cleanup に依存せず独立検証可能であること
 
@@ -87,14 +87,14 @@
 
 ### Verification for User Story 3
 
-- [ ] T019 [US3] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` に Qwen / Gemma / DeepSeek R1 の think control 計画、未対応 mode、retry 対象判定、failure kind 表示を検証する unit test を追加する
-- [ ] T020 [US3] `specs/039-comfyui-llm-node/quickstart.md` に family ごとの think 切替、retry、failure 切り分けの確認手順を反映する
+- [X] T019 [US3] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` に Qwen / Gemma / DeepSeek R1 の think control 計画、未対応 mode、retry 対象判定、failure kind 表示を検証する unit test を追加する
+- [X] T020 [US3] `specs/039-comfyui-llm-node/quickstart.md` に family ごとの think 切替、retry、failure 切り分けの確認手順を反映する
 
 ### Implementation for User Story 3
 
-- [ ] T021 [US3] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に documented think control の解決ロジックを実装し、`off`、`generic`、`qwen`、`gemma`、`deepseek_r1` を family ごとに適用または明示失敗できるようにする
-- [ ] T022 [US3] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に parse 失敗と schema 不一致だけを対象にした retry ループと `config_error` / `think_mode_error` / `backend_error` / `json_parse_error` / `schema_error` の分類を実装する
-- [ ] T023 [US3] `comfyui/custom_node/comfyui-photopainter-custom/README.md` に `think_mode` 一覧、documented control 優先方針、`generic` の best-effort 性質、retry 条件、failure kind を追記する
+- [X] T021 [US3] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に documented think control の解決ロジックを実装し、`off`、`generic`、`qwen`、`gemma`、`deepseek_r1` を family ごとに適用または明示失敗できるようにする
+- [X] T022 [US3] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に parse 失敗と schema 不一致だけを対象にした retry ループと `config_error` / `think_mode_error` / `backend_error` / `json_parse_error` / `schema_error` の分類を実装する
+- [X] T023 [US3] `comfyui/custom_node/comfyui-photopainter-custom/README.md` に `think_mode` 一覧、documented control 優先方針、`generic` の best-effort 性質、retry 条件、failure kind を追記する
 
 **Checkpoint**: think 制御、retry、failure 分類が独立して検証可能であること
 
@@ -104,10 +104,10 @@
 
 **Purpose**: 文書、手動検証、回帰確認を行う
 
-- [ ] T024 [P] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_contract.py` と `test_node_logic.py` を含めて `python -m unittest discover -s comfyui/custom_node/comfyui-photopainter-custom/tests -v` を実行し、回帰を確認する
-- [ ] T025 [P] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` を対象に `python -m py_compile` を実行し、構文エラーがないことを確認する
-- [ ] T026 `specs/039-comfyui-llm-node/plan.md`、`research.md`、`data-model.md`、`contracts/comfyui-local-llm-node-contract.md`、`quickstart.md`、`tasks.md` の記述整合を確認する
-- [ ] T027 `comfyui/custom_node/comfyui-photopainter-custom/.venv` を使った devcontainer 内 GPU 検証手順を `comfyui/custom_node/comfyui-photopainter-custom/README.md` または `specs/039-comfyui-llm-node/quickstart.md` に反映する
+- [X] T024 [P] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_contract.py` と `test_node_logic.py` を含めて `python -m unittest discover -s comfyui/custom_node/comfyui-photopainter-custom/tests -v` を実行し、回帰を確認する
+- [X] T025 [P] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` を対象に `python -m py_compile` を実行し、構文エラーがないことを確認する
+- [X] T026 `specs/039-comfyui-llm-node/plan.md`、`research.md`、`data-model.md`、`contracts/comfyui-local-llm-node-contract.md`、`quickstart.md`、`tasks.md` の記述整合を確認する
+- [X] T027 `comfyui/custom_node/comfyui-photopainter-custom/.venv` を使った devcontainer 内 GPU 検証手順を `comfyui/custom_node/comfyui-photopainter-custom/README.md` または `specs/039-comfyui-llm-node/quickstart.md` に反映する
 
 ---
 

@@ -10,22 +10,21 @@ import zlib
 from dataclasses import dataclass
 from http import HTTPStatus
 from pathlib import Path
-from typing import Iterable
+from typing import Any, Iterable
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 
+MODULE_PATH = Path(__file__).resolve()
 LLM_CACHE_DIR_ENV = "COMFYUI_LLM_MODEL_CACHE_DIR"
 SUPPORTED_BACKENDS = ("transformers", "llama-cpp")
 SUPPORTED_THINK_MODES = ("off", "generic", "qwen", "gemma", "deepseek_r1")
 HF_REPO_ID_PATTERN = re.compile(r"^[A-Za-z0-9][\w.-]*/[\w.-]+$")
-THINK_MODE_PROMPTS = {
-    "generic": "Reason carefully before answering. Keep the answer concise and well-structured.",
-    "qwen": "Use a Qwen-style reasoning pass before producing the final answer.",
-    "gemma": "Use a Gemma-style reasoning pass before producing the final answer.",
-    "deepseek_r1": "Use a DeepSeek-R1-style reasoning pass before producing the final answer.",
-}
+
+GENERIC_THINK_PROMPT = "Think carefully before answering, but return only the final answer."
+DEEPSEEK_R1_THINK_PROMPT = "Use a DeepSeek-R1-style reasoning pass internally, then return only the final answer."
+FINAL_ONLY_PROMPT = "Return only the final answer."
 
 
 @dataclass(frozen=True)
@@ -38,10 +37,27 @@ class LlmNodeConfig:
     think_mode: str
     json_output: bool
     json_schema_text: str | None
+    json_schema: dict[str, Any] | None
     max_retries: int
     temperature: float
     max_tokens: int
     cache_dir: str | None
+
+
+@dataclass(frozen=True)
+class ThinkControlPlan:
+    think_mode: str
+    family: str | None
+    documented_control_available: bool
+    control_kind: str | None
+    fallback_to_generic_prompt: bool
+    prompt_suffix: str | None
+
+
+@dataclass(frozen=True)
+class StructuredOutputPlan:
+    enabled: bool
+    schema: dict[str, Any] | None
 
 
 def _normalize_url(url: str) -> str:
@@ -182,9 +198,7 @@ def _post_png(url: str, png_bytes: bytes, timeout: int = 10) -> str:
     except HTTPError as exc:
         detail = _excerpt(exc.read())
         suffix = f" -> {detail}" if detail else ""
-        raise RuntimeError(
-            f"POST failed: {exc.code} {exc.reason}{suffix}"
-        ) from exc
+        raise RuntimeError(f"POST failed: {exc.code} {exc.reason}{suffix}") from exc
     except URLError as exc:
         raise RuntimeError(f"POST failed: network error -> {exc.reason}") from exc
 
@@ -200,6 +214,10 @@ def _post_png(url: str, png_bytes: bytes, timeout: int = 10) -> str:
 
 def _config_error(message: str) -> ValueError:
     return ValueError(f"config_error: {message}")
+
+
+def _think_mode_error(message: str) -> RuntimeError:
+    return RuntimeError(f"think_mode_error: {message}")
 
 
 def _backend_error(message: str) -> RuntimeError:
@@ -307,7 +325,61 @@ def _load_jsonschema_module():
     return jsonschema
 
 
-def _validate_schema_text(schema_text: str) -> dict:
+def _load_transformers_modules():
+    try:
+        import torch  # type: ignore
+        from transformers import AutoModelForCausalLM, AutoTokenizer  # type: ignore
+    except ImportError as exc:
+        raise _backend_error("transformers backend dependencies are not installed") from exc
+    return torch, AutoModelForCausalLM, AutoTokenizer
+
+
+def _load_llama_cpp_module():
+    try:
+        from llama_cpp import Llama  # type: ignore
+    except ImportError as exc:
+        raise _backend_error("llama-cpp backend dependencies are not installed") from exc
+    return Llama
+
+
+def _load_lmfe_json_parser():
+    try:
+        from lmformatenforcer import JsonSchemaParser  # type: ignore
+    except ImportError as exc:
+        raise _backend_error("lm-format-enforcer is not installed") from exc
+    return JsonSchemaParser
+
+
+def _load_lmfe_transformers_builder():
+    try:
+        import transformers.tokenization_utils as tokenization_utils  # type: ignore
+        from transformers.tokenization_utils_base import PreTrainedTokenizerBase  # type: ignore
+    except ImportError as exc:
+        raise _backend_error("transformers backend dependencies are not installed") from exc
+
+    if not hasattr(tokenization_utils, "PreTrainedTokenizerBase"):
+        tokenization_utils.PreTrainedTokenizerBase = PreTrainedTokenizerBase
+
+    try:
+        from lmformatenforcer.integrations.transformers import (  # type: ignore
+            build_transformers_prefix_allowed_tokens_fn,
+        )
+    except ImportError as exc:
+        raise _backend_error("lm-format-enforcer transformers integration is unavailable") from exc
+    return build_transformers_prefix_allowed_tokens_fn
+
+
+def _load_lmfe_llama_cpp_builder():
+    try:
+        from lmformatenforcer.integrations.llamacpp import (  # type: ignore
+            build_llamacpp_logits_processor,
+        )
+    except ImportError as exc:
+        raise _backend_error("lm-format-enforcer llama-cpp integration is unavailable") from exc
+    return build_llamacpp_logits_processor
+
+
+def _validate_schema_text(schema_text: str) -> dict[str, Any]:
     try:
         schema = json.loads(schema_text)
     except json.JSONDecodeError as exc:
@@ -322,12 +394,60 @@ def _validate_schema_text(schema_text: str) -> dict:
     return schema
 
 
-def _validate_json_instance(instance: object, schema: dict) -> None:
+def _validate_json_instance(instance: object, schema: dict[str, Any]) -> None:
     jsonschema = _load_jsonschema_module()
     try:
         jsonschema.validate(instance=instance, schema=schema)
     except Exception as exc:
         raise _schema_error(str(exc)) from exc
+
+
+def _detect_model_family(model_id: str) -> str | None:
+    lowered = model_id.lower()
+    if "deepseek" in lowered and "r1" in lowered:
+        return "deepseek_r1"
+    if "gemma" in lowered:
+        return "gemma"
+    if "qwen" in lowered:
+        return "qwen"
+    return None
+
+
+def _resolve_think_control(config: LlmNodeConfig) -> ThinkControlPlan:
+    family = _detect_model_family(config.model_id)
+
+    if config.think_mode == "off":
+        if family == "qwen":
+            return ThinkControlPlan("off", family, True, "qwen_enable_thinking", False, FINAL_ONLY_PROMPT)
+        if family == "gemma":
+            return ThinkControlPlan("off", family, True, "gemma_system_token", False, FINAL_ONLY_PROMPT)
+        return ThinkControlPlan("off", family, False, None, False, FINAL_ONLY_PROMPT)
+
+    if config.think_mode == "generic":
+        return ThinkControlPlan("generic", family, False, None, True, GENERIC_THINK_PROMPT)
+
+    if config.think_mode == "qwen":
+        if family != "qwen":
+            raise _think_mode_error("qwen think_mode requires a Qwen family model")
+        return ThinkControlPlan("qwen", family, True, "qwen_enable_thinking", False, FINAL_ONLY_PROMPT)
+
+    if config.think_mode == "gemma":
+        if family != "gemma":
+            raise _think_mode_error("gemma think_mode requires a Gemma family model")
+        return ThinkControlPlan("gemma", family, True, "gemma_system_token", False, FINAL_ONLY_PROMPT)
+
+    if config.think_mode == "deepseek_r1":
+        if family != "deepseek_r1":
+            raise _think_mode_error("deepseek_r1 think_mode requires a DeepSeek-R1 family model")
+        return ThinkControlPlan("deepseek_r1", family, False, None, True, DEEPSEEK_R1_THINK_PROMPT)
+
+    raise _config_error(f"unsupported think_mode: {config.think_mode}")
+
+
+def _build_structured_output_plan(config: LlmNodeConfig) -> StructuredOutputPlan:
+    if not config.json_output:
+        return StructuredOutputPlan(enabled=False, schema=None)
+    return StructuredOutputPlan(enabled=True, schema=config.json_schema)
 
 
 def _build_llm_config(
@@ -351,14 +471,15 @@ def _build_llm_config(
     normalized_user_prompt = _normalize_prompt(user_prompt, "user_prompt")
     normalized_think_mode = _normalize_think_mode(think_mode)
     normalized_json_output = bool(json_output)
-    normalized_json_schema = _normalize_json_schema_text(json_schema)
+    normalized_json_schema_text = _normalize_json_schema_text(json_schema)
     normalized_retries = _normalize_max_retries(max_retries)
     normalized_temperature = _normalize_temperature(temperature)
     normalized_max_tokens = _normalize_max_tokens(max_tokens)
     cache_dir = _resolve_llm_cache_dir()
 
-    if normalized_json_output and normalized_json_schema is not None:
-        _validate_schema_text(normalized_json_schema)
+    parsed_schema = None
+    if normalized_json_output and normalized_json_schema_text is not None:
+        parsed_schema = _validate_schema_text(normalized_json_schema_text)
 
     return LlmNodeConfig(
         backend=normalized_backend,
@@ -368,7 +489,8 @@ def _build_llm_config(
         user_prompt=normalized_user_prompt,
         think_mode=normalized_think_mode,
         json_output=normalized_json_output,
-        json_schema_text=normalized_json_schema,
+        json_schema_text=normalized_json_schema_text,
+        json_schema=parsed_schema,
         max_retries=normalized_retries,
         temperature=normalized_temperature,
         max_tokens=normalized_max_tokens,
@@ -376,18 +498,29 @@ def _build_llm_config(
     )
 
 
-def _build_messages(config: LlmNodeConfig, retry_feedback: str | None = None) -> list[dict[str, str]]:
-    system_parts = [config.system_prompt]
-    if config.think_mode != "off":
-        system_parts.append(THINK_MODE_PROMPTS[config.think_mode])
-
+def _build_messages(
+    config: LlmNodeConfig,
+    think_plan: ThinkControlPlan,
+    retry_feedback: str | None = None,
+) -> list[dict[str, str]]:
+    system_prompt = config.system_prompt
     user_parts = [config.user_prompt]
+
+    if think_plan.control_kind == "gemma_system_token" and config.think_mode != "off":
+        system_prompt = f"<|think|>\n{system_prompt}"
+
+    if think_plan.prompt_suffix:
+        system_prompt = f"{system_prompt}\n\n{think_plan.prompt_suffix}".strip()
+
+    if config.json_output:
+        user_parts.append("Return only valid JSON.")
+
     if retry_feedback:
         user_parts.append(retry_feedback)
 
     return [
-        {"role": "system", "content": "\n\n".join(system_parts).strip()},
-        {"role": "user", "content": "\n\n".join(user_parts).strip()},
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": "\n\n".join(part for part in user_parts if part).strip()},
     ]
 
 
@@ -401,12 +534,53 @@ def _render_messages_as_text(messages: list[dict[str, str]]) -> str:
     return "\n\n".join(rendered)
 
 
-def _run_transformers_generation(config: LlmNodeConfig, messages: list[dict[str, str]]) -> str:
+def _build_structured_output_parser(
+    config: LlmNodeConfig,
+    structured_output_plan: StructuredOutputPlan,
+) -> Any | None:
+    if not structured_output_plan.enabled:
+        return None
+    JsonSchemaParser = _load_lmfe_json_parser()
     try:
-        import torch  # type: ignore
-        from transformers import AutoModelForCausalLM, AutoTokenizer  # type: ignore
-    except ImportError as exc:
-        raise _backend_error("transformers backend dependencies are not installed") from exc
+        return JsonSchemaParser(structured_output_plan.schema)
+    except Exception as exc:
+        raise _backend_error(f"failed to initialize structured output parser: {exc}") from exc
+
+
+def _apply_transformers_chat_template(
+    tokenizer: Any,
+    messages: list[dict[str, str]],
+    think_plan: ThinkControlPlan,
+) -> str:
+    apply_chat_template = getattr(tokenizer, "apply_chat_template", None)
+    if not callable(apply_chat_template):
+        return _render_messages_as_text(messages)
+
+    kwargs: dict[str, Any] = {
+        "tokenize": False,
+        "add_generation_prompt": True,
+    }
+    if think_plan.control_kind == "qwen_enable_thinking":
+        kwargs["chat_template_kwargs"] = {
+            "enable_thinking": think_plan.think_mode != "off",
+        }
+
+    try:
+        return apply_chat_template(messages, **kwargs)
+    except TypeError:
+        kwargs.pop("chat_template_kwargs", None)
+        return apply_chat_template(messages, **kwargs)
+    except Exception:
+        return _render_messages_as_text(messages)
+
+
+def _run_transformers_generation(
+    config: LlmNodeConfig,
+    think_plan: ThinkControlPlan,
+    structured_output_plan: StructuredOutputPlan,
+    messages: list[dict[str, str]],
+) -> str:
+    torch, AutoModelForCausalLM, AutoTokenizer = _load_transformers_modules()
 
     try:
         tokenizer = AutoTokenizer.from_pretrained(
@@ -423,19 +597,9 @@ def _run_transformers_generation(config: LlmNodeConfig, messages: list[dict[str,
     except Exception as exc:
         raise _backend_error(f"failed to load transformers model: {exc}") from exc
 
-    prompt_text = _render_messages_as_text(messages)
-    apply_chat_template = getattr(tokenizer, "apply_chat_template", None)
-    if callable(apply_chat_template):
-        try:
-            prompt_text = apply_chat_template(
-                messages,
-                tokenize=False,
-                add_generation_prompt=True,
-            )
-        except Exception:
-            prompt_text = _render_messages_as_text(messages)
-
+    prompt_text = _apply_transformers_chat_template(tokenizer, messages, think_plan)
     inputs = tokenizer(prompt_text, return_tensors="pt")
+
     hf_device_map = getattr(model, "hf_device_map", None)
     if hf_device_map is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -443,12 +607,20 @@ def _run_transformers_generation(config: LlmNodeConfig, messages: list[dict[str,
             model.to(device)
         inputs = {name: tensor.to(device) for name, tensor in inputs.items()}
 
-    generate_kwargs = {
+    generate_kwargs: dict[str, Any] = {
         "max_new_tokens": config.max_tokens,
         "do_sample": config.temperature > 0,
     }
     if config.temperature > 0:
         generate_kwargs["temperature"] = config.temperature
+
+    parser = _build_structured_output_parser(config, structured_output_plan)
+    if parser is not None:
+        build_prefix_allowed_tokens_fn = _load_lmfe_transformers_builder()
+        try:
+            generate_kwargs["prefix_allowed_tokens_fn"] = build_prefix_allowed_tokens_fn(tokenizer, parser)
+        except Exception as exc:
+            raise _backend_error(f"failed to configure transformers structured output: {exc}") from exc
 
     try:
         generated = model.generate(**inputs, **generate_kwargs)
@@ -476,13 +648,15 @@ def _extract_llama_content(response: object) -> str:
     return normalized
 
 
-def _run_llama_cpp_generation(config: LlmNodeConfig, messages: list[dict[str, str]]) -> str:
-    try:
-        from llama_cpp import Llama  # type: ignore
-    except ImportError as exc:
-        raise _backend_error("llama-cpp backend dependencies are not installed") from exc
+def _run_llama_cpp_generation(
+    config: LlmNodeConfig,
+    think_plan: ThinkControlPlan,
+    structured_output_plan: StructuredOutputPlan,
+    messages: list[dict[str, str]],
+) -> str:
+    Llama = _load_llama_cpp_module()
 
-    kwargs = {
+    kwargs: dict[str, Any] = {
         "repo_id": config.model_id,
         "n_gpu_layers": -1,
         "verbose": False,
@@ -497,23 +671,36 @@ def _run_llama_cpp_generation(config: LlmNodeConfig, messages: list[dict[str, st
     except Exception as exc:
         raise _backend_error(f"failed to load llama-cpp model: {exc}") from exc
 
+    create_kwargs: dict[str, Any] = {
+        "messages": messages,
+        "max_tokens": config.max_tokens,
+        "temperature": config.temperature,
+    }
+
+    parser = _build_structured_output_parser(config, structured_output_plan)
+    if parser is not None:
+        build_llamacpp_logits_processor = _load_lmfe_llama_cpp_builder()
+        try:
+            create_kwargs["logits_processor"] = [build_llamacpp_logits_processor(llm, parser)]
+        except Exception as exc:
+            raise _backend_error(f"failed to configure llama-cpp structured output: {exc}") from exc
+
     try:
-        response = llm.create_chat_completion(
-            messages=messages,
-            max_tokens=config.max_tokens,
-            temperature=config.temperature,
-        )
+        response = llm.create_chat_completion(**create_kwargs)
     except Exception as exc:
         raise _backend_error(f"llama-cpp generation failed: {exc}") from exc
     return _extract_llama_content(response)
 
 
 def _run_generation_attempt(config: LlmNodeConfig, retry_feedback: str | None = None) -> str:
-    messages = _build_messages(config, retry_feedback)
+    think_plan = _resolve_think_control(config)
+    structured_output_plan = _build_structured_output_plan(config)
+    messages = _build_messages(config, think_plan, retry_feedback)
+
     if config.backend == "transformers":
-        return _run_transformers_generation(config, messages)
+        return _run_transformers_generation(config, think_plan, structured_output_plan, messages)
     if config.backend == "llama-cpp":
-        return _run_llama_cpp_generation(config, messages)
+        return _run_llama_cpp_generation(config, think_plan, structured_output_plan, messages)
     raise _config_error(f"unsupported backend: {config.backend}")
 
 
@@ -525,18 +712,21 @@ def _retry_feedback(attempt: int, error_kind: str, detail: str) -> str:
 
 
 def _validate_generation_output(config: LlmNodeConfig, output_text: str) -> str:
+    normalized = output_text.strip()
+    if not normalized:
+        raise _backend_error("generation returned empty output")
+
     if not config.json_output:
-        return output_text
+        return normalized
 
     try:
-        parsed = json.loads(output_text)
+        parsed = json.loads(normalized)
     except json.JSONDecodeError as exc:
         raise _json_parse_error(exc.msg) from exc
 
-    if config.json_schema_text is not None:
-        schema = _validate_schema_text(config.json_schema_text)
-        _validate_json_instance(parsed, schema)
-    return output_text
+    if config.json_schema is not None:
+        _validate_json_instance(parsed, config.json_schema)
+    return normalized
 
 
 def _generate_llm_output(config: LlmNodeConfig) -> tuple[str, int]:
@@ -590,12 +780,12 @@ class PhotopainterLlmGenerate:
                 "system_prompt": ("STRING", {"default": "You are a helpful assistant.", "multiline": True}),
                 "user_prompt": ("STRING", {"default": "", "multiline": True}),
                 "backend": (list(SUPPORTED_BACKENDS),),
-                "model_id": ("STRING", {"default": "Qwen/Qwen3-0.6B", "multiline": False}),
+                "model_id": ("STRING", {"default": "Qwen/Qwen3.5-4B", "multiline": False}),
                 "think_mode": (list(SUPPORTED_THINK_MODES),),
                 "json_output": ("BOOLEAN", {"default": False}),
                 "max_retries": ("INT", {"default": 1, "min": 0, "max": 5}),
-                "temperature": ("FLOAT", {"default": 0.0, "min": 0.0, "step": 0.1}),
-                "max_tokens": ("INT", {"default": 512, "min": 1, "max": 4096}),
+                "temperature": ("FLOAT", {"default": 1.0, "min": 0.0, "step": 0.1}),
+                "max_tokens": ("INT", {"default": 2048, "min": 1, "max": 8192}),
             },
             "optional": {
                 "model_file": ("STRING", {"default": "", "multiline": False}),

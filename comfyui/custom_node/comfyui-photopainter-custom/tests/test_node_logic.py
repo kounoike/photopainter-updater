@@ -3,7 +3,6 @@ from __future__ import annotations
 import importlib.util
 import json
 import socket
-import struct
 import sys
 import threading
 import unittest
@@ -25,6 +24,23 @@ def load_module():
 
 class FakeTensor:
     def __init__(self, data):
+        self._data = list(data)
+        self.shape = (1, len(self._data))
+        self.device = None
+
+    def to(self, device):
+        self.device = device
+        return self
+
+    def __getitem__(self, key):
+        return self._data[key]
+
+    def tolist(self):
+        return list(self._data)
+
+
+class FakeBatchTensor:
+    def __init__(self, data):
         self._data = data
 
     def detach(self):
@@ -38,7 +54,7 @@ class FakeTensor:
 
 
 def single_rgb_tensor():
-    return FakeTensor(
+    return FakeBatchTensor(
         [
             [
                 [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]],
@@ -49,7 +65,7 @@ def single_rgb_tensor():
 
 
 def batch_rgb_tensor():
-    return FakeTensor(
+    return FakeBatchTensor(
         [
             [[[1.0, 0.0, 0.0]]],
             [[[0.0, 1.0, 0.0]]],
@@ -97,6 +113,90 @@ class FakeJsonSchemaModule:
                 raise FakeJsonSchemaModule.ValidationError(f"'{key}' must be string")
 
 
+class FakeTorchModule:
+    class cuda:
+        @staticmethod
+        def is_available():
+            return True
+
+
+class FakeTokenizer:
+    def __init__(self):
+        self.chat_template_calls = []
+
+    def apply_chat_template(self, messages, **kwargs):
+        self.chat_template_calls.append(kwargs)
+        return "PROMPT"
+
+    def __call__(self, prompt_text, return_tensors=None):
+        return {
+            "input_ids": FakeTensor([10, 11, 12]),
+            "attention_mask": FakeTensor([1, 1, 1]),
+        }
+
+    def decode(self, tokens, skip_special_tokens=True):
+        mapping = {
+            (90, 91): "hello world",
+            (70, 71): '{"prompt":"ok"}',
+        }
+        return mapping[tuple(tokens)]
+
+
+class FakeModel:
+    def __init__(self):
+        self.hf_device_map = None
+        self.to_device = None
+        self.generate_calls = []
+
+    def to(self, device):
+        self.to_device = device
+        return self
+
+    def generate(self, **kwargs):
+        self.generate_calls.append(kwargs)
+        if kwargs.get("prefix_allowed_tokens_fn") is not None:
+            return [[10, 11, 12, 70, 71]]
+        return [[10, 11, 12, 90, 91]]
+
+
+class FakeAutoTokenizer:
+    last_instance = None
+
+    @classmethod
+    def from_pretrained(cls, *args, **kwargs):
+        cls.last_instance = FakeTokenizer()
+        return cls.last_instance
+
+
+class FakeAutoModel:
+    last_instance = None
+
+    @classmethod
+    def from_pretrained(cls, *args, **kwargs):
+        cls.last_instance = FakeModel()
+        return cls.last_instance
+
+
+class FakeLlamaInstance:
+    def __init__(self):
+        self.calls = []
+
+    def create_chat_completion(self, **kwargs):
+        self.calls.append(kwargs)
+        return {"choices": [{"message": {"content": '{"prompt":"ok"}'}}]}
+
+
+class FakeLlama:
+    last_kwargs = None
+    last_instance = None
+
+    @classmethod
+    def from_pretrained(cls, **kwargs):
+        cls.last_kwargs = kwargs
+        cls.last_instance = FakeLlamaInstance()
+        return cls.last_instance
+
+
 class NodeLogicTests(unittest.TestCase):
     def setUp(self):
         self.module = load_module()
@@ -115,7 +215,8 @@ class NodeLogicTests(unittest.TestCase):
     def test_png_encoder_generates_expected_dimensions(self):
         png_bytes = self.module._image_to_png_bytes(single_rgb_tensor())
         self.assertEqual(png_bytes[:8], b"\x89PNG\r\n\x1a\n")
-        width, height = struct.unpack(">II", png_bytes[16:24])
+        width = int.from_bytes(png_bytes[16:20], "big")
+        height = int.from_bytes(png_bytes[20:24], "big")
         self.assertEqual((width, height), (2, 2))
 
     def test_multiple_images_are_rejected(self):
@@ -161,34 +262,50 @@ class NodeLogicTests(unittest.TestCase):
                 json_output=False,
                 json_schema="",
                 max_retries=1,
-                temperature=0,
+                temperature=1.0,
                 max_tokens=32,
+            )
+
+    def test_invalid_schema_is_rejected_before_generation(self):
+        self.module._load_jsonschema_module = lambda: FakeJsonSchemaModule
+        node = self.module.PhotopainterLlmGenerate()
+        with self.assertRaisesRegex(ValueError, r"config_error: json_schema is not a valid schema"):
+            node.generate_text(
+                "system",
+                "user",
+                "transformers",
+                "Qwen/Qwen3.5-4B",
+                "generic",
+                True,
+                1,
+                1.0,
+                32,
+                json_schema='{"type":"array"}',
             )
 
     def test_llm_text_mode_returns_single_string_output(self):
         observed = {}
 
-        def fake_generate(config, retry_feedback=None):
+        def fake_generate(config):
             observed["config"] = config
-            observed["retry_feedback"] = retry_feedback
-            return "hello from llm"
+            return "hello from llm", 1
 
-        self.module._generate_llm_output = lambda config: (fake_generate(config), 1)
+        self.module._generate_llm_output = fake_generate
         node = self.module.PhotopainterLlmGenerate()
         result = node.generate_text(
             "system",
             "user",
             "transformers",
-            "Qwen/Qwen3-0.6B",
+            "Qwen/Qwen3.5-4B",
             "off",
             False,
             1,
-            0.0,
+            1.0,
             32,
         )
 
         self.assertEqual(result["result"], ("hello from llm",))
-        self.assertEqual(observed["config"].model_id, "Qwen/Qwen3-0.6B")
+        self.assertEqual(observed["config"].model_id, "Qwen/Qwen3.5-4B")
         self.assertIn("attempts=1", result["ui"]["text"][0])
 
     def test_llm_json_mode_returns_json_string_output(self):
@@ -199,11 +316,11 @@ class NodeLogicTests(unittest.TestCase):
             "system",
             "user",
             "transformers",
-            "Qwen/Qwen3-0.6B",
+            "Qwen/Qwen3.5-4B",
             "generic",
             True,
             1,
-            0.0,
+            1.0,
             32,
             json_schema=json.dumps(
                 {
@@ -219,22 +336,78 @@ class NodeLogicTests(unittest.TestCase):
 
         self.assertEqual(json.loads(result["result"][0])["positive_prompt"], "a")
 
-    def test_invalid_schema_is_rejected_before_generation(self):
-        self.module._load_jsonschema_module = lambda: FakeJsonSchemaModule
-        node = self.module.PhotopainterLlmGenerate()
-        with self.assertRaisesRegex(ValueError, r"config_error: json_schema is not a valid schema"):
-            node.generate_text(
-                "system",
-                "user",
-                "transformers",
-                "Qwen/Qwen3-0.6B",
-                "generic",
-                True,
-                1,
-                0.0,
-                32,
-                json_schema='{"type":"array"}',
-            )
+    def test_qwen_off_uses_documented_thinking_disable_control(self):
+        config = self.module._build_llm_config(
+            backend="transformers",
+            model_id="Qwen/Qwen3.5-4B",
+            model_file="",
+            system_prompt="system",
+            user_prompt="user",
+            think_mode="off",
+            json_output=False,
+            json_schema="",
+            max_retries=1,
+            temperature=1.0,
+            max_tokens=32,
+        )
+        plan = self.module._resolve_think_control(config)
+
+        self.assertTrue(plan.documented_control_available)
+        self.assertEqual(plan.control_kind, "qwen_enable_thinking")
+
+    def test_family_specific_think_mode_requires_matching_family(self):
+        config = self.module._build_llm_config(
+            backend="transformers",
+            model_id="google/gemma-4-E4B",
+            model_file="",
+            system_prompt="system",
+            user_prompt="user",
+            think_mode="qwen",
+            json_output=False,
+            json_schema="",
+            max_retries=1,
+            temperature=1.0,
+            max_tokens=32,
+        )
+        with self.assertRaisesRegex(RuntimeError, r"think_mode_error: qwen think_mode requires a Qwen family model"):
+            self.module._resolve_think_control(config)
+
+    def test_gemma_think_mode_prefixes_system_prompt(self):
+        config = self.module._build_llm_config(
+            backend="transformers",
+            model_id="google/gemma-4-E4B",
+            model_file="",
+            system_prompt="system",
+            user_prompt="user",
+            think_mode="gemma",
+            json_output=False,
+            json_schema="",
+            max_retries=1,
+            temperature=1.0,
+            max_tokens=32,
+        )
+        plan = self.module._resolve_think_control(config)
+        messages = self.module._build_messages(config, plan)
+        self.assertTrue(messages[0]["content"].startswith("<|think|>\n"))
+
+    def test_deepseek_r1_mode_uses_family_specific_fallback_plan(self):
+        config = self.module._build_llm_config(
+            backend="transformers",
+            model_id="deepseek-ai/DeepSeek-R1",
+            model_file="",
+            system_prompt="system",
+            user_prompt="user",
+            think_mode="deepseek_r1",
+            json_output=False,
+            json_schema="",
+            max_retries=1,
+            temperature=1.0,
+            max_tokens=32,
+        )
+        plan = self.module._resolve_think_control(config)
+        self.assertEqual(plan.family, "deepseek_r1")
+        self.assertFalse(plan.documented_control_available)
+        self.assertTrue(plan.fallback_to_generic_prompt)
 
     def test_json_parse_retry_then_success(self):
         self.module._load_jsonschema_module = lambda: FakeJsonSchemaModule
@@ -246,7 +419,7 @@ class NodeLogicTests(unittest.TestCase):
         self.module._run_generation_attempt = fake_attempt
         config = self.module._build_llm_config(
             backend="transformers",
-            model_id="Qwen/Qwen3-0.6B",
+            model_id="Qwen/Qwen3.5-4B",
             model_file="",
             system_prompt="system",
             user_prompt="user",
@@ -254,7 +427,7 @@ class NodeLogicTests(unittest.TestCase):
             json_output=True,
             json_schema='{"type":"object","required":["positive_prompt"],"properties":{"positive_prompt":{"type":"string"}}}',
             max_retries=1,
-            temperature=0,
+            temperature=1.0,
             max_tokens=32,
         )
 
@@ -267,15 +440,15 @@ class NodeLogicTests(unittest.TestCase):
         self.module._run_generation_attempt = lambda config, retry_feedback=None: "{}"
         config = self.module._build_llm_config(
             backend="transformers",
-            model_id="Qwen/Qwen3-0.6B",
+            model_id="Qwen/Qwen3.5-4B",
             model_file="",
             system_prompt="system",
             user_prompt="user",
-            think_mode="qwen",
+            think_mode="generic",
             json_output=True,
             json_schema='{"type":"object","required":["positive_prompt"],"properties":{"positive_prompt":{"type":"string"}}}',
             max_retries=1,
-            temperature=0,
+            temperature=1.0,
             max_tokens=32,
         )
 
@@ -288,20 +461,146 @@ class NodeLogicTests(unittest.TestCase):
         )
         config = self.module._build_llm_config(
             backend="transformers",
-            model_id="Qwen/Qwen3-0.6B",
+            model_id="Qwen/Qwen3.5-4B",
             model_file="",
             system_prompt="system",
             user_prompt="user",
-            think_mode="deepseek_r1",
+            think_mode="off",
             json_output=False,
             json_schema="",
             max_retries=3,
-            temperature=0,
+            temperature=1.0,
             max_tokens=32,
         )
 
         with self.assertRaisesRegex(RuntimeError, r"backend_error: model load failed"):
             self.module._generate_llm_output(config)
+
+    def test_transformers_generation_passes_qwen_enable_thinking_flag(self):
+        self.module._load_transformers_modules = lambda: (FakeTorchModule, FakeAutoModel, FakeAutoTokenizer)
+        config = self.module._build_llm_config(
+            backend="transformers",
+            model_id="Qwen/Qwen3.5-4B",
+            model_file="",
+            system_prompt="system",
+            user_prompt="user",
+            think_mode="off",
+            json_output=False,
+            json_schema="",
+            max_retries=0,
+            temperature=1.0,
+            max_tokens=16,
+        )
+        plan = self.module._resolve_think_control(config)
+        messages = self.module._build_messages(config, plan)
+
+        output = self.module._run_transformers_generation(
+            config,
+            plan,
+            self.module._build_structured_output_plan(config),
+            messages,
+        )
+
+        self.assertEqual(output, "hello world")
+        kwargs = FakeAutoTokenizer.last_instance.chat_template_calls[-1]
+        self.assertEqual(kwargs["chat_template_kwargs"]["enable_thinking"], False)
+
+    def test_transformers_json_mode_configures_generation_time_constraint(self):
+        self.module._load_transformers_modules = lambda: (FakeTorchModule, FakeAutoModel, FakeAutoTokenizer)
+        self.module._load_lmfe_json_parser = lambda: (lambda schema: {"schema": schema})
+        self.module._load_lmfe_transformers_builder = lambda: (lambda tokenizer, parser: "prefix-fn")
+        self.module._load_jsonschema_module = lambda: FakeJsonSchemaModule
+        config = self.module._build_llm_config(
+            backend="transformers",
+            model_id="Qwen/Qwen3.5-4B",
+            model_file="",
+            system_prompt="system",
+            user_prompt="user",
+            think_mode="off",
+            json_output=True,
+            json_schema='{"type":"object","properties":{"prompt":{"type":"string"}}}',
+            max_retries=0,
+            temperature=1.0,
+            max_tokens=16,
+        )
+        plan = self.module._resolve_think_control(config)
+        messages = self.module._build_messages(config, plan)
+
+        output = self.module._run_transformers_generation(
+            config,
+            plan,
+            self.module._build_structured_output_plan(config),
+            messages,
+        )
+
+        self.assertEqual(output, '{"prompt":"ok"}')
+        generate_kwargs = FakeAutoModel.last_instance.generate_calls[-1]
+        self.assertEqual(generate_kwargs["prefix_allowed_tokens_fn"], "prefix-fn")
+
+    def test_structured_output_constraint_failure_is_explicit(self):
+        self.module._load_transformers_modules = lambda: (FakeTorchModule, FakeAutoModel, FakeAutoTokenizer)
+        self.module._load_lmfe_json_parser = lambda: (lambda schema: {"schema": schema})
+
+        def raise_constraint_failure():
+            raise RuntimeError("backend_error: lm-format-enforcer transformers integration is unavailable")
+
+        self.module._load_lmfe_transformers_builder = raise_constraint_failure
+        self.module._load_jsonschema_module = lambda: FakeJsonSchemaModule
+        config = self.module._build_llm_config(
+            backend="transformers",
+            model_id="Qwen/Qwen3.5-4B",
+            model_file="",
+            system_prompt="system",
+            user_prompt="user",
+            think_mode="off",
+            json_output=True,
+            json_schema='{"type":"object","properties":{"prompt":{"type":"string"}}}',
+            max_retries=0,
+            temperature=1.0,
+            max_tokens=16,
+        )
+        plan = self.module._resolve_think_control(config)
+        messages = self.module._build_messages(config, plan)
+
+        with self.assertRaisesRegex(RuntimeError, r"backend_error: lm-format-enforcer transformers integration is unavailable"):
+            self.module._run_transformers_generation(
+                config,
+                plan,
+                self.module._build_structured_output_plan(config),
+                messages,
+            )
+
+    def test_llama_cpp_json_mode_configures_logits_processor(self):
+        self.module._load_llama_cpp_module = lambda: FakeLlama
+        self.module._load_lmfe_json_parser = lambda: (lambda schema: {"schema": schema})
+        self.module._load_lmfe_llama_cpp_builder = lambda: (lambda llm, parser: "logits-processor")
+        self.module._load_jsonschema_module = lambda: FakeJsonSchemaModule
+        config = self.module._build_llm_config(
+            backend="llama-cpp",
+            model_id="Qwen/Qwen3.5-4B-GGUF",
+            model_file="model.gguf",
+            system_prompt="system",
+            user_prompt="user",
+            think_mode="off",
+            json_output=True,
+            json_schema='{"type":"object","properties":{"prompt":{"type":"string"}}}',
+            max_retries=0,
+            temperature=1.0,
+            max_tokens=16,
+        )
+        plan = self.module._resolve_think_control(config)
+        messages = self.module._build_messages(config, plan)
+
+        output = self.module._run_llama_cpp_generation(
+            config,
+            plan,
+            self.module._build_structured_output_plan(config),
+            messages,
+        )
+
+        self.assertEqual(output, '{"prompt":"ok"}')
+        self.assertEqual(FakeLlama.last_kwargs["filename"], "model.gguf")
+        self.assertEqual(FakeLlama.last_instance.calls[-1]["logits_processor"], ["logits-processor"])
 
 
 if __name__ == "__main__":

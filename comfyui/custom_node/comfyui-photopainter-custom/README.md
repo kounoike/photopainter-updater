@@ -47,18 +47,25 @@
 ### `backend` と `think_mode` の違い
 
 - `backend` は推論実行基盤の選択です
-- `think_mode` は model family 向けの prompt formatting preset です
+- `think_mode` は model family ごとの think 制御方針です
 
-`think_mode` は backend 固有 API の on/off ではありません。node が prompt を整形してから
-backend に渡します。
+`think_mode` は単なる共通 prompt 文言ではなく、family ごとの documented control が
+ある場合はそれを優先して使います。`generic` だけは best-effort の汎用 mode です。
 
 ### `think_mode`
 
-- `off`: thinking preset を追加しない
-- `generic`: best-effort の汎用 preset。特定 model での thinking 挙動は保証しない
-- `qwen`: Qwen 系向け preset
-- `gemma`: Gemma 系向け preset
-- `deepseek_r1`: DeepSeek R1 系向け preset
+- `off`: documented な think 無効化方法があればそれを優先し、無ければ通常生成に戻る
+- `generic`: best-effort の汎用 mode。特定 model での thinking 挙動は保証しない
+- `qwen`: Qwen 系向け mode。対応 family 以外では `think_mode_error`
+- `gemma`: Gemma 系向け mode。対応 family 以外では `think_mode_error`
+- `deepseek_r1`: DeepSeek R1 系向け mode。対応 family 以外では `think_mode_error`
+
+### JSON mode
+
+- `json_output=true` のとき、node は generation-time structured output を優先します
+- `json_schema` がある場合は `lm-format-enforcer` と `jsonschema` の両方で制約します
+- 選択した backend / model 経路で structured output constraint を適用できない場合は、
+  自由文 fallback ではなく明示 failure にします
 
 ### model cache
 
@@ -79,6 +86,7 @@ COMFYUI_LLM_MODEL_CACHE_DIR=./comfyui-data/llm-models
 ### failure kind
 
 - `config_error`: 入力不正、schema 不正、未解決の model 指定など
+- `think_mode_error`: family と `think_mode` の組み合わせ不正
 - `backend_error`: import 失敗、model load 失敗、推論実行失敗
 - `json_parse_error`: `json_output=true` で JSON parse 不能
 - `schema_error`: schema mismatch
@@ -133,4 +141,22 @@ lazy import にしているため、heavy dependency が未導入でも contract
 
 ```bash
 python -m unittest discover -s comfyui/custom_node/comfyui-photopainter-custom/tests -v
+```
+
+## devcontainer での GPU 検証
+
+repo の `.devcontainer` は GPU を見える前提で調整しています。custom node 配下の
+`.venv` を使うと、repo 全体の Python 環境を汚さずに local LLM の確認ができます。
+
+```bash
+cd comfyui/custom_node/comfyui-photopainter-custom
+python -m venv .venv
+source .venv/bin/activate
+pip install --extra-index-url https://download.pytorch.org/whl/cu128 torch torchvision torchaudio
+pip install "transformers<5" jsonschema lm-format-enforcer
+python - <<'PY'
+import torch
+print(torch.cuda.is_available())
+print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else "no-gpu")
+PY
 ```
