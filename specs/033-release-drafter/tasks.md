@@ -15,7 +15,7 @@
 
 **Purpose**: release-drafter 導入の対象ファイルと更新契機を固定する
 
-- [ ] T001 `specs/033-release-drafter/spec.md`、`specs/033-release-drafter/plan.md`、`specs/033-release-drafter/contracts/release-drafter-contract.md` を照合し、更新契機を `main` への `push` のみに固定する前提を確定する
+- [X] T001 `specs/033-release-drafter/spec.md`、`specs/033-release-drafter/plan.md`、`specs/033-release-drafter/contracts/release-drafter-contract.md` を照合し、更新契機を `main` への `push` のみに固定する前提を確定する
 
 ---
 
@@ -25,8 +25,8 @@
 
 **CRITICAL**: この phase 完了まで user story 実装を開始しない
 
-- [ ] T002 `.github/` 配下の既存構成を確認し、新規追加対象を `.github/workflows/release-drafter.yml` と `.github/release-drafter.yml` に限定する
-- [ ] T003 `README.md` と `specs/033-release-drafter/quickstart.md` の運用導線を確認し、release draft 設定場所と確認手順の追記範囲を整理する
+- [X] T002 `.github/` 配下の既存構成を確認し、新規追加対象を `.github/workflows/release-drafter.yml` と `.github/release-drafter.yml` に限定する
+- [X] T003 `README.md` と `specs/033-release-drafter/quickstart.md` の運用導線を確認し、release draft 設定場所と確認手順の追記範囲を整理する
 
 **Checkpoint**: 対象ファイル、更新契機、文書更新範囲が確定していること
 
@@ -40,14 +40,14 @@
 
 ### Verification for User Story 1
 
-- [ ] T004 [US1] `main` への `push` のみを更新契機とする確認手順を `specs/033-release-drafter/quickstart.md` に記載する
-- [ ] T005 [US1] `main` へ反映後に GitHub の Releases 画面で draft が作成または更新される確認手順を `specs/033-release-drafter/quickstart.md` に記載する
+- [X] T004 [US1] `main` への `push` のみを更新契機とする確認手順を `specs/033-release-drafter/quickstart.md` に記載する
+- [X] T005 [US1] `main` へ反映後に GitHub の Releases 画面で draft が作成または更新される確認手順を `specs/033-release-drafter/quickstart.md` に記載する
 
 ### Implementation for User Story 1
 
-- [ ] T006 [US1] release draft 更新 workflow を `.github/workflows/release-drafter.yml` に実装する
-- [ ] T007 [US1] draft 名称、初回作成、既存 draft 更新、既定カテゴリの基本契約を `.github/release-drafter.yml` に実装する
-- [ ] T008 [US1] `main` 以外や merge 前 PR 更新で draft を更新しないことを `.github/workflows/release-drafter.yml` と `specs/033-release-drafter/quickstart.md` で担保する
+- [X] T006 [US1] release draft 更新 workflow を `.github/workflows/release-drafter.yml` に実装する
+- [X] T007 [US1] draft 名称、初回作成、既存 draft 更新、既定カテゴリの基本契約を `.github/release-drafter.yml` に実装する
+- [X] T008 [US1] `main` 以外や merge 前 PR 更新で draft を更新しないことを `.github/workflows/release-drafter.yml` と `specs/033-release-drafter/quickstart.md` で担保する
 
 **Checkpoint**: `main` への `push` 後だけ draft が更新される契約が独立して確認できること
 
@@ -61,13 +61,13 @@
 
 ### Verification for User Story 2
 
-- [ ] T009 [US2] 分類ルールと未分類変更の既定扱い確認手順を `specs/033-release-drafter/quickstart.md` に記載する
-- [ ] T010 [US2] GitHub の Releases 画面で分類済み一覧と既定カテゴリ表示を確認する手順を `specs/033-release-drafter/quickstart.md` に記載する
+- [X] T009 [US2] 分類ルールと未分類変更の既定扱い確認手順を `specs/033-release-drafter/quickstart.md` に記載する
+- [X] T010 [US2] GitHub の Releases 画面で分類済み一覧と既定カテゴリ表示を確認する手順を `specs/033-release-drafter/quickstart.md` に記載する
 
 ### Implementation for User Story 2
 
-- [ ] T011 [US2] pull request labels に基づくカテゴリ定義を `.github/release-drafter.yml` に実装する
-- [ ] T012 [US2] 分類対象外の変更を欠落させない既定カテゴリを `.github/release-drafter.yml` に実装する
+- [X] T011 [US2] pull request labels に基づくカテゴリ定義を `.github/release-drafter.yml` に実装する
+- [X] T012 [US2] 分類対象外の変更を欠落させない既定カテゴリを `.github/release-drafter.yml` に実装する
 
 **Checkpoint**: 分類済み表示と既定カテゴリへのフォールバックが独立して確認できること
 
@@ -81,12 +81,12 @@
 
 ### Verification for User Story 3
 
-- [ ] T013 [US3] 設定場所、更新契機、Releases 画面での確認手順を `specs/033-release-drafter/quickstart.md` に整理する
+- [X] T013 [US3] 設定場所、更新契機、Releases 画面での確認手順を `specs/033-release-drafter/quickstart.md` に整理する
 
 ### Implementation for User Story 3
 
-- [ ] T014 [US3] release drafter の設定場所と運用概要を `README.md` に追記する
-- [ ] T015 [US3] troubleshooting を含む確認導線を `specs/033-release-drafter/quickstart.md` に実装する
+- [X] T014 [US3] release drafter の設定場所と運用概要を `README.md` に追記する
+- [X] T015 [US3] troubleshooting を含む確認導線を `specs/033-release-drafter/quickstart.md` に実装する
 
 **Checkpoint**: 運用者が repository 内文書だけで導入後の確認導線を辿れること
 
@@ -96,8 +96,8 @@
 
 **Purpose**: 複数 story にまたがる最終整合
 
-- [ ] T016 [P] `specs/033-release-drafter/contracts/release-drafter-contract.md`、`specs/033-release-drafter/plan.md`、`specs/033-release-drafter/tasks.md` の記述整合を確認する
-- [ ] T017 [P] `.github/workflows/release-drafter.yml`、`.github/release-drafter.yml`、`README.md`、`specs/033-release-drafter/quickstart.md` の導線が一致していることを確認する
+- [X] T016 [P] `specs/033-release-drafter/contracts/release-drafter-contract.md`、`specs/033-release-drafter/plan.md`、`specs/033-release-drafter/tasks.md` の記述整合を確認する
+- [X] T017 [P] `.github/workflows/release-drafter.yml`、`.github/release-drafter.yml`、`README.md`、`specs/033-release-drafter/quickstart.md` の導線が一致していることを確認する
 
 ---
 

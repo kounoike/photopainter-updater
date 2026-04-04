@@ -16,7 +16,7 @@
 期待結果:
 
 - workflow 側で `main` への `push` が更新契機として定義されている
-- release drafter 設定側で分類ルールと既定カテゴリが定義されている
+- release drafter 設定側で draft 名称、分類ルール、version resolver、既定扱いの方針が定義されている
 
 ## 2. `main` への変更反映後に draft を確認する
 
@@ -30,18 +30,20 @@
 
 - 次回リリース向け draft が作成または更新される
 - merge された pull request が draft に反映される
+- GitHub の Releases 画面で draft の本文を確認できる
 
 ## 3. 分類ルールを確認する
 
 確認:
 
 - label 付き pull request が対応するカテゴリへ入る
-- label が付いていない pull request も既定カテゴリへ掲載される
+- label が付いていない pull request も draft から欠落しない
+- GitHub の Releases 画面で分類済み一覧を確認できる
 
 期待結果:
 
 - draft 内で変更一覧が分類済みで見える
-- 未分類変更が欠落しない
+- 未分類変更が draft 本文に残る
 
 ## 4. 対象外イベントで更新されないことを確認する
 
@@ -59,6 +61,7 @@
 確認:
 
 - README から設定場所と確認方法を辿れる
+- troubleshooting と対象外イベントを quickstart で確認できる
 
 期待結果:
 
