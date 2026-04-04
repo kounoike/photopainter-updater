@@ -15,8 +15,8 @@
 
 **Purpose**: release publish feature の作業対象と前提を揃える
 
-- [ ] T001 既存 release workflow と Docker build 入力の参照点を確認し `specs/034-ghcr-release-publish/plan.md` に実装境界メモを追記する
-- [ ] T002 `.github/workflows/` と `.github/` 配下の命名方針を確認し release image publish 用ファイル名を `specs/034-ghcr-release-publish/contracts/release-image-publish-contract.md` に固定する
+- [X] T001 既存 release workflow と Docker build 入力の参照点を確認し `specs/034-ghcr-release-publish/plan.md` に実装境界メモを追記する
+- [X] T002 `.github/workflows/` と `.github/` 配下の命名方針を確認し release image publish 用ファイル名を `specs/034-ghcr-release-publish/contracts/release-image-publish-contract.md` に固定する
 
 ---
 
@@ -26,11 +26,11 @@
 
 **CRITICAL**: この phase 完了まで user story 実装を開始しない
 
-- [ ] T003 `.github/release-image-publish.yml` に publish target schema の初期定義を追加する
-- [ ] T004 [P] `.github/workflows/release-image-publish.yml` に `release.published` trigger と job permissions の骨格を追加する
-- [ ] T005 [P] `.github/workflows/release-image-publish.yml` で `.github/release-image-publish.yml` を参照する target 読み出し方針を実装する
-- [ ] T006 `.github/workflows/release-image-publish.yml` と `.github/release-image-publish.yml` の責務分離を `specs/034-ghcr-release-publish/quickstart.md` に反映する
-- [ ] T007 Allowed Scope / Forbidden Scope の実装境界と `server` のみ初期 enabled とする前提を `specs/034-ghcr-release-publish/tasks.md` に記録する
+- [X] T003 `.github/release-image-publish.yml` に publish target schema の初期定義を追加する
+- [X] T004 [P] `.github/workflows/release-image-publish.yml` に `release.published` trigger と job permissions の骨格を追加する
+- [X] T005 [P] `.github/workflows/release-image-publish.yml` で `.github/release-image-publish.yml` の enabled target を workflow 入力へ変換する前処理を実装する
+- [X] T006 `.github/workflows/release-image-publish.yml` と `.github/release-image-publish.yml` の責務分離を `specs/034-ghcr-release-publish/quickstart.md` に反映する
+- [X] T007 Allowed Scope / Forbidden Scope の実装境界と `server` のみ初期 enabled とする前提を `specs/034-ghcr-release-publish/tasks.md` に記録する
 
 **Checkpoint**: 基盤完了後に user story 実装へ進む
 
@@ -44,16 +44,16 @@
 
 ### Verification for User Story 1
 
-- [ ] T008 [P] [US1] `specs/034-ghcr-release-publish/quickstart.md` に `release.published` と `server` publish 成否の手動確認手順を追加する
-- [ ] T009 [US1] `.github/workflows/release-image-publish.yml` と `.github/release-image-publish.yml` の YAML 構文検証手順を `specs/034-ghcr-release-publish/quickstart.md` に記載する
+- [X] T008 [P] [US1] `specs/034-ghcr-release-publish/quickstart.md` に `release.published` と `server` publish 成否の手動確認手順を追加する
+- [X] T009 [US1] `.github/workflows/release-image-publish.yml` と `.github/release-image-publish.yml` の YAML 構文検証手順を `specs/034-ghcr-release-publish/quickstart.md` に記載する
 
 ### Implementation for User Story 1
 
-- [ ] T010 [P] [US1] `.github/release-image-publish.yml` に `server` target の build context、Dockerfile、image repository、enabled 状態を定義する
-- [ ] T011 [US1] `.github/workflows/release-image-publish.yml` に GHCR login と `server` target の build/push step を実装する
-- [ ] T012 [US1] `.github/workflows/release-image-publish.yml` に release version ベースの tag/label 生成を実装する
-- [ ] T013 [US1] `.github/workflows/release-image-publish.yml` に release version 不正時の fail-fast と未対象 event の非実行条件を追加する
-- [ ] T014 [US1] `README.md` に release publish 時の `server` image 公開先と確認場所を追記する
+- [X] T010 [P] [US1] `.github/release-image-publish.yml` に `server` target の build context、Dockerfile、image repository、enabled 状態を定義する
+- [X] T011 [US1] `.github/workflows/release-image-publish.yml` に GHCR login と `server` target の build/push step を実装する
+- [X] T012 [US1] `.github/workflows/release-image-publish.yml` に release version ベースの tag/label 生成を実装する
+- [X] T013 [US1] `.github/workflows/release-image-publish.yml` に release version 不正時の fail-fast と未対象 event の非実行条件を追加する
+- [X] T014 [US1] `README.md` に release publish 時の `server` image 公開先と確認場所を追記する
 
 **Checkpoint**: User Story 1 が独立して検証可能であること
 
@@ -67,14 +67,14 @@
 
 ### Verification for User Story 2
 
-- [ ] T015 [P] [US2] `specs/034-ghcr-release-publish/contracts/release-image-publish-contract.md` に target 追加時の必須項目と非対象条件の確認観点を追記する
-- [ ] T016 [US2] `specs/034-ghcr-release-publish/quickstart.md` に将来 `comfyui` などを追加する際の確認手順を追記する
+- [X] T015 [P] [US2] `specs/034-ghcr-release-publish/contracts/release-image-publish-contract.md` に target 追加時の必須項目と非対象条件の確認観点を追記する
+- [X] T016 [US2] `specs/034-ghcr-release-publish/quickstart.md` に将来 `comfyui` などを追加する際の確認手順を追記する
 
 ### Implementation for User Story 2
 
-- [ ] T017 [P] [US2] `.github/release-image-publish.yml` を複数 target を表現できる構造に整理し、初期値として `server` のみを enabled に保つ
-- [ ] T018 [US2] `.github/workflows/release-image-publish.yml` で未定義または disabled target を publish しない制御を実装する
-- [ ] T019 [US2] `README.md` に publish target 定義の拡張方針と今回の対象外 image の扱いを追記する
+- [X] T017 [P] [US2] `.github/release-image-publish.yml` を複数 target を表現できる構造に整理し、初期値として `server` のみを enabled に保つ
+- [X] T018 [US2] `.github/workflows/release-image-publish.yml` で未定義または disabled target を publish しない制御を実装する
+- [X] T019 [US2] `README.md` に publish target 定義の拡張方針と今回の対象外 image の扱いを追記する
 
 **Checkpoint**: User Story 2 が独立して検証可能であること
 
@@ -88,14 +88,14 @@
 
 ### Verification for User Story 3
 
-- [ ] T020 [P] [US3] `specs/034-ghcr-release-publish/quickstart.md` に Releases、Actions、GHCR の 3 点確認フローを記載する
-- [ ] T021 [US3] `README.md` に release image publish の trigger、対象 image、確認場所が揃っていることを見直す
+- [X] T020 [P] [US3] `specs/034-ghcr-release-publish/quickstart.md` に Releases、Actions、GHCR の 3 点確認フローを記載する
+- [X] T021 [US3] `README.md` に release image publish の trigger、対象 image、確認場所が揃っていることを見直す
 
 ### Implementation for User Story 3
 
-- [ ] T022 [US3] `README.md` に release drafter と release image publish の責務差分を明記する
-- [ ] T023 [US3] `specs/034-ghcr-release-publish/quickstart.md` に失敗時の確認順序と対象ファイルを整理する
-- [ ] T024 [US3] `specs/034-ghcr-release-publish/contracts/release-image-publish-contract.md` に visibility contract と scope guard の運用説明を補強する
+- [X] T022 [US3] `README.md` に release drafter と release image publish の責務差分を明記する
+- [X] T023 [US3] `specs/034-ghcr-release-publish/quickstart.md` に失敗時の確認順序と対象ファイルを整理する
+- [X] T024 [US3] `specs/034-ghcr-release-publish/contracts/release-image-publish-contract.md` に visibility contract と scope guard の運用説明を補強する
 
 **Checkpoint**: すべての user story が独立検証可能であること
 
@@ -105,10 +105,10 @@
 
 **Purpose**: 横断確認と最終整合を取る
 
-- [ ] T025 [P] `.github/workflows/release-image-publish.yml` と `.github/release-image-publish.yml` の YAML 構文を確認する
-- [ ] T026 `README.md`、`specs/034-ghcr-release-publish/quickstart.md`、`specs/034-ghcr-release-publish/contracts/release-image-publish-contract.md` の記述整合を確認する
-- [ ] T027 `git diff --check` 相当で workflow / 文書差分の体裁を確認する
-- [ ] T028 `specs/034-ghcr-release-publish/quickstart.md` の手順で live 確認に必要な GitHub 側作業だけが残ることを確認する
+- [X] T025 [P] `.github/workflows/release-image-publish.yml` と `.github/release-image-publish.yml` の YAML 構文を確認する
+- [X] T026 `README.md`、`specs/034-ghcr-release-publish/quickstart.md`、`specs/034-ghcr-release-publish/contracts/release-image-publish-contract.md` の記述整合を確認する
+- [X] T027 `git diff --check` 相当で workflow / 文書差分の体裁を確認する
+- [X] T028 `specs/034-ghcr-release-publish/quickstart.md` に draft release publish 後の Actions / GHCR 手動確認が live 検証として残ることを確認する
 
 ---
 

@@ -64,6 +64,12 @@ README.md
 
 **Structure Decision**: 実装対象は GitHub Actions workflow、publish target 定義ファイル、既存 `server/Dockerfile` を参照する release publish 導線、運用文書に限定する。`compose.yml` は build context の現行値を参照するための入力として扱うが、runtime 構成そのものは変更しない。publish target を workflow から分離した設定ファイルとして置くことで、将来 image 追加時の変更点を定義側へ寄せ、単一 image 専用の分岐増殖を避ける。
 
+### Implementation Boundary Memo
+
+- release image publish workflow は `.github/workflows/release-image-publish.yml` に固定する
+- publish target 定義は `.github/release-image-publish.yml` に固定する
+- `server` target の `build_context` と `dockerfile` は `compose.yml` の `server.build` を参照元とし、runtime 設定変更は今回対象外とする
+
 ## Phase 0: Research Summary
 
 - GitHub Actions の `release` event は `types: [published]` に限定することで、draft 編集時ではなく正式公開時だけ workflow を走らせられる
