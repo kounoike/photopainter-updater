@@ -34,6 +34,11 @@
     "source=${localWorkspaceFolderBasename}-claude-config,target=/home/vscode/.claude,type=volume"
   ],
   "runArgs": [
+    "--gpus=all",
+    "--env",
+    "NVIDIA_VISIBLE_DEVICES=all",
+    "--env",
+    "NVIDIA_DRIVER_CAPABILITIES=compute,utility",
     "--env-file",
     "${localWorkspaceFolder}/.devcontainer/.env"
   ],
