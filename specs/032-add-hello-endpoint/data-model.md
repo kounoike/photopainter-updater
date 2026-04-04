@@ -5,7 +5,7 @@
 - Purpose:
   - 利用者または運用者が server 稼働確認のために送る `/hello` request を表す。
 - Fields:
-  - `method`: 想定は `GET`、確認系 client では `HEAD` もあり得る
+  - `method`: `GET`
   - `path`: `/hello`
   - `remote`: request の送信元識別子
 - Validation:

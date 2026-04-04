@@ -80,11 +80,11 @@
 
 ### Verification for User Story 3
 
-- [ ] T012 [US3] 既存 route の回帰確認観点と fallback 維持条件を `specs/032-add-hello-endpoint/quickstart.md` に整理する
+- [ ] T012 [US3] 既存 route の回帰確認観点と fallback の `404` / `route not found` / logging 維持条件を `specs/032-add-hello-endpoint/quickstart.md` に整理する
 
 ### Implementation for User Story 3
 
-- [ ] T013 [US3] `/hello` 追加が unknown path の `404` 契約を壊さないことを検証する既存 not found test の期待値を `server/src/routes.rs` で維持または必要最小限更新する
+- [ ] T013 [US3] `/hello` 追加が unknown path の `404` / `route not found` 本文 / `LogOutcome::NotFound` を壊さないことを検証する既存 not found test の期待値を `server/src/routes.rs` で維持または必要最小限更新する
 - [ ] T014 [US3] `/hello` 追加後も `/image.bmp`、`/image.bin`、`/upload` の既存回帰が通ることを `server/src/routes.rs` の既存 test 群と `server/README.md` の確認手順で担保する
 
 **Checkpoint**: 既存 endpoint と fallback の期待挙動が維持されていること
