@@ -7,7 +7,7 @@
 | Category | `photopainter/llm` |
 | Display Name | `PhotoPainter LLM Generate` |
 | Output Node | `false` |
-| Return Types | `("STRING", "STRING")` |
+| Return Types | `("STRING",)` |
 
 ## 2. Inputs
 
@@ -16,8 +16,9 @@
 | `system_prompt` | `STRING` | Yes | system message として使う |
 | `user_prompt` | `STRING` | Yes | user message として使う |
 | `backend` | `STRING` or choice | Yes | `transformers` / `llama-cpp` |
-| `model_id` | `STRING` | Yes | model 識別子 |
-| `think_mode` | `STRING` or choice | Yes | `off` / `qwen` / `gemma` / `deepseek_r1` |
+| `model_id` | `STRING` | Yes | Hugging Face Hub の `user/repo` |
+| `model_file` | `STRING` | No | 主に `llama-cpp` で repo 内 GGUF を指定する |
+| `think_mode` | `STRING` or choice | Yes | `off` / `generic` / `qwen` / `gemma` / `deepseek_r1` |
 | `json_output` | `BOOLEAN` | Yes | JSON mode 有効化 |
 | `json_schema` | `STRING` | No | multiline schema 文字列 |
 | `max_retries` | `INT` | Yes | parse/schema failure の retry 上限 |
@@ -28,16 +29,17 @@
 
 | Name | Required | Meaning |
 |------|----------|---------|
-| `PHOTOPAINTER_LLM_MODEL_ROOT` | No | local model 保存先。未設定時は backend 既定保存先を使う |
+| `COMFYUI_LLM_MODEL_CACHE_DIR` | No | local model 保存先。未設定時は backend 既定保存先を使う |
 
 ## 4. Success Contract
 
 ### Preconditions
 
 - `backend` が対応値である
-- `model_id` が空でない
+- `model_id` が Hugging Face Hub の `user/repo` 形式で空でない
 - `think_mode` が対応値である
 - `json_schema` が与えられている場合は parse 可能な schema 文字列である
+- `llama-cpp` で repo 内に複数 GGUF がある場合、`model_file` が必要になる
 
 ### Success Condition
 
@@ -48,10 +50,10 @@
 
 ### Success Result
 
-node は `(text, json_text)` を返す。
+node は単一 `STRING` を返す。
 
-- `text`: 常に最終文字列を返す
-- `json_text`: JSON mode 成功時は JSON 文字列、非 JSON mode では空文字を許可
+- `json_output=false`: plain text
+- `json_output=true`: valid JSON string
 
 例:
 
@@ -60,10 +62,7 @@ node は `(text, json_text)` を返す。
     "ui": {
         "text": ["LLM success: transformers / Qwen / attempts=1"]
     },
-    "result": (
-        "plain output text",
-        "{\"positive_prompt\":\"...\",\"negative_prompt\":\"...\"}",
-    ),
+    "result": ("{\"positive_prompt\":\"...\",\"negative_prompt\":\"...\"}",),
 }
 ```
 
@@ -95,12 +94,14 @@ LLM failed: schema_error after 3 attempts
 | Value | Meaning |
 |------|---------|
 | `off` | 思考モード無効 |
+| `generic` | best-effort の汎用 thinking preset |
 | `qwen` | Qwen 系に対応する思考モード |
 | `gemma` | Gemma 系に対応する思考モード |
 | `deepseek_r1` | DeepSeek R1 系に対応する思考モード |
 
-- 上記 4 値のみ初期対応とする
-- backend がその family に対応しない場合は暗黙変換せず失敗する
+- 上記 5 値のみ初期対応とする
+- `generic` は family 固有最適化を持たない best-effort preset であり、特定 model での thinking 挙動を保証しない
+- `think_mode` は backend 固有 API ではなく prompt formatting preset として扱う
 
 ## 7. Out of Scope
 

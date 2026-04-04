@@ -16,22 +16,30 @@
 - backend ごとに別 node を作る: UI とテストが重複する
 - backend 判定を model 名の規約に埋め込む: 利用者に暗黙ルールを強いる
 
-## Decision 3: `think_mode` は共通列挙値 `off` / `qwen` / `gemma` / `deepseek_r1` に限定する
+## Decision 3: `think_mode` は共通列挙値 `off` / `generic` / `qwen` / `gemma` / `deepseek_r1` に限定し、prompt formatting preset として扱う
 
-**Decision**: node の widget は backend 非依存の `think_mode` を持ち、初期対応 family は 4 値に限定する。未対応 backend との組み合わせは実行前に失敗させる。  
-**Rationale**: user は family ごとの差異を明示的に制御したい一方、backend ごとの細かい proprietary flag を node contract に露出したくない。列挙値を絞ることで UI と validation を安定化できる。  
+**Decision**: node の widget は backend 非依存の `think_mode` を持ち、`off`、`generic`、`qwen`、`gemma`、`deepseek_r1` の 5 値を初期対応とする。`think_mode` は backend 固有 API の切替ではなく、system/user prompt へ適用する prompt formatting preset として扱う。`generic` は family 固有最適化を持たない best-effort preset とする。  
+**Rationale**: user は family ごとの差異を明示的に制御したい一方、backend ごとの細かい proprietary flag を node contract に露出したくない。prompt formatting に寄せると `transformers` と `llama-cpp` の両方で同じ入力 contract を保てる。  
 **Alternatives considered**:
 - boolean のみ: family 差分を表現できない
-- backend ごとに別 widget: node contract が肥大化する
+- backend ごとに別 widget や別 API にする: node contract が肥大化する
 - `granite` 等まで最初から広げる: adapter と test が増える
 
-## Decision 4: model 保存先は repo 固有環境変数 `PHOTOPAINTER_LLM_MODEL_ROOT` を一次参照する
+## Decision 4: model 保存先は環境変数 `COMFYUI_LLM_MODEL_CACHE_DIR` を一次参照する
 
-**Decision**: model cache / 保存先の統一入力として `PHOTOPAINTER_LLM_MODEL_ROOT` を採用し、未設定時は backend の既定保存先へ fallback する。  
-**Rationale**: Hugging Face 系と llama.cpp 系で既定の保存場所や環境変数が異なるため、node 側で 1 本の project-scoped env var を見る方が利用者向け説明が単純になる。未設定 fallback を残すことで導入時の friction も下げられる。  
+**Decision**: model cache / 保存先の統一入力として `COMFYUI_LLM_MODEL_CACHE_DIR` を採用し、`.env` から `compose.yml` 経由で ComfyUI container へ渡す。未設定時は backend の既定保存先へ fallback する。  
+**Rationale**: Hugging Face 系と llama.cpp 系で既定の保存場所や環境変数が異なるため、node 側で 1 本の env var を見る方が利用者向け説明が単純になる。`.env` を node 自身に読ませるのではなく compose で注入する方が責務も薄い。  
 **Alternatives considered**:
 - backend 固有環境変数だけをそのまま使う: 利用者が backend ごとの差を理解する必要がある
 - 環境変数を必須にする: 試験導入の負担が増える
+
+## Decision 4a: `model_id` は Hugging Face Hub の `user/repo` とし、`llama-cpp` は任意の `model_file` で補助する
+
+**Decision**: `model_id` は backend 共通で Hugging Face Hub の `user/repo` として扱う。`llama-cpp` は追加で任意入力 `model_file` を受け取り、repo 内に複数 GGUF がある場合の選択に使う。  
+**Rationale**: `model_id` の意味を backend 間で揃えつつ、GGUF ファイル選択だけを `model_file` へ切り出すと input contract がわかりやすい。  
+**Alternatives considered**:
+- `llama-cpp` だけローカルファイル path を `model_id` に入れる: backend ごとに意味が変わりすぎる
+- `model_file` を持たない: 複数 GGUF repo の扱いが曖昧になる
 
 ## Decision 5: JSON/schema 検証は `jsonschema` を使う
 
@@ -49,10 +57,10 @@
 - すべて retry する: 遅いだけで原因を隠す
 - retry を持たない: JSON mode の運用安定性が下がる
 
-## Decision 7: node は後続利用向けの文字列出力を持つ非終端 node とする
+## Decision 7: node は後続利用向けの単一 `STRING` 出力を持つ非終端 node とする
 
-**Decision**: node は output node にせず、少なくとも `text` と `json_text` を返す通常 node とする。成功時は必要に応じて UI summary を付与し、失敗時は例外で workflow を止める。  
-**Rationale**: spec の主用途は prompt planner など後続ノードでの文字列再利用であり、PNG POST のような終端 node とは役割が異なる。出力ソケットを持つ方が workflow へ組み込みやすい。  
+**Decision**: node は output node にせず、成功時は単一の `STRING` 出力だけを返す通常 node とする。text mode では plain text、JSON mode では valid JSON string を返す。必要に応じて UI summary を付与し、失敗時は例外で workflow を止める。  
+**Rationale**: spec の主用途は prompt planner など後続ノードでの文字列再利用であり、出力契約は 1 本の方が workflow 接続と contract test が単純になる。  
 **Alternatives considered**:
 - 終端 node にする: 結果を downstream へ渡しにくい
-- 失敗も文字列で返して成功扱いにする: schema 契約が崩れる
+- `text` と `json_text` を分けて返す: output 契約が複雑になる

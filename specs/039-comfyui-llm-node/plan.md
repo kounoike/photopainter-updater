@@ -7,7 +7,7 @@
 
 ## Summary
 
-この feature では、既存 `comfyui/custom_node/comfyui-photopainter-custom` ライブラリへ、ローカル推論専用の薄い LLM node を追加する。node は `system_prompt`、`user_prompt`、backend、model、`think_mode`、`json_output`、`json_schema`、retry 回数を受け取り、`transformers` または `llama-cpp` で単発推論を実行する。`json_output=true` の場合は JSON parse を行い、`json_schema` がある場合だけ schema 検証を追加する。parse 失敗または schema 不一致のみ限定 retry の対象とし、model load 失敗や backend 実行失敗は即失敗とする。model 保存先は repo 固有環境変数で統一し、未設定時は backend 既定保存先へ fallback する。実装は custom node 本体、unit/contract test、README、必要最小限の環境変数文書更新に限定する。
+この feature では、既存 `comfyui/custom_node/comfyui-photopainter-custom` ライブラリへ、ローカル推論専用の薄い LLM node を追加する。node は `system_prompt`、`user_prompt`、backend、`model_id`、任意の `model_file`、`think_mode`、`json_output`、`json_schema`、retry 回数を受け取り、`transformers` または `llama-cpp` で単発推論を実行する。`think_mode` は backend 固有 API 切替ではなく prompt formatting preset として扱い、`off`、`generic`、`qwen`、`gemma`、`deepseek_r1` を初期対応とする。`json_output=true` の場合は JSON parse を行い、`json_schema` がある場合だけ schema 検証を追加する。parse 失敗または schema 不一致のみ限定 retry の対象とし、model load 失敗や backend 実行失敗は即失敗とする。model 保存先は環境変数 `COMFYUI_LLM_MODEL_CACHE_DIR` で統一し、`.env` から `compose.yml` 経由で ComfyUI container に注入する。成功時の output は単一 `STRING` とし、`json_output=true` のときだけその文字列が valid JSON を表す。実装は custom node 本体、unit/contract test、README、必要最小限の compose / 環境変数文書更新に限定する。
 
 ## Technical Context
 
@@ -18,7 +18,7 @@
 **Target Platform**: Docker Compose で起動する ComfyUI GPU container、または同等のローカル ComfyUI 実行環境  
 **Project Type**: ComfyUI custom node 拡張 + ドキュメント更新  
 **Performance Goals**: 1 回の node 実行で単発のローカル推論を完了し、schema 不一致時の retry は少数回に限定して workflow の待ち時間を過度に悪化させない  
-**Constraints**: node は薄く保つ、HTTP 待受や常駐サービスは追加しない、`think_mode` 初期対応は `off` / `qwen` / `gemma` / `deepseek_r1` に限定、schema は `json_schema` 文字列入力のみ、retry 対象は parse 失敗または schema 不一致のみ  
+**Constraints**: node は薄く保つ、HTTP 待受や常駐サービスは追加しない、`think_mode` 初期対応は `off` / `generic` / `qwen` / `gemma` / `deepseek_r1` に限定、schema は `json_schema` 文字列入力のみ、retry 対象は parse 失敗または schema 不一致のみ  
 **Scale/Scope**: 単一利用者の ComfyUI workflow、1 node 実行あたり 1 回のローカル LLM 推論、単一 prompt 応答の生成と検証
 
 ## Constitution Check
@@ -64,16 +64,17 @@ compose.yml
 .env.example
 ```
 
-**Structure Decision**: 実装は既存の `comfyui-photopainter-custom` モジュールに集約し、ComfyUI image build で同梱する現在の配布経路を維持する。backend adapter、schema 検証、retry 制御は custom node 内の helper 関数に閉じ込め、ComfyUI 本体や server 側へ責務を広げない。環境変数の利用例は `.env.example` と node README に寄せ、compose/entrypoint の更新は本当に必要な場合だけに限定する。
+**Structure Decision**: 実装は既存の `comfyui-photopainter-custom` モジュールに集約し、ComfyUI image build で同梱する現在の配布経路を維持する。backend adapter、prompt formatting preset、schema 検証、retry 制御は custom node 内の helper 関数に閉じ込め、ComfyUI 本体や server 側へ責務を広げない。環境変数の利用例は `.env.example` と node README に寄せ、runtime 注入は `compose.yml` で `COMFYUI_LLM_MODEL_CACHE_DIR` を container 環境変数として渡す。
 
 ## Phase 0: Research Summary
 
 - `transformers` と `llama-cpp-python` の両方を lazy import し、node 入力の backend 切替で単一 node に収める
-- `think_mode` は node 共通列挙値 `off` / `qwen` / `gemma` / `deepseek_r1` とし、backend ごとの未対応値はエラーにする
-- model 保存先は repo 固有環境変数 `PHOTOPAINTER_LLM_MODEL_ROOT` を一次参照とし、未設定時は backend 既定保存先へ fallback する
+- `think_mode` は node 共通列挙値 `off` / `generic` / `qwen` / `gemma` / `deepseek_r1` とし、prompt formatting preset として適用する
+- model 保存先は環境変数 `COMFYUI_LLM_MODEL_CACHE_DIR` を一次参照とし、未設定時は backend 既定保存先へ fallback する
+- `model_id` は Hugging Face Hub の `user/repo` を前提とし、`llama-cpp` では任意入力 `model_file` で repo 内 GGUF を補助指定できる
 - JSON schema 検証は `jsonschema` 依存を使い、`json_output=true` のときだけ parse + validate を適用する
 - retry は parse 失敗または schema 不一致に限って最大少数回とし、再試行時に短い補正指示を追加する
-- node は文字列を後続へ渡す non-output node とし、成功時は `text` と `json_text` を返し、失敗時は例外で workflow を止める
+- node は文字列を後続へ渡す non-output node とし、成功時は単一 `STRING` を返し、失敗時は例外で workflow を止める
 
 ## Phase 1: Design & Contracts
 
@@ -83,16 +84,16 @@ compose.yml
 - `ResolvedModelPathPolicy`: 環境変数と backend 既定保存先の優先解決結果
 - `LlmGenerationAttempt`: 1 回の生成試行と retry 状態を表す実行モデル
 - `JsonValidationContract`: `json_output`、`json_schema`、検証成否、failure kind を表す構造化契約
-- `LlmGenerationResult`: 成功時の `text` / `json_text` / UI summary と失敗分類を表す出力モデル
+- `LlmGenerationResult`: 成功時の単一 `STRING` 出力 / UI summary と失敗分類を表す出力モデル
 
 ### Contract Output
 
-- `contracts/comfyui-local-llm-node-contract.md`: node metadata、入力 widget、出力ソケット、`think_mode`、JSON/schema/retry、failure kind の契約を定義する
+- `contracts/comfyui-local-llm-node-contract.md`: node metadata、入力 widget、`model_id` / `model_file`、`think_mode`、JSON/schema/retry、failure kind の契約を定義する
 
 ### Quickstart Output
 
 - ComfyUI image を再 build して node を読み込む手順
-- `PHOTOPAINTER_LLM_MODEL_ROOT` を任意設定する手順
+- `COMFYUI_LLM_MODEL_CACHE_DIR` を任意設定する手順
 - text mode と JSON mode の最小 workflow 例
 - schema 不一致 retry と最終 failure の確認手順
 

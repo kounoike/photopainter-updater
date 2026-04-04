@@ -5,10 +5,11 @@
 | 項目 | 型 | 必須 | 説明 |
 |------|----|------|------|
 | `backend` | `enum` | 必須 | `transformers` または `llama-cpp` |
-| `model_id` | `str` | 必須 | Hugging Face 上の model 識別子、または backend が解決可能な model 名 |
+| `model_id` | `str` | 必須 | Hugging Face Hub の `user/repo` 形式 |
+| `model_file` | `str \| None` | 条件付き | 主に `llama-cpp` で repo 内 GGUF を指定する任意入力 |
 | `system_prompt` | `str` | 必須 | system message として渡す文字列 |
 | `user_prompt` | `str` | 必須 | user message として渡す文字列 |
-| `think_mode` | `enum` | 必須 | `off` / `qwen` / `gemma` / `deepseek_r1` |
+| `think_mode` | `enum` | 必須 | `off` / `generic` / `qwen` / `gemma` / `deepseek_r1` |
 | `json_output` | `bool` | 必須 | JSON mode を有効化するか |
 | `json_schema` | `str` | 任意 | multiline widget で受ける JSON Schema 文字列 |
 | `max_retries` | `int` | 必須 | parse/schema failure に対する retry 上限 |
@@ -18,9 +19,10 @@
 ### Validation Rules
 
 - `backend` は 2 値のどちらかでなければならない
-- `model_id` は空文字不可
+- `model_id` は空文字不可かつ `user/repo` 形式を前提とする
+- `model_file` は `llama-cpp` では任意、`transformers` では無視または空を許可する
 - `system_prompt` と `user_prompt` は両方空にしない
-- `think_mode` は 4 値のいずれかでなければならない
+- `think_mode` は 5 値のいずれかでなければならない
 - `json_output=false` のとき `json_schema` は解釈しない
 - `max_retries` は 0 以上の小さい整数に制限する
 
@@ -28,7 +30,7 @@
 
 | 項目 | 型 | 必須 | 説明 |
 |------|----|------|------|
-| `env_var_name` | `str` | 必須 | `PHOTOPAINTER_LLM_MODEL_ROOT` |
+| `env_var_name` | `str` | 必須 | `COMFYUI_LLM_MODEL_CACHE_DIR` |
 | `configured_root` | `path \| None` | 条件付き | 環境変数が設定されている場合の値 |
 | `resolved_root` | `path \| None` | 条件付き | backend に適用する最終保存先 |
 | `uses_backend_default` | `bool` | 必須 | backend 既定保存先へ fallback したか |
@@ -80,8 +82,7 @@
 
 | 項目 | 型 | 必須 | 説明 |
 |------|----|------|------|
-| `text` | `str` | 必須 | 最終的なプレーンテキスト出力 |
-| `json_text` | `str` | 条件付き | JSON mode 成功時の JSON 文字列 |
+| `output_text` | `str` | 必須 | 最終的な単一 `STRING` 出力 |
 | `ui_message` | `str` | 必須 | ComfyUI UI に表示する summary |
 | `attempt_count` | `int` | 必須 | 実行に使った総試行回数 |
 | `success` | `bool` | 必須 | 最終成功判定 |
@@ -89,6 +90,6 @@
 
 ### Invariants
 
-- `success=true` のとき `text` は空にしない
-- `json_output=true` で成功した場合、`json_text` は parse 可能である
+- `success=true` のとき `output_text` は空にしない
+- `json_output=true` で成功した場合、`output_text` は parse 可能な JSON 文字列である
 - `success=false` のとき node は例外送出により workflow を失敗扱いにする
