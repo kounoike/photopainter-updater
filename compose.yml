@@ -52,6 +52,7 @@ services:
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
       - MODEL_ROOT=${COMFYUI_MODEL_ROOT:-/root/ComfyUI/models}
       - CLI_ARGS=${COMFYUI_CLI_ARGS:---listen 0.0.0.0 --fast --enable-manager}
+      - COMFYUI_LLM_MODEL_CACHE_DIR=${COMFYUI_LLM_MODEL_CACHE_DIR:-}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8188/system_stats"]

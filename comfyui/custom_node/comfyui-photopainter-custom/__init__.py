@@ -1,14 +1,47 @@
-"""ComfyUI custom node for posting a single IMAGE input as PNG."""
+"""ComfyUI custom nodes for PhotoPainter workflow integrations."""
 
 from __future__ import annotations
 
+import json
+import os
+import re
 import struct
 import zlib
+from dataclasses import dataclass
 from http import HTTPStatus
+from pathlib import Path
 from typing import Iterable
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
+
+
+LLM_CACHE_DIR_ENV = "COMFYUI_LLM_MODEL_CACHE_DIR"
+SUPPORTED_BACKENDS = ("transformers", "llama-cpp")
+SUPPORTED_THINK_MODES = ("off", "generic", "qwen", "gemma", "deepseek_r1")
+HF_REPO_ID_PATTERN = re.compile(r"^[A-Za-z0-9][\w.-]*/[\w.-]+$")
+THINK_MODE_PROMPTS = {
+    "generic": "Reason carefully before answering. Keep the answer concise and well-structured.",
+    "qwen": "Use a Qwen-style reasoning pass before producing the final answer.",
+    "gemma": "Use a Gemma-style reasoning pass before producing the final answer.",
+    "deepseek_r1": "Use a DeepSeek-R1-style reasoning pass before producing the final answer.",
+}
+
+
+@dataclass(frozen=True)
+class LlmNodeConfig:
+    backend: str
+    model_id: str
+    model_file: str | None
+    system_prompt: str
+    user_prompt: str
+    think_mode: str
+    json_output: bool
+    json_schema_text: str | None
+    max_retries: int
+    temperature: float
+    max_tokens: int
+    cache_dir: str | None
 
 
 def _normalize_url(url: str) -> str:
@@ -165,6 +198,368 @@ def _post_png(url: str, png_bytes: bytes, timeout: int = 10) -> str:
     return f"POST success: {status} {_status_phrase(status)}{suffix}"
 
 
+def _config_error(message: str) -> ValueError:
+    return ValueError(f"config_error: {message}")
+
+
+def _backend_error(message: str) -> RuntimeError:
+    return RuntimeError(f"backend_error: {message}")
+
+
+def _json_parse_error(message: str) -> RuntimeError:
+    return RuntimeError(f"json_parse_error: {message}")
+
+
+def _schema_error(message: str) -> RuntimeError:
+    return RuntimeError(f"schema_error: {message}")
+
+
+def _normalize_backend(value: object) -> str:
+    backend = str(value or "").strip()
+    if backend not in SUPPORTED_BACKENDS:
+        raise _config_error(f"unsupported backend: {backend or '<empty>'}")
+    return backend
+
+
+def _normalize_hf_repo_id(value: object) -> str:
+    model_id = str(value or "").strip()
+    if not HF_REPO_ID_PATTERN.match(model_id):
+        raise _config_error("model_id must be a Hugging Face repo in user/repo format")
+    return model_id
+
+
+def _normalize_model_file(value: object) -> str | None:
+    normalized = str(value or "").strip()
+    return normalized or None
+
+
+def _normalize_prompt(value: object, field_name: str) -> str:
+    normalized = str(value or "").strip()
+    if not normalized:
+        raise _config_error(f"{field_name} must not be empty")
+    return normalized
+
+
+def _normalize_think_mode(value: object) -> str:
+    think_mode = str(value or "").strip()
+    if think_mode not in SUPPORTED_THINK_MODES:
+        raise _config_error(f"unsupported think_mode: {think_mode or '<empty>'}")
+    return think_mode
+
+
+def _normalize_json_schema_text(value: object) -> str | None:
+    normalized = str(value or "").strip()
+    return normalized or None
+
+
+def _normalize_max_retries(value: object) -> int:
+    try:
+        retries = int(value)
+    except (TypeError, ValueError) as exc:
+        raise _config_error("max_retries must be an integer") from exc
+    if retries < 0 or retries > 5:
+        raise _config_error("max_retries must be between 0 and 5")
+    return retries
+
+
+def _normalize_temperature(value: object) -> float:
+    try:
+        temperature = float(value)
+    except (TypeError, ValueError) as exc:
+        raise _config_error("temperature must be numeric") from exc
+    if temperature < 0:
+        raise _config_error("temperature must be >= 0")
+    return temperature
+
+
+def _normalize_max_tokens(value: object) -> int:
+    try:
+        max_tokens = int(value)
+    except (TypeError, ValueError) as exc:
+        raise _config_error("max_tokens must be an integer") from exc
+    if max_tokens <= 0:
+        raise _config_error("max_tokens must be > 0")
+    return max_tokens
+
+
+def _resolve_llm_cache_dir() -> str | None:
+    configured = os.environ.get(LLM_CACHE_DIR_ENV, "").strip()
+    if not configured:
+        return None
+
+    path = Path(configured).expanduser()
+    try:
+        path.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        raise _config_error(f"{LLM_CACHE_DIR_ENV} is not writable: {path}") from exc
+    if not path.is_dir():
+        raise _config_error(f"{LLM_CACHE_DIR_ENV} is not a directory: {path}")
+    if not os.access(path, os.W_OK):
+        raise _config_error(f"{LLM_CACHE_DIR_ENV} is not writable: {path}")
+    return str(path)
+
+
+def _load_jsonschema_module():
+    try:
+        import jsonschema  # type: ignore
+    except ImportError as exc:
+        raise _backend_error("jsonschema is not installed") from exc
+    return jsonschema
+
+
+def _validate_schema_text(schema_text: str) -> dict:
+    try:
+        schema = json.loads(schema_text)
+    except json.JSONDecodeError as exc:
+        raise _config_error(f"json_schema is not valid JSON: {exc.msg}") from exc
+
+    jsonschema = _load_jsonschema_module()
+    try:
+        validator_cls = jsonschema.validators.validator_for(schema)
+        validator_cls.check_schema(schema)
+    except Exception as exc:
+        raise _config_error(f"json_schema is not a valid schema: {exc}") from exc
+    return schema
+
+
+def _validate_json_instance(instance: object, schema: dict) -> None:
+    jsonschema = _load_jsonschema_module()
+    try:
+        jsonschema.validate(instance=instance, schema=schema)
+    except Exception as exc:
+        raise _schema_error(str(exc)) from exc
+
+
+def _build_llm_config(
+    *,
+    backend: object,
+    model_id: object,
+    model_file: object,
+    system_prompt: object,
+    user_prompt: object,
+    think_mode: object,
+    json_output: object,
+    json_schema: object,
+    max_retries: object,
+    temperature: object,
+    max_tokens: object,
+) -> LlmNodeConfig:
+    normalized_backend = _normalize_backend(backend)
+    normalized_model_id = _normalize_hf_repo_id(model_id)
+    normalized_model_file = _normalize_model_file(model_file)
+    normalized_system_prompt = _normalize_prompt(system_prompt, "system_prompt")
+    normalized_user_prompt = _normalize_prompt(user_prompt, "user_prompt")
+    normalized_think_mode = _normalize_think_mode(think_mode)
+    normalized_json_output = bool(json_output)
+    normalized_json_schema = _normalize_json_schema_text(json_schema)
+    normalized_retries = _normalize_max_retries(max_retries)
+    normalized_temperature = _normalize_temperature(temperature)
+    normalized_max_tokens = _normalize_max_tokens(max_tokens)
+    cache_dir = _resolve_llm_cache_dir()
+
+    if normalized_json_output and normalized_json_schema is not None:
+        _validate_schema_text(normalized_json_schema)
+
+    return LlmNodeConfig(
+        backend=normalized_backend,
+        model_id=normalized_model_id,
+        model_file=normalized_model_file,
+        system_prompt=normalized_system_prompt,
+        user_prompt=normalized_user_prompt,
+        think_mode=normalized_think_mode,
+        json_output=normalized_json_output,
+        json_schema_text=normalized_json_schema,
+        max_retries=normalized_retries,
+        temperature=normalized_temperature,
+        max_tokens=normalized_max_tokens,
+        cache_dir=cache_dir,
+    )
+
+
+def _build_messages(config: LlmNodeConfig, retry_feedback: str | None = None) -> list[dict[str, str]]:
+    system_parts = [config.system_prompt]
+    if config.think_mode != "off":
+        system_parts.append(THINK_MODE_PROMPTS[config.think_mode])
+
+    user_parts = [config.user_prompt]
+    if retry_feedback:
+        user_parts.append(retry_feedback)
+
+    return [
+        {"role": "system", "content": "\n\n".join(system_parts).strip()},
+        {"role": "user", "content": "\n\n".join(user_parts).strip()},
+    ]
+
+
+def _render_messages_as_text(messages: list[dict[str, str]]) -> str:
+    rendered = []
+    for message in messages:
+        role = message.get("role", "user").upper()
+        content = message.get("content", "").strip()
+        rendered.append(f"{role}:\n{content}")
+    rendered.append("ASSISTANT:")
+    return "\n\n".join(rendered)
+
+
+def _run_transformers_generation(config: LlmNodeConfig, messages: list[dict[str, str]]) -> str:
+    try:
+        import torch  # type: ignore
+        from transformers import AutoModelForCausalLM, AutoTokenizer  # type: ignore
+    except ImportError as exc:
+        raise _backend_error("transformers backend dependencies are not installed") from exc
+
+    try:
+        tokenizer = AutoTokenizer.from_pretrained(
+            config.model_id,
+            cache_dir=config.cache_dir,
+            trust_remote_code=True,
+        )
+        model = AutoModelForCausalLM.from_pretrained(
+            config.model_id,
+            cache_dir=config.cache_dir,
+            trust_remote_code=True,
+            torch_dtype="auto",
+        )
+    except Exception as exc:
+        raise _backend_error(f"failed to load transformers model: {exc}") from exc
+
+    prompt_text = _render_messages_as_text(messages)
+    apply_chat_template = getattr(tokenizer, "apply_chat_template", None)
+    if callable(apply_chat_template):
+        try:
+            prompt_text = apply_chat_template(
+                messages,
+                tokenize=False,
+                add_generation_prompt=True,
+            )
+        except Exception:
+            prompt_text = _render_messages_as_text(messages)
+
+    inputs = tokenizer(prompt_text, return_tensors="pt")
+    hf_device_map = getattr(model, "hf_device_map", None)
+    if hf_device_map is None:
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        if hasattr(model, "to"):
+            model.to(device)
+        inputs = {name: tensor.to(device) for name, tensor in inputs.items()}
+
+    generate_kwargs = {
+        "max_new_tokens": config.max_tokens,
+        "do_sample": config.temperature > 0,
+    }
+    if config.temperature > 0:
+        generate_kwargs["temperature"] = config.temperature
+
+    try:
+        generated = model.generate(**inputs, **generate_kwargs)
+    except Exception as exc:
+        raise _backend_error(f"transformers generation failed: {exc}") from exc
+
+    prompt_length = inputs["input_ids"].shape[-1]
+    output_tokens = generated[0][prompt_length:]
+    output_text = tokenizer.decode(output_tokens, skip_special_tokens=True).strip()
+    if not output_text:
+        raise _backend_error("transformers generation returned empty output")
+    return output_text
+
+
+def _extract_llama_content(response: object) -> str:
+    try:
+        choice = response["choices"][0]
+        message = choice.get("message", {})
+        content = message.get("content", "")
+    except Exception as exc:
+        raise _backend_error(f"llama-cpp response parsing failed: {exc}") from exc
+    normalized = str(content).strip()
+    if not normalized:
+        raise _backend_error("llama-cpp generation returned empty output")
+    return normalized
+
+
+def _run_llama_cpp_generation(config: LlmNodeConfig, messages: list[dict[str, str]]) -> str:
+    try:
+        from llama_cpp import Llama  # type: ignore
+    except ImportError as exc:
+        raise _backend_error("llama-cpp backend dependencies are not installed") from exc
+
+    kwargs = {
+        "repo_id": config.model_id,
+        "n_gpu_layers": -1,
+        "verbose": False,
+    }
+    if config.cache_dir is not None:
+        kwargs["local_dir"] = config.cache_dir
+    if config.model_file is not None:
+        kwargs["filename"] = config.model_file
+
+    try:
+        llm = Llama.from_pretrained(**kwargs)
+    except Exception as exc:
+        raise _backend_error(f"failed to load llama-cpp model: {exc}") from exc
+
+    try:
+        response = llm.create_chat_completion(
+            messages=messages,
+            max_tokens=config.max_tokens,
+            temperature=config.temperature,
+        )
+    except Exception as exc:
+        raise _backend_error(f"llama-cpp generation failed: {exc}") from exc
+    return _extract_llama_content(response)
+
+
+def _run_generation_attempt(config: LlmNodeConfig, retry_feedback: str | None = None) -> str:
+    messages = _build_messages(config, retry_feedback)
+    if config.backend == "transformers":
+        return _run_transformers_generation(config, messages)
+    if config.backend == "llama-cpp":
+        return _run_llama_cpp_generation(config, messages)
+    raise _config_error(f"unsupported backend: {config.backend}")
+
+
+def _retry_feedback(attempt: int, error_kind: str, detail: str) -> str:
+    return (
+        f"Previous attempt {attempt} failed with {error_kind}. "
+        f"Return only a corrected response. Detail: {detail}"
+    )
+
+
+def _validate_generation_output(config: LlmNodeConfig, output_text: str) -> str:
+    if not config.json_output:
+        return output_text
+
+    try:
+        parsed = json.loads(output_text)
+    except json.JSONDecodeError as exc:
+        raise _json_parse_error(exc.msg) from exc
+
+    if config.json_schema_text is not None:
+        schema = _validate_schema_text(config.json_schema_text)
+        _validate_json_instance(parsed, schema)
+    return output_text
+
+
+def _generate_llm_output(config: LlmNodeConfig) -> tuple[str, int]:
+    retry_feedback: str | None = None
+    total_attempts = config.max_retries + 1
+
+    for attempt in range(1, total_attempts + 1):
+        output_text = _run_generation_attempt(config, retry_feedback)
+        try:
+            validated = _validate_generation_output(config, output_text)
+            return validated, attempt
+        except RuntimeError as exc:
+            detail = str(exc)
+            if not detail.startswith(("json_parse_error:", "schema_error:")):
+                raise
+            if attempt >= total_attempts:
+                raise
+            error_kind, _, message = detail.partition(": ")
+            retry_feedback = _retry_feedback(attempt, error_kind, message)
+
+    raise _backend_error("generation exhausted without producing output")
+
+
 class PhotopainterPngPost:
     @classmethod
     def INPUT_TYPES(cls):
@@ -187,10 +582,74 @@ class PhotopainterPngPost:
         return {"ui": {"text": [f"{message} [{normalized_url}]"]}, "result": ()}
 
 
+class PhotopainterLlmGenerate:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "system_prompt": ("STRING", {"default": "You are a helpful assistant.", "multiline": True}),
+                "user_prompt": ("STRING", {"default": "", "multiline": True}),
+                "backend": (list(SUPPORTED_BACKENDS),),
+                "model_id": ("STRING", {"default": "Qwen/Qwen3-0.6B", "multiline": False}),
+                "think_mode": (list(SUPPORTED_THINK_MODES),),
+                "json_output": ("BOOLEAN", {"default": False}),
+                "max_retries": ("INT", {"default": 1, "min": 0, "max": 5}),
+                "temperature": ("FLOAT", {"default": 0.0, "min": 0.0, "step": 0.1}),
+                "max_tokens": ("INT", {"default": 512, "min": 1, "max": 4096}),
+            },
+            "optional": {
+                "model_file": ("STRING", {"default": "", "multiline": False}),
+                "json_schema": ("STRING", {"default": "", "multiline": True}),
+            },
+        }
+
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("output_text",)
+    FUNCTION = "generate_text"
+    OUTPUT_NODE = False
+    CATEGORY = "photopainter/llm"
+
+    def generate_text(
+        self,
+        system_prompt,
+        user_prompt,
+        backend,
+        model_id,
+        think_mode,
+        json_output,
+        max_retries,
+        temperature,
+        max_tokens,
+        model_file="",
+        json_schema="",
+    ):
+        config = _build_llm_config(
+            backend=backend,
+            model_id=model_id,
+            model_file=model_file,
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            think_mode=think_mode,
+            json_output=json_output,
+            json_schema=json_schema,
+            max_retries=max_retries,
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
+        output_text, attempts = _generate_llm_output(config)
+        summary = (
+            f"LLM success: {config.backend} / {config.model_id} / "
+            f"think_mode={config.think_mode} / attempts={attempts}"
+        )
+        return {"ui": {"text": [summary]}, "result": (output_text,)}
+
+
 NODE_CLASS_MAPPINGS = {
     "PhotopainterPngPost": PhotopainterPngPost,
+    "PhotopainterLlmGenerate": PhotopainterLlmGenerate,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "PhotopainterPngPost": "PhotoPainter PNG POST",
+    "PhotopainterLlmGenerate": "PhotoPainter LLM Generate",
 }

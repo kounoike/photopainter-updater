@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import importlib.util
+import os
+import sys
 import threading
 import unittest
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -14,6 +16,7 @@ def load_module():
     spec = importlib.util.spec_from_file_location("photopainter_custom_node", MODULE_PATH)
     module = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
+    sys.modules[spec.name] = module
     spec.loader.exec_module(module)
     return module
 
@@ -76,13 +79,41 @@ class ContractTests(unittest.TestCase):
         thread.start()
         return server, thread
 
-    def test_node_metadata_contract(self):
+    def test_png_post_node_metadata_contract(self):
         self.assertIn("PhotopainterPngPost", self.module.NODE_CLASS_MAPPINGS)
         node = self.module.PhotopainterPngPost
         self.assertEqual(node.RETURN_TYPES, ())
         self.assertTrue(node.OUTPUT_NODE)
         self.assertEqual(node.CATEGORY, "photopainter/http")
         self.assertEqual(self.module.NODE_DISPLAY_NAME_MAPPINGS["PhotopainterPngPost"], "PhotoPainter PNG POST")
+
+    def test_llm_node_metadata_contract(self):
+        self.assertIn("PhotopainterLlmGenerate", self.module.NODE_CLASS_MAPPINGS)
+        node = self.module.PhotopainterLlmGenerate
+        self.assertEqual(node.RETURN_TYPES, ("STRING",))
+        self.assertFalse(node.OUTPUT_NODE)
+        self.assertEqual(node.CATEGORY, "photopainter/llm")
+        self.assertEqual(self.module.NODE_DISPLAY_NAME_MAPPINGS["PhotopainterLlmGenerate"], "PhotoPainter LLM Generate")
+
+        input_types = node.INPUT_TYPES()
+        required = input_types["required"]
+        optional = input_types["optional"]
+        self.assertEqual(required["backend"][0], list(self.module.SUPPORTED_BACKENDS))
+        self.assertEqual(required["think_mode"][0], list(self.module.SUPPORTED_THINK_MODES))
+        self.assertIn("model_file", optional)
+        self.assertIn("json_schema", optional)
+
+    def test_llm_cache_env_contract(self):
+        temp_dir = Path(self.module.MODULE_PATH if hasattr(self.module, "MODULE_PATH") else MODULE_PATH).parent / "tmp-cache"
+        try:
+            os.environ[self.module.LLM_CACHE_DIR_ENV] = str(temp_dir)
+            resolved = self.module._resolve_llm_cache_dir()
+            self.assertEqual(resolved, str(temp_dir))
+            self.assertTrue(temp_dir.is_dir())
+        finally:
+            os.environ.pop(self.module.LLM_CACHE_DIR_ENV, None)
+            if temp_dir.exists():
+                temp_dir.rmdir()
 
     def test_success_posts_png_raw_body(self):
         server, thread = self._server()

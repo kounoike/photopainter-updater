@@ -25,7 +25,9 @@ WORKDIR /root
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
+      build-essential \
       ca-certificates \
+      cmake \
       curl \
       ffmpeg \
       git \
@@ -56,6 +58,8 @@ RUN --mount=type=cache,target=/root/.cache/uv \
       --torch-backend "${UV_TORCH_BACKEND}" && \
     uv pip install --system -r requirements.txt && \
     uv pip install --system -r manager_requirements.txt && \
+    uv pip install --system transformers jsonschema && \
+    CMAKE_ARGS="-DGGML_CUDA=on" FORCE_CMAKE=1 uv pip install --system llama-cpp-python && \
     chmod +x /usr/local/bin/install-custom-nodes /usr/local/bin/photopainter-comfyui-entrypoint && \
     /usr/local/bin/install-custom-nodes
 
