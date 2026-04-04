@@ -77,10 +77,16 @@ curl -i \
 ## 起動確認
 
 ```bash
+curl -i http://127.0.0.1:${SERVER_EXPOSE_PORT:-8000}/hello
 curl -I http://127.0.0.1:${SERVER_EXPOSE_PORT:-8000}/
 curl -I http://127.0.0.1:${SERVER_EXPOSE_PORT:-8000}/image.bmp
 curl -I http://127.0.0.1:${SERVER_EXPOSE_PORT:-8000}/image.bin
 ```
+
+- まず `GET /hello` が `200 OK` と本文 `hello` を返すことを確認する
+- `image.png` が未配置でも `/hello` は疎通確認に使える
+- その後に `/image.bmp` や `/image.bin` を確認すると、server 疎通と画像処理の問題を切り分けやすい
+- 未定義 path は引き続き `404` と本文 `route not found` を返し、access log でも `not-found` として記録される
 
 この repository 作業環境では `docker` コマンドが使えない場合がある。その場合、Compose
 起動確認は Docker 利用可能な実行環境で実施する。

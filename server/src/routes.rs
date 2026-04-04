@@ -18,12 +18,29 @@ use crate::response::{
 
 pub fn build_app(state: AppState) -> Router {
     Router::new()
+        .route("/hello", get(serve_hello))
         .route("/", get(serve_binary_image))
         .route("/image.bmp", get(serve_image))
         .route("/image.bin", get(serve_binary_image))
         .route(crate::config::UPLOAD_ROUTE_PATH, post(upload_image))
         .fallback(any(serve_not_found))
         .with_state(state)
+}
+
+async fn serve_hello(State(state): State<AppState>, request: Request) -> Response<Body> {
+    let method = request.method().clone();
+    let path = request.uri().path().to_string();
+    let remote = extract_remote_addr(&request);
+    let response = text_response(StatusCode::OK, "hello");
+    record(
+        &state,
+        method,
+        path,
+        remote,
+        response.status(),
+        LogOutcome::Success,
+    );
+    response
 }
 
 async fn serve_image(State(state): State<AppState>, request: Request) -> Response<Body> {
@@ -428,6 +445,74 @@ mod tests {
         body.extend_from_slice(payload);
         body.extend_from_slice(format!("\r\n--{boundary}--\r\n").as_bytes());
         body
+    }
+
+    #[tokio::test]
+    async fn hello_returns_plain_text_and_logs_success() {
+        let dir = create_content_dir("hello-route", &[(0, 0, [255, 0, 0])]);
+        let (state, logger) = test_state(dir.clone());
+        let router = build_app(state);
+
+        let response = router
+            .oneshot(request_with_remote(
+                "/hello",
+                "192.168.0.5:40100".parse().expect("remote addr"),
+            ))
+            .await
+            .expect("hello response");
+
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(
+            response.headers().get(CONTENT_TYPE),
+            Some(&HeaderValue::from_static("text/plain; charset=utf-8"))
+        );
+        assert_eq!(response_body(response).await, "hello");
+
+        let entries = logged_entries(&logger);
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].path, "/hello");
+        assert_eq!(entries[0].status, StatusCode::OK);
+        assert_eq!(entries[0].outcome, LogOutcome::Success);
+        assert_eq!(entries[0].remote, "192.168.0.5:40100");
+
+        cleanup_dir(&dir);
+    }
+
+    #[tokio::test]
+    async fn hello_succeeds_even_when_input_image_is_missing() {
+        let missing_dir = temp_path("hello-missing-content");
+        std::fs::create_dir_all(&missing_dir).expect("create missing dir");
+        let (state, logger) = test_state(missing_dir.clone());
+        let router = build_app(state);
+
+        let hello = router
+            .clone()
+            .oneshot(request_with_remote(
+                "/hello",
+                "192.168.0.6:40101".parse().expect("remote addr"),
+            ))
+            .await
+            .expect("hello response");
+        let image = router
+            .oneshot(request_with_remote(
+                "/image.bmp",
+                "192.168.0.7:40102".parse().expect("remote addr"),
+            ))
+            .await
+            .expect("image response");
+
+        assert_eq!(hello.status(), StatusCode::OK);
+        assert_eq!(response_body(hello).await, "hello");
+        assert_eq!(image.status(), StatusCode::NOT_FOUND);
+
+        let entries = logged_entries(&logger);
+        assert_eq!(entries.len(), 2);
+        assert_eq!(entries[0].path, "/hello");
+        assert_eq!(entries[0].outcome, LogOutcome::Success);
+        assert_eq!(entries[1].path, "/image.bmp");
+        assert_eq!(entries[1].outcome, LogOutcome::InputMissing);
+
+        cleanup_dir(&missing_dir);
     }
 
     #[tokio::test]
