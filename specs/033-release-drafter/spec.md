@@ -9,6 +9,12 @@
 
 ## User Scenarios & Testing *(mandatory)*
 
+## Clarifications
+
+### Session 2026-04-04
+
+- Q: release draft はどの契機で更新するか → A: `main` への `push` のみ
+
 ### User Story 1 - 次回リリースの下書きを自動更新したい (Priority: P1)
 
 リポジトリ管理者は、main へ変更が入るたびに、次回リリース向けの draft を自動で更新し、手で changelog をまとめ直す手間を減らしたい。
@@ -19,8 +25,8 @@
 
 **Acceptance Scenarios**:
 
-1. **Given** repository に main 向けの変更履歴がある, **When** release draft 更新処理が実行される, **Then** 次回リリース向けの draft が生成または更新される。
-2. **Given** 新しい pull request が main に取り込まれる, **When** release draft 更新処理が再実行される, **Then** draft へ新しい変更が反映される。
+1. **Given** repository に main 向けの変更履歴がある, **When** `main` への `push` を契機に release draft 更新処理が実行される, **Then** 次回リリース向けの draft が生成または更新される。
+2. **Given** 新しい pull request が main に取り込まれる, **When** merge 後の `main` への `push` を契機に release draft 更新処理が再実行される, **Then** draft へ新しい変更が反映される。
 
 ---
 
@@ -56,7 +62,7 @@
 
 - 分類対象外の pull request が含まれても、release draft 更新自体は止まらず、既定の扱いで一覧化されること。
 - release draft がまだ存在しない初回実行でも、新規 draft を作成できること。
-- release draft 更新対象でない branch や event では、不要な draft 更新を発生させないこと。
+- `main` への `push` 以外の branch や event では、不要な draft 更新を発生させないこと。
 
 ## Requirements *(mandatory)*
 
@@ -67,7 +73,7 @@
 - **FR-003**: Users MUST be able to repository 上で次回リリースの draft 内容を確認できなければならない。
 - **FR-004**: System MUST pull request の分類情報に応じて release draft 内の項目を整理しなければならない。
 - **FR-005**: System MUST 分類対象外の変更も release draft から欠落させず、既定の扱いで掲載しなければならない。
-- **FR-006**: System MUST release draft 更新の対象 branch または対象 event を限定し、不要な更新を避けなければならない。
+- **FR-006**: System MUST release draft 更新の対象を `main` への `push` に限定し、不要な更新を避けなければならない。
 - **FR-007**: System MUST repository 内文書で release draft の設定場所、更新契約、確認方法を案内しなければならない。
 
 ### Key Entities *(include if feature involves data)*
@@ -104,6 +110,7 @@
 
 - この repository は GitHub 上で運用され、pull request ベースで main へ変更が取り込まれる。
 - pull request には分類に使える label などの metadata を付与できる前提とする。
+- release draft 更新契機は `main` への `push` のみを対象とする。
 - 今回は release draft の維持までを対象とし、publish 操作の自動化は含めない。
 
 ## Documentation Impact
