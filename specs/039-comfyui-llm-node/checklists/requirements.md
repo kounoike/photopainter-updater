@@ -31,4 +31,4 @@
 
 ## Notes
 
-- 既存 custom node ライブラリへの追加、local 推論、JSON schema 検証、限定 retry、保存先環境変数の範囲を spec に反映済み。
+- 既存 custom node ライブラリへの追加、local 推論、生成時構造化制約、documented think 制御、限定 retry、保存先環境変数の範囲を spec に反映済み。
