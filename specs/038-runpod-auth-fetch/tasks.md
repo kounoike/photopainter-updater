@@ -25,9 +25,9 @@
 
 **CRITICAL**: この phase 完了まで user story 実装を開始しない
 
-- [ ] T002 `firmware/main/config.h` に `insecure` と `bearer_token` を含む `FirmwareConfig` 拡張方針を反映し、`specs/038-runpod-auth-fetch/data-model.md` と整合させる
-- [ ] T003 [P] `firmware/main/config.cc` に `http://` / `https://` 判定、`insecure` 正規化、`bearer_token` 検証を追加する設計を反映する
-- [ ] T004 [P] `firmware/main/display_update.h` と `firmware/main/display_update.cc` に認証ヘッダ付与と transport policy 受け渡しを追加する更新範囲を整理する
+- [ ] T002 `firmware/main/config.h` に `insecure` と `bearer_token` を含む `FirmwareConfig` の新規フィールド定義と関連関数宣言を追加し、`specs/038-runpod-auth-fetch/data-model.md` と整合させる
+- [ ] T003 [P] `firmware/main/config.cc` に `http://` / `https://` の URL scheme 検証、`insecure` の既定値 `false` 正規化、`bearer_token` の型不正・空文字検出を実装する
+- [ ] T004 [P] `firmware/main/display_update.h` と `firmware/main/display_update.cc` に `bearer_token` と HTTPS transport policy を受け取るダウンロード API 変更を実装する
 
 **Checkpoint**: config schema と HTTP client 設定責務が確定していること
 
@@ -65,7 +65,7 @@
 
 ### Implementation for User Story 2
 
-- [ ] T010 [US2] `firmware/main/display_update.cc` に certificate bundle を使う通常 HTTPS 経路と `insecure: true` の未検証 HTTPS 経路を両立する client 設定を実装する
+- [ ] T010 [US2] `firmware/main/display_update.cc` に certificate bundle を使う通常 HTTPS 経路と `insecure: true` の未検証 HTTPS 経路を両立する client 設定を実装し、BMP / binary 両経路で verified HTTPS を維持する
 - [ ] T011 [US2] `firmware/main/config.cc` と `firmware/main/update_job.cc` で `insecure` 未設定時を `false` として扱い、HTTP 回帰と安全側既定値を維持する
 - [ ] T012 [US2] `docs/firmware-http-epaper.md` に `bearer_token` と `insecure` を併用する外部 HTTPS 運用手順と注意点を追記する
 
