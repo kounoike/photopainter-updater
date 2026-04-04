@@ -29,8 +29,8 @@
 - Content-Type:
   - `text/plain; charset=utf-8`
 - Body expectations:
-  - server 稼働中であることが分かる短い文言を含む
-  - 画像状態や内部 profile 情報のような追加診断を必須にしない
+  - 本文は `hello`
+  - 画像状態や内部 profile 情報のような追加診断を含めない
 
 ## Error Handling Contract
 

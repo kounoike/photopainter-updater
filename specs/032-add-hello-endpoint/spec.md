@@ -9,6 +9,12 @@
 
 ## User Scenarios & Testing *(mandatory)*
 
+## Clarifications
+
+### Session 2026-04-04
+
+- Q: `/hello` は何を返して server 稼働を示すか → A: `text/plain` で `hello`
+
 ### User Story 1 - サーバ疎通をすぐ確認したい (Priority: P1)
 
 利用者は、画像ファイルの有無や変換結果に依存せず、HTTP サーバが起動して応答可能かを即座に確認したい。
@@ -19,8 +25,8 @@
 
 **Acceptance Scenarios**:
 
-1. **Given** HTTP サーバが起動している, **When** 利用者が `GET /hello` を実行する, **Then** サーバ稼働を示す成功応答を受け取れる。
-2. **Given** `image.png` が未配置または無効である, **When** 利用者が `GET /hello` を実行する, **Then** 画像状態に関係なく疎通確認用の成功応答を受け取れる。
+1. **Given** HTTP サーバが起動している, **When** 利用者が `GET /hello` を実行する, **Then** `text/plain` で `hello` を含む成功応答を受け取れる。
+2. **Given** `image.png` が未配置または無効である, **When** 利用者が `GET /hello` を実行する, **Then** 画像状態に関係なく `text/plain` で `hello` を返す成功応答を受け取れる。
 
 ---
 
@@ -61,7 +67,7 @@
 
 ### Functional Requirements
 
-- **FR-001**: System MUST `GET /hello` で HTTP サーバの稼働確認に使える成功応答を返さなければならない。
+- **FR-001**: System MUST `GET /hello` で `text/plain` の本文 `hello` を返し、HTTP サーバの稼働確認に使える成功応答を提供しなければならない。
 - **FR-002**: System MUST `/hello` の応答を画像ファイルの配置有無や画像変換状態に依存させてはならない。
 - **FR-003**: Users MUST be able to `/hello` だけで server の起動確認を完了できなければならない。
 - **FR-004**: System MUST `/hello` の追加によって既存の `/`、`/image.bmp`、`/image.bin`、`/upload` の期待挙動を変更してはならない。
@@ -93,7 +99,7 @@
 
 ### Measurable Outcomes
 
-- **SC-001**: 利用者は HTTP サーバ起動後 10 秒以内に `/hello` へのアクセス結果だけで疎通確認を完了できる。
+- **SC-001**: 利用者は HTTP サーバ起動後 10 秒以内に `/hello` へのアクセス結果として `text/plain` の `hello` を受け取り、疎通確認を完了できる。
 - **SC-002**: 画像入力が未配置または異常な状態でも、`/hello` は 100% 成功応答を返し、疎通確認に利用できる。
 - **SC-003**: `/hello` 追加後も、既存の主要 endpoint の回帰確認項目がすべて成功する。
 - **SC-004**: 利用文書を読んだ利用者が追加説明なしで `/hello` を使った動作確認手順を再現できる。

@@ -21,7 +21,7 @@
 - Fields:
   - `status`: 成功 status
   - `content_type`: text 系の応答種別
-  - `message`: server 稼働確認に使う固定メッセージ
+  - `message`: 固定値 `hello`
   - `depends_on_image_state`: 常に `false`
 - Validation:
   - 画像ファイルの有無や decode 成否に関係なく生成できること

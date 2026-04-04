@@ -14,9 +14,10 @@
 ## Decision 2: 応答は固定の成功メッセージを返す
 
 - Decision:
-  - `/hello` は利用者が一目で server 稼働を判断できる固定の成功メッセージを返す。
+  - `/hello` は `text/plain` の固定本文 `hello` を返す。
 - Rationale:
   - 動作確認 endpoint の目的は payload の多様性ではなく、到達性とサーバ稼働の即時判定である。
+  - 本文を `hello` に固定すると、README の確認例、route test、手動 `curl` 確認の期待値をぶらさずに済む。
   - 既存 `text_response` helper を使う設計に寄せると、応答生成とテストが単純になる。
 - Alternatives considered:
   - JSON 形式の診断情報を返す: 現行 server の他 endpoint と比べて過剰で、spec で要求されていない。

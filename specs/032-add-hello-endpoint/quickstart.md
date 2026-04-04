@@ -28,7 +28,7 @@ curl -i http://127.0.0.1:${SERVER_EXPOSE_PORT:-8000}/hello
 確認:
 
 - 成功 status が返る
-- server 稼働を判定できる短い文言が body に含まれる
+- body が `hello` である
 - この確認は `image.png` の有無に依存しない
 
 ## 3. 画像未配置でも `/hello` が使えることを確認する

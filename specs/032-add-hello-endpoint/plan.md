@@ -7,7 +7,7 @@
 
 ## Summary
 
-既存の Rust 製 HTTP サーバは画像取得用の `/`、`/image.bmp`、`/image.bin` と画像更新用の `POST /upload` を提供している。今回の feature では、画像ファイルの有無や変換状態に左右されない疎通確認用 endpoint として `GET /hello` を追加し、利用者が最小の確認手順でサーバ稼働を判定できるようにする。実装は既存 router と logging の流れに沿って最小変更で行い、not found 方針と既存 endpoint の契約は維持したまま、README と quickstart に `/hello` ベースの確認手順を追記する。
+既存の Rust 製 HTTP サーバは画像取得用の `/`、`/image.bmp`、`/image.bin` と画像更新用の `POST /upload` を提供している。今回の feature では、画像ファイルの有無や変換状態に左右されない疎通確認用 endpoint として `GET /hello` を追加し、利用者が `text/plain` の `hello` を受け取るだけでサーバ稼働を判定できるようにする。実装は既存 router と logging の流れに沿って最小変更で行い、not found 方針と既存 endpoint の契約は維持したまま、README と quickstart に `/hello` ベースの確認手順を追記する。
 
 ## Technical Context
 
@@ -65,7 +65,7 @@ server/
 ## Phase 0: Research Summary
 
 - `GET /hello` は画像変換パイプラインを通さない専用 handler とし、画像状態に左右されない疎通確認専用 route とする
-- 応答形式は既存 helper と同じ `text/plain` 系の成功応答に揃え、利用者とテストが 1 回の request で成功判定できるようにする
+- 応答形式は既存 helper と同じ `text/plain` に揃え、本文は固定文字列 `hello` として利用者とテストが 1 回の request で成功判定できるようにする
 - 既存 fallback は維持し、`/hello` だけを明示的 route として追加することで未定義 path の `404` 契約を壊さない
 - `GET` route と同じ logging 経路に載せ、`method`、`path`、`status`、`outcome` の記録方針を維持する
 - README と quickstart の起動確認は `/hello` を先頭導線に更新し、画像未配置時でも使える確認手順へ寄せる
@@ -75,7 +75,7 @@ server/
 ### Data Model Output
 
 - `HelloProbeRequest`: 利用者または運用者が `/hello` へ送る疎通確認 request
-- `HelloProbeResponse`: 稼働確認に使う成功レスポンス。画像状態に依存せず返せる固定メッセージを持つ
+- `HelloProbeResponse`: 稼働確認に使う成功レスポンス。画像状態に依存せず `hello` を返す
 - `AccessLogEvent`: 既存の request log 1 件。`/hello` 追加後も同じ構造で記録する
 - `RouteContractSet`: `/hello` と既存 route 群の共存条件。新 route が既存契約を変えないことを明示する
 
