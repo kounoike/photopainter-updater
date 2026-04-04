@@ -145,6 +145,8 @@ Use slash commands:
 - bind mount（`${COMFYUI_DATA_DIR:-./comfyui-data}` 配下の models / output / input / user 設定）、image に焼き込む repo 管理 custom node、`.env.example` (031-bake-custom-node)
 - Rust stable（edition 2024） + `axum` 0.8、Tokio、`tracing`、`tracing-subscriber`、既存 `http-bmp-server` crate 内の `routes.rs` / `response.rs` / `logging.rs` (032-add-hello-endpoint)
 - N/A（`/hello` 自体は永続化やファイル入出力を持たない） (032-add-hello-endpoint)
+- YAML（GitHub Actions workflow / release drafter 設定）、Markdown + GitHub Actions、Release Drafter、既存 GitHub repository 運用、pull request labels (033-release-drafter)
+- GitHub repository 内の workflow / 設定ファイル、永続 DB なし (033-release-drafter)
 
 ## Recent Changes
 - 002-add-run-script: Added Bash (POSIX shell) / Python 3 (実行環境) + Python 標準の HTTP 配信機能
