@@ -264,7 +264,7 @@ esp_err_t RunUpdate(UpdateTrigger trigger) {
              use_binary_path ? "binary" : "bmp");
 
     if (use_binary_path) {
-        err = DownloadBinaryFrameToDisplay(config.image_url, detail, sizeof(detail));
+        err = DownloadBinaryFrameToDisplay(config.image_url, config.bearer_token, config.insecure, detail, sizeof(detail));
         if (err != ESP_OK) {
             FailureCategory category =
                 (err == ESP_ERR_INVALID_RESPONSE || err == ESP_ERR_INVALID_SIZE || err == ESP_ERR_INVALID_CRC)
@@ -275,7 +275,8 @@ esp_err_t RunUpdate(UpdateTrigger trigger) {
         }
         ESP_LOGI(kTag, "Binary frame render completed");
     } else {
-        err = DownloadImageToSdCard(config.image_url, kImageCachePath, detail, sizeof(detail));
+        err = DownloadImageToSdCard(config.image_url, config.bearer_token, config.insecure, kImageCachePath, detail,
+                                    sizeof(detail));
         if (err != ESP_OK) {
             HandleFailure(trigger, FailureCategory::kHttpError, detail);
             return err;
