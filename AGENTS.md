@@ -152,6 +152,8 @@ Use slash commands:
 - Rust stable（edition 2024） + `axum` 0.8、Tokio、既存 `routes.rs` / `response.rs` / `logging.rs` (035-add-ping-endpoint)
 - N/A（`/ping` 自体は永続化やファイル入出力を持たない） (035-add-ping-endpoint)
 - Rust stable（edition 2024） + `axum` 0.8、Tokio、既存 `app.rs` / `config.rs` / `routes.rs` / `logging.rs` (036-health-port-listener)
+- Python 3.13（既存 ComfyUI image） + ComfyUI custom node backend API、`transformers`、`llama-cpp-python`、`jsonschema`、Python 標準ライブラリ (039-comfyui-llm-node)
+- ローカルファイル（ComfyUI container 内 model cache、必要に応じた bind mount 永続ディレクトリ） (039-comfyui-llm-node)
 
 ## Recent Changes
 - 002-add-run-script: Added Bash (POSIX shell) / Python 3 (実行環境) + Python 標準の HTTP 配信機能
