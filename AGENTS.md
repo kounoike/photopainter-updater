@@ -149,6 +149,8 @@ Use slash commands:
 - GitHub repository 内の workflow / 設定ファイル、永続 DB なし (033-release-drafter)
 - YAML（GitHub Actions workflow）、Markdown、既存 Dockerfile syntax + GitHub Actions、GitHub Releases event、GHCR、Docker Buildx、`docker/login-action`、`docker/metadata-action`、`docker/build-push-action` (034-ghcr-release-publish)
 - GitHub repository 内 workflow / publish target 定義 / 文書、GHCR 上の container image (034-ghcr-release-publish)
+- Rust stable（edition 2024） + `axum` 0.8、Tokio、既存 `routes.rs` / `response.rs` / `logging.rs` (035-add-ping-endpoint)
+- N/A（`/ping` 自体は永続化やファイル入出力を持たない） (035-add-ping-endpoint)
 
 ## Recent Changes
 - 002-add-run-script: Added Bash (POSIX shell) / Python 3 (実行環境) + Python 標準の HTTP 配信機能
