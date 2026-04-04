@@ -1,0 +1,12 @@
+registry: ghcr.io
+future_extension_policy: >-
+  Add another entry under targets with the same fields and set enabled to true
+  only when that image is intentionally included in release publishing.
+targets:
+  - name: server
+    enabled: true
+    build_context: ./server
+    dockerfile: ./server/Dockerfile
+    image_repository: photopainter-server
+    default_labels:
+      org.opencontainers.image.title: photopainter-server

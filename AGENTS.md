@@ -147,6 +147,8 @@ Use slash commands:
 - N/A（`/hello` 自体は永続化やファイル入出力を持たない） (032-add-hello-endpoint)
 - YAML（GitHub Actions workflow / release drafter 設定）、Markdown + GitHub Actions、Release Drafter、既存 GitHub repository 運用、pull request labels (033-release-drafter)
 - GitHub repository 内の workflow / 設定ファイル、永続 DB なし (033-release-drafter)
+- YAML（GitHub Actions workflow）、Markdown、既存 Dockerfile syntax + GitHub Actions、GitHub Releases event、GHCR、Docker Buildx、`docker/login-action`、`docker/metadata-action`、`docker/build-push-action` (034-ghcr-release-publish)
+- GitHub repository 内 workflow / publish target 定義 / 文書、GHCR 上の container image (034-ghcr-release-publish)
 
 ## Recent Changes
 - 002-add-run-script: Added Bash (POSIX shell) / Python 3 (実行環境) + Python 標準の HTTP 配信機能
