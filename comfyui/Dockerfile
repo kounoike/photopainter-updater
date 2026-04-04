@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-FROM python:3.13-slim-bookworm
+FROM python:3.12-slim-bookworm
 
 ARG COMFYUI_REPO=https://github.com/Comfy-Org/ComfyUI.git
 ARG COMFYUI_REF=v0.18.2
@@ -59,7 +59,9 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv pip install --system -r requirements.txt && \
     uv pip install --system -r manager_requirements.txt && \
     uv pip install --system "transformers<5" jsonschema lm-format-enforcer && \
-    CMAKE_ARGS="-DGGML_CUDA=on" FORCE_CMAKE=1 uv pip install --system llama-cpp-python && \
+    uv pip install --system \
+      --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu125 \
+      llama-cpp-python && \
     chmod +x /usr/local/bin/install-custom-nodes /usr/local/bin/photopainter-comfyui-entrypoint && \
     /usr/local/bin/install-custom-nodes
 
