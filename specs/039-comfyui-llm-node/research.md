@@ -16,14 +16,14 @@
 - backend ごとに別 node を作る: UI とテストが重複する
 - backend 判定を model 名の規約に埋め込む: 利用者に暗黙ルールを強いる
 
-## Decision 3: `think_mode` は共通列挙値 `off` / `generic` / `qwen` / `gemma` / `deepseek_r1` に限定し、prompt formatting preset として扱う
+## Decision 3: `think_mode` は共通列挙値を維持しつつ、family 固有 mode では documented control を優先する
 
-**Decision**: node の widget は backend 非依存の `think_mode` を持ち、`off`、`generic`、`qwen`、`gemma`、`deepseek_r1` の 5 値を初期対応とする。`think_mode` は backend 固有 API の切替ではなく、system/user prompt へ適用する prompt formatting preset として扱う。`generic` は family 固有最適化を持たない best-effort preset とする。  
-**Rationale**: user は family ごとの差異を明示的に制御したい一方、backend ごとの細かい proprietary flag を node contract に露出したくない。prompt formatting に寄せると `transformers` と `llama-cpp` の両方で同じ入力 contract を保てる。  
+**Decision**: node の widget は backend 非依存の `think_mode` を持ち、`off`、`generic`、`qwen`、`gemma`、`deepseek_r1` の 5 値を初期対応とする。ただし family 固有 mode は単なる prompt 文言ではなく、公開されている think 制御方法を優先して使う。`generic` は family 固有最適化を持たない best-effort mode とする。  
+**Rationale**: 実際の think 制御は model family ごとに異なり、共通 prompt 指示だけでは期待どおりに動かないことがある。共通 input contract を維持しつつ、内部では family 差分を吸収する方が利用者にも実装にも都合がよい。  
 **Alternatives considered**:
 - boolean のみ: family 差分を表現できない
-- backend ごとに別 widget や別 API にする: node contract が肥大化する
-- `granite` 等まで最初から広げる: adapter と test が増える
+- backend ごとに別 widget を持つ: node contract が肥大化する
+- すべて prompt formatting に寄せる: documented control を活かせない
 
 ## Decision 4: model 保存先は環境変数 `COMFYUI_LLM_MODEL_CACHE_DIR` を一次参照する
 
@@ -41,7 +41,15 @@
 - `llama-cpp` だけローカルファイル path を `model_id` に入れる: backend ごとに意味が変わりすぎる
 - `model_file` を持たない: 複数 GGUF repo の扱いが曖昧になる
 
-## Decision 5: JSON/schema 検証は `jsonschema` を使う
+## Decision 5: 構造化出力は generation-time constraint を優先する
+
+**Decision**: `json_output=true` の場合、JSON parse の後処理に頼るのではなく、出力生成時点で expected structure を満たす方向へ制約する。実装上は `lm-format-enforcer` を採用し、`transformers` を優先して導入する。  
+**Rationale**: 自由文をあとで parse / cleanup / retry するだけでは family 差や reasoning spill に引きずられやすい。構造化出力は generation-time constraint の方が責務が明確で、node 自前の heuristic を減らせる。  
+**Alternatives considered**:
+- parse 後 validation のみ: 自由文 cleanup が厚くなる
+- 別の高レベル抽象ライブラリへ全面移行する: node の実装面積が広がりやすい
+
+## Decision 6: schema 検証は `jsonschema` を使う
 
 **Decision**: `json_output=true` の場合はまず `json.loads()` を行い、`json_schema` が非空のときだけ `jsonschema` で検証する。  
 **Rationale**: schema 検証を自前実装すると node が厚くなりやすく、必須キー・型・追加プロパティなどの扱いで曖昧さが残る。依存追加は増えるが、責務を小さく維持できる。  
@@ -49,7 +57,7 @@
 - parse 成功だけを見る: schema 利用価値が下がる
 - 自前の最小 validator を書く: edge case と test が増える
 
-## Decision 6: retry は parse 失敗または schema 不一致だけに限定する
+## Decision 7: retry は parse 失敗または schema 不一致だけに限定する
 
 **Decision**: retry 対象は JSON parse 失敗と schema 不一致のみとし、上限は小さく固定できる設計にする。model load 失敗、OOM、backend import 失敗、未対応 `think_mode` は即失敗とする。  
 **Rationale**: local LLM の出力ぶれは retry で改善することがあるが、backend や model 自体の失敗は retry しても改善しにくい。対象を絞ることで node の責務過多を防げる。  
@@ -57,7 +65,7 @@
 - すべて retry する: 遅いだけで原因を隠す
 - retry を持たない: JSON mode の運用安定性が下がる
 
-## Decision 7: node は後続利用向けの単一 `STRING` 出力を持つ非終端 node とする
+## Decision 8: node は後続利用向けの単一 `STRING` 出力を持つ非終端 node とする
 
 **Decision**: node は output node にせず、成功時は単一の `STRING` 出力だけを返す通常 node とする。text mode では plain text、JSON mode では valid JSON string を返す。必要に応じて UI summary を付与し、失敗時は例外で workflow を止める。  
 **Rationale**: spec の主用途は prompt planner など後続ノードでの文字列再利用であり、出力契約は 1 本の方が workflow 接続と contract test が単純になる。  

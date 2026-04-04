@@ -41,7 +41,42 @@
 - 環境変数が設定されている場合、存在しない・書き込み不能 path は設定不備として扱う
 - backend は `resolved_root` を model 解決時に利用する
 
-## 3. LlmGenerationAttempt
+## 3. ThinkControlPlan
+
+| 項目 | 型 | 必須 | 説明 |
+|------|----|------|------|
+| `think_mode` | `enum` | 必須 | 選択された think mode |
+| `family` | `str \| None` | 条件付き | `model_id` から推定した model family |
+| `documented_control_available` | `bool` | 必須 | documented な think 制御方法を適用できるか |
+| `control_kind` | `str \| None` | 条件付き | chat template 引数、special token、system marker などの適用方式 |
+| `fallback_to_generic_prompt` | `bool` | 必須 | documented control がなく generic prompt に fallback したか |
+
+### Validation Rules
+
+- `generic` は `documented_control_available=false` でも許可する
+- family 固有 mode は、documented control がある場合はその方式を優先する
+- 未対応 family に対しては暗黙変換ではなく設定不備または未対応として扱う
+
+## 4. StructuredOutputContract
+
+| 項目 | 型 | 必須 | 説明 |
+|------|----|------|------|
+| `json_output` | `bool` | 必須 | JSON mode 有効フラグ |
+| `schema_source` | `enum` | 必須 | `none` または `inline_string` |
+| `schema_text` | `str \| None` | 条件付き | `json_schema` の中身 |
+| `constraint_enabled` | `bool` | 必須 | generation-time constraint を有効化したか |
+| `parsed_json` | `object \| None` | 条件付き | `json.loads()` 後の結果 |
+| `validation_passed` | `bool` | 必須 | constraint + parse + schema 検証の成否 |
+| `validation_error` | `str \| None` | 条件付き | parse または schema mismatch の要約 |
+
+### Validation Rules
+
+- `json_output=false` のとき `schema_source=none`
+- `json_output=true` かつ `json_schema` が空なら parse 成功のみで通す
+- `json_output=true` かつ `json_schema` が非空なら generation-time constraint と parse 成功後に schema 検証する
+- schema 自体が不正なら推論前に失敗する
+
+## 5. LlmGenerationAttempt
 
 | 項目 | 型 | 必須 | 説明 |
 |------|----|------|------|
@@ -60,25 +95,7 @@
 
 `failed` のうち `json_parse_error` と `schema_error` のみ次の `prepared` へ遷移できる。
 
-## 4. JsonValidationContract
-
-| 項目 | 型 | 必須 | 説明 |
-|------|----|------|------|
-| `json_output` | `bool` | 必須 | JSON mode 有効フラグ |
-| `schema_source` | `enum` | 必須 | `none` または `inline_string` |
-| `schema_text` | `str \| None` | 条件付き | `json_schema` の中身 |
-| `parsed_json` | `object \| None` | 条件付き | `json.loads()` 後の結果 |
-| `validation_passed` | `bool` | 必須 | parse + schema 検証の成否 |
-| `validation_error` | `str \| None` | 条件付き | parse または schema mismatch の要約 |
-
-### Validation Rules
-
-- `json_output=false` のとき `schema_source=none`
-- `json_output=true` かつ `json_schema` が空なら parse 成功のみで通す
-- `json_output=true` かつ `json_schema` が非空なら parse 成功後に schema 検証する
-- schema 自体が不正なら推論前に失敗する
-
-## 5. LlmGenerationResult
+## 6. LlmGenerationResult
 
 | 項目 | 型 | 必須 | 説明 |
 |------|----|------|------|
@@ -86,7 +103,7 @@
 | `ui_message` | `str` | 必須 | ComfyUI UI に表示する summary |
 | `attempt_count` | `int` | 必須 | 実行に使った総試行回数 |
 | `success` | `bool` | 必須 | 最終成功判定 |
-| `error_kind` | `str \| None` | 条件付き | `config_error` / `backend_error` / `json_parse_error` / `schema_error` |
+| `error_kind` | `str \| None` | 条件付き | `config_error` / `backend_error` / `json_parse_error` / `schema_error` / `think_mode_error` |
 
 ### Invariants
 

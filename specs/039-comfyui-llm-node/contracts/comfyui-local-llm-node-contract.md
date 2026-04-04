@@ -44,8 +44,9 @@
 ### Success Condition
 
 - backend 推論が成功する
+- documented think 制御が利用可能な family では、その制御が優先的に適用される
 - `json_output=false` の場合は文字列生成が成功する
-- `json_output=true` の場合は JSON parse が成功する
+- `json_output=true` の場合は generation-time structured output と JSON parse が成功する
 - `json_output=true` かつ `json_schema` 非空の場合は schema 検証にも成功する
 
 ### Success Result
@@ -73,6 +74,7 @@ node は単一 `STRING` を返す。
 | Failure Kind | Condition | Retry |
 |--------------|-----------|-------|
 | `config_error` | backend / `think_mode` 不正、schema 不正、環境変数 path 不正 | No |
+| `think_mode_error` | selected family に documented control がなく未対応として扱う場合 | No |
 | `backend_error` | import 失敗、model load 失敗、推論実行失敗 | No |
 | `json_parse_error` | `json_output=true` で JSON parse 不能 | Yes |
 | `schema_error` | schema 不一致 | Yes |
@@ -93,17 +95,23 @@ LLM failed: schema_error after 3 attempts
 
 | Value | Meaning |
 |------|---------|
-| `off` | 思考モード無効 |
-| `generic` | best-effort の汎用 thinking preset |
+| `off` | family ごとの documented control があれば思考モードを無効化する |
+| `generic` | best-effort の汎用 mode |
 | `qwen` | Qwen 系に対応する思考モード |
 | `gemma` | Gemma 系に対応する思考モード |
 | `deepseek_r1` | DeepSeek R1 系に対応する思考モード |
 
 - 上記 5 値のみ初期対応とする
-- `generic` は family 固有最適化を持たない best-effort preset であり、特定 model での thinking 挙動を保証しない
-- `think_mode` は backend 固有 API ではなく prompt formatting preset として扱う
+- `generic` は family 固有最適化を持たない best-effort mode であり、特定 model での thinking 挙動を保証しない
+- family 固有 mode は documented control を優先し、単なる prompt formatting を主手段にしない
 
-## 7. Out of Scope
+## 7. Structured Output Contract
+
+- `json_output=true` の場合、node は generation-time structured output を優先する
+- `json_schema` がある場合、node は schema 準拠の結果だけを成功扱いにする
+- 自由文 cleanup だけで JSON mode の成功を作ってはならない
+
+## 8. Out of Scope
 
 - 外部 HTTP endpoint 呼び出し
 - prompt planner 固有テンプレートの注入
