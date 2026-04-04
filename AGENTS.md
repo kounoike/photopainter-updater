@@ -151,6 +151,7 @@ Use slash commands:
 - GitHub repository 内 workflow / publish target 定義 / 文書、GHCR 上の container image (034-ghcr-release-publish)
 - Rust stable（edition 2024） + `axum` 0.8、Tokio、既存 `routes.rs` / `response.rs` / `logging.rs` (035-add-ping-endpoint)
 - N/A（`/ping` 自体は永続化やファイル入出力を持たない） (035-add-ping-endpoint)
+- Rust stable（edition 2024） + `axum` 0.8、Tokio、既存 `app.rs` / `config.rs` / `routes.rs` / `logging.rs` (036-health-port-listener)
 
 ## Recent Changes
 - 002-add-run-script: Added Bash (POSIX shell) / Python 3 (実行環境) + Python 標準の HTTP 配信機能

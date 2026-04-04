@@ -2,9 +2,11 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 use std::sync::atomic::AtomicU64;
 
-use crate::config::{BINARY_OUTPUT_NAME, OUTPUT_IMAGE_NAME, ServerConfig, UPLOAD_ROUTE_PATH};
+use crate::config::{
+    BINARY_OUTPUT_NAME, HealthListenerMode, OUTPUT_IMAGE_NAME, ServerConfig, UPLOAD_ROUTE_PATH,
+};
 use crate::logging::{AccessLogger, StdoutAccessLogger, init_tracing, log_startup_messages};
-use crate::routes::build_app;
+use crate::routes::{build_app, build_health_app};
 
 #[derive(Clone)]
 pub struct AppState {
@@ -56,6 +58,15 @@ pub fn startup_messages(config: &ServerConfig) -> Vec<String> {
         "off".to_string()
     };
     let port = config.port;
+    let health_listener = match config.health_listener_mode() {
+        HealthListenerMode::Disabled => "Health: disabled (use main /ping)".to_string(),
+        HealthListenerMode::SharedWithMain => {
+            format!("Health: shared with main listener on http://127.0.0.1:{port}/ping")
+        }
+        HealthListenerMode::Dedicated(health_port) => {
+            format!("Health: http://127.0.0.1:{health_port}/ping")
+        }
+    };
 
     vec![
         format!(
@@ -67,6 +78,7 @@ pub fn startup_messages(config: &ServerConfig) -> Vec<String> {
         format!("LAN:    use this host's IP address with port {port} from other devices"),
         format!("Binary: http://127.0.0.1:{port}/{BINARY_OUTPUT_NAME} for firmware clients"),
         format!("Upload: POST http://127.0.0.1:{port}{UPLOAD_ROUTE_PATH}"),
+        health_listener,
         format!(
             "Profile: {} ({})",
             config.render_options.profile.key(),
@@ -85,17 +97,91 @@ pub fn startup_messages(config: &ServerConfig) -> Vec<String> {
 pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
     init_tracing();
     let config = crate::config::ServerConfig::from_env().map_err(std::io::Error::other)?;
-    let address = SocketAddr::from(([0, 0, 0, 0], config.port));
-    let listener = tokio::net::TcpListener::bind(address).await?;
     let state = AppState::from_config(&config, Arc::new(StdoutAccessLogger));
 
     log_startup_messages(&startup_messages(&config));
 
-    axum::serve(
-        listener,
-        build_app(state).into_make_service_with_connect_info::<SocketAddr>(),
-    )
-    .await?;
+    let address = SocketAddr::from(([0, 0, 0, 0], config.port));
+    let listener = tokio::net::TcpListener::bind(address).await?;
+
+    match config.health_listener_mode() {
+        HealthListenerMode::Disabled | HealthListenerMode::SharedWithMain => {
+            axum::serve(
+                listener,
+                build_app(state).into_make_service_with_connect_info::<SocketAddr>(),
+            )
+            .await?;
+        }
+        HealthListenerMode::Dedicated(health_port) => {
+            let health_address = SocketAddr::from(([0, 0, 0, 0], health_port));
+            let health_listener = tokio::net::TcpListener::bind(health_address).await?;
+            let main_state = state.clone();
+            let health_state = state;
+            tokio::try_join!(
+                async {
+                    axum::serve(
+                        listener,
+                        build_app(main_state).into_make_service_with_connect_info::<SocketAddr>(),
+                    )
+                    .await
+                },
+                async {
+                    axum::serve(
+                        health_listener,
+                        build_health_app(health_state)
+                            .into_make_service_with_connect_info::<SocketAddr>(),
+                    )
+                    .await
+                }
+            )?;
+        }
+    }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::{CompareOptions, DitherOptions, ImageProfile, RenderOptions, SaturationMode};
+    use std::path::PathBuf;
+
+    fn test_config(port: u16, health_port: Option<u16>) -> ServerConfig {
+        ServerConfig {
+            port,
+            health_port,
+            content_dir: PathBuf::from("/tmp/content"),
+            render_options: RenderOptions {
+                profile: ImageProfile::Baseline,
+                dither_options: DitherOptions {
+                    use_lab: false,
+                    use_atkinson: false,
+                    use_zigzag: false,
+                    diffusion_rate: 1.0,
+                    saturation_mode: SaturationMode::Boosted,
+                    neutral_bias: 0.0,
+                    chroma_bias: 0.0,
+                    hue_guard: 0.0,
+                },
+                compare: CompareOptions {
+                    profile: None,
+                    split: crate::config::CompareSplit::Vertical,
+                },
+            },
+        }
+    }
+
+    #[test]
+    fn startup_messages_show_dedicated_health_port() {
+        let messages = startup_messages(&test_config(8000, Some(18000)));
+
+        assert!(messages.iter().any(|line| line.contains("Health: http://127.0.0.1:18000/ping")));
+    }
+
+    #[test]
+    fn startup_messages_show_shared_health_port() {
+        let messages = startup_messages(&test_config(8000, Some(8000)));
+
+        assert!(messages.iter().any(|line| line.contains("shared with main listener")));
+    }
 }

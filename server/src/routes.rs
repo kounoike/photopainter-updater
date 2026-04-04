@@ -28,6 +28,13 @@ pub fn build_app(state: AppState) -> Router {
         .with_state(state)
 }
 
+pub fn build_health_app(state: AppState) -> Router {
+    Router::new()
+        .route("/ping", get(serve_ping))
+        .fallback(any(serve_not_found))
+        .with_state(state)
+}
+
 async fn serve_ping(State(state): State<AppState>, request: Request) -> Response<Body> {
     let method = request.method().clone();
     let path = request.uri().path().to_string();
@@ -530,6 +537,43 @@ mod tests {
         assert_eq!(entries[1].outcome, LogOutcome::InputMissing);
 
         cleanup_dir(&missing_dir);
+    }
+
+    #[tokio::test]
+    async fn health_router_only_serves_ping() {
+        let dir = create_content_dir("health-router", &[(0, 0, [255, 0, 0])]);
+        let (state, logger) = test_state(dir.clone());
+        let router = build_health_app(state);
+
+        let ping = router
+            .clone()
+            .oneshot(request_with_remote(
+                "/ping",
+                "192.168.0.10:40103".parse().expect("remote addr"),
+            ))
+            .await
+            .expect("ping response");
+        let hello = router
+            .oneshot(request_with_remote(
+                "/hello",
+                "192.168.0.11:40104".parse().expect("remote addr"),
+            ))
+            .await
+            .expect("hello response");
+
+        assert_eq!(ping.status(), StatusCode::OK);
+        assert_eq!(response_body(ping).await, "");
+        assert_eq!(hello.status(), StatusCode::NOT_FOUND);
+        assert_eq!(response_body(hello).await, "route not found\n");
+
+        let entries = logged_entries(&logger);
+        assert_eq!(entries.len(), 2);
+        assert_eq!(entries[0].path, "/ping");
+        assert_eq!(entries[0].outcome, LogOutcome::Success);
+        assert_eq!(entries[1].path, "/hello");
+        assert_eq!(entries[1].outcome, LogOutcome::NotFound);
+
+        cleanup_dir(&dir);
     }
 
     #[tokio::test]

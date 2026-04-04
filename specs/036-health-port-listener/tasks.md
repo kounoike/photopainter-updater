@@ -15,7 +15,7 @@
 
 **Purpose**: `PORT_HEALTH` の契約と実装境界を固定する
 
-- [ ] T001 `specs/036-health-port-listener/spec.md`、`plan.md`、`contracts/health-port-contract.md` を照合し、未指定 / 同一 / 別 port の 3 パターンを実装前提として確定する
+- [X] T001 `specs/036-health-port-listener/spec.md`、`plan.md`、`contracts/health-port-contract.md` を照合し、未指定 / 同一 / 別 port の 3 パターンを実装前提として確定する
 
 ---
 
@@ -25,9 +25,9 @@
 
 **CRITICAL**: この phase 完了まで user story 実装を開始しない
 
-- [ ] T002 `server/src/config.rs` に `PORT_HEALTH` を追加する設計を反映し、config test の更新範囲を明確化する
-- [ ] T003 [P] `server/src/routes.rs` の main router と health-only router の分離方針を整理する
-- [ ] T004 [P] `server/src/app.rs` の listener 起動と startup message の分岐更新範囲を整理する
+- [X] T002 `server/src/config.rs` に `PORT_HEALTH` を追加する設計を反映し、config test の更新範囲を明確化する
+- [X] T003 [P] `server/src/routes.rs` の main router と health-only router の分離方針を整理する
+- [X] T004 [P] `server/src/app.rs` の listener 起動と startup message の分岐更新範囲を整理する
 
 **Checkpoint**: config / routes / app の責務分担が確定していること
 
@@ -41,15 +41,15 @@
 
 ### Verification for User Story 1
 
-- [ ] T005 [P] [US1] `PORT_HEALTH` が別値のとき dedicated health listener になる config / app test を `server/src/config.rs` と `server/src/app.rs` に追加する
-- [ ] T006 [US1] health-only router が `/ping` だけ成功し他 path は `404` になる route test を `server/src/routes.rs` に追加する
+- [X] T005 [P] [US1] `PORT_HEALTH` が別値のとき dedicated health listener になる config / app test を `server/src/config.rs` と `server/src/app.rs` に追加する
+- [X] T006 [US1] health-only router が `/ping` だけ成功し他 path は `404` になる route test を `server/src/routes.rs` に追加する
 
 ### Implementation for User Story 1
 
-- [ ] T007 [US1] `PORT_HEALTH` 設定を `server/src/config.rs` に実装する
-- [ ] T008 [US1] health-only router を `server/src/routes.rs` に実装する
-- [ ] T009 [US1] main listener と dedicated health listener を同時起動する処理を `server/src/app.rs` に実装する
-- [ ] T010 [US1] startup message に health port の listen 先を `server/src/app.rs` へ反映する
+- [X] T007 [US1] `PORT_HEALTH` 設定を `server/src/config.rs` に実装する
+- [X] T008 [US1] health-only router を `server/src/routes.rs` に実装する
+- [X] T009 [US1] main listener と dedicated health listener を同時起動する処理を `server/src/app.rs` に実装する
+- [X] T010 [US1] startup message に health port の listen 先を `server/src/app.rs` へ反映する
 
 **Checkpoint**: 別 port 時に health-only listener を独立検証できること
 
@@ -63,12 +63,12 @@
 
 ### Verification for User Story 2
 
-- [ ] T011 [P] [US2] `PORT_HEALTH == PORT` のとき shared mode になる test を `server/src/config.rs` と `server/src/app.rs` に追加する
+- [X] T011 [P] [US2] `PORT_HEALTH == PORT` のとき shared mode になる test を `server/src/config.rs` と `server/src/app.rs` に追加する
 
 ### Implementation for User Story 2
 
-- [ ] T012 [US2] `PORT_HEALTH == PORT` 時の追加 bind 抑止と startup message 分岐を `server/src/app.rs` に実装する
-- [ ] T013 [US2] shared mode でも main router 上の `/ping` 契約が維持されることを `server/src/routes.rs` と `server/src/app.rs` で担保する
+- [X] T012 [US2] `PORT_HEALTH == PORT` 時の追加 bind 抑止と startup message 分岐を `server/src/app.rs` に実装する
+- [X] T013 [US2] shared mode でも main router 上の `/ping` 契約が維持されることを `server/src/routes.rs` と `server/src/app.rs` で担保する
 
 **Checkpoint**: 同一 port 指定で起動失敗しないこと
 
@@ -82,13 +82,13 @@
 
 ### Verification for User Story 3
 
-- [ ] T014 [US3] `specs/036-health-port-listener/quickstart.md` に未指定 / 同一 / 別 port の確認手順を整理する
+- [X] T014 [US3] `specs/036-health-port-listener/quickstart.md` に未指定 / 同一 / 別 port の確認手順を整理する
 
 ### Implementation for User Story 3
 
-- [ ] T015 [US3] `server/README.md` に `PORT_HEALTH` の説明と `/ping` health-only listener の使い方を追記する
-- [ ] T016 [US3] `specs/036-health-port-listener/quickstart.md` に route 公開範囲と回帰確認観点を実装する
-- [ ] T017 [US3] 既存 `/hello`、`/`、`/image.bmp`、`/image.bin`、`/upload` 契約の回帰を `server/src/routes.rs` と `server/src/app.rs` で担保する
+- [X] T015 [US3] `server/README.md` に `PORT_HEALTH` の説明と `/ping` health-only listener の使い方を追記する
+- [X] T016 [US3] `specs/036-health-port-listener/quickstart.md` に route 公開範囲と回帰確認観点を実装する
+- [X] T017 [US3] 既存 `/hello`、`/`、`/image.bmp`、`/image.bin`、`/upload` 契約の回帰を `server/src/routes.rs` と `server/src/app.rs` で担保する
 
 **Checkpoint**: README だけで `PORT_HEALTH` の運用を理解できること
 
@@ -98,9 +98,9 @@
 
 **Purpose**: 最終整合と回帰確認を行う
 
-- [ ] T018 [P] `cargo test` を `server/` で実行し config / app / route 回帰が成功することを確認する
-- [ ] T019 `specs/036-health-port-listener/plan.md`、`contracts/health-port-contract.md`、`tasks.md` の記述整合を確認する
-- [ ] T020 `server/README.md` と `specs/036-health-port-listener/quickstart.md` の手順差分がないことを確認する
+- [X] T018 [P] `cargo test` を `server/` で実行し config / app / route 回帰が成功することを確認する
+- [X] T019 `specs/036-health-port-listener/plan.md`、`contracts/health-port-contract.md`、`tasks.md` の記述整合を確認する
+- [X] T020 `server/README.md` と `specs/036-health-port-listener/quickstart.md` の手順差分がないことを確認する
 
 ---
 

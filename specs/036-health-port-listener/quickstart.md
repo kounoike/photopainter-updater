@@ -6,6 +6,7 @@
 
 - `PORT` の main listener だけが起動する
 - `/ping` は main listener で使える
+- 既存 `/hello` と画像 route は従来どおり使える
 
 ## 2. `PORT_HEALTH` が `PORT` と異なる
 
@@ -14,6 +15,7 @@
 - `PORT` で既存 route 群を返す
 - `PORT_HEALTH` で `/ping` だけを返す
 - health port の未定義 path は `404` になる
+- `PORT_HEALTH` では `/hello` や `/image.bmp` は公開されない
 
 ## 3. `PORT_HEALTH` が `PORT` と同じ
 
@@ -21,6 +23,7 @@
 
 - 起動失敗しない
 - 追加 listener を起動せず main listener 上の `/ping` を使う
+- 二重 bind を試みない
 
 ## 4. 回帰確認
 
@@ -28,3 +31,4 @@
 
 - `/hello`、`/`、`/image.bmp`、`/image.bin`、`/upload` を維持する
 - `/ping` の response 契約は維持する
+- `cargo test` が成功する
