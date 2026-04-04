@@ -19,6 +19,7 @@ docker compose logs --tail=200 server
 ## 設定項目
 
 - `SERVER_EXPOSE_PORT`: host 側へ公開する HTTP ポート。既定値は `8000`
+- `PORT_HEALTH`: health-only listener 用 port。未指定時は無効、`PORT` と同じ値なら main listener の `/ping` を使う
 - `SERVER_CONTENT_DIR`: 入力画像 `image.png` を読む host 側ディレクトリ。既定値は `./server/contents`
 - `IMAGE_PROFILE`: `baseline` / `no-sat-boost` / `color-priority` / `hue-guard` / `color-priority-hue-guard`
 - `COMPARE_WITH_BASELINE`: `0/1` または `true/false`
@@ -87,6 +88,8 @@ curl -I http://127.0.0.1:${SERVER_EXPOSE_PORT:-8000}/image.bin
 - まず `GET /ping` が `200 OK` と空 body を返すことを確認する
 - まず `GET /hello` が `200 OK` と本文 `hello` を返すことを確認する
 - `/ping` は最小の到達性確認、`/hello` は本文付きの疎通確認として使い分けられる
+- `PORT_HEALTH` を `PORT` と異なる値で指定した場合、その port では `/ping` だけを返す health-only listener が起動する
+- `PORT_HEALTH` を未指定または `PORT` と同じ値にした場合、health check は main listener の `/ping` を使う
 - `image.png` が未配置でも `/hello` は疎通確認に使える
 - その後に `/image.bmp` や `/image.bin` を確認すると、server 疎通と画像処理の問題を切り分けやすい
 - 未定義 path は引き続き `404` と本文 `route not found` を返し、access log でも `not-found` として記録される

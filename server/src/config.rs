@@ -152,14 +152,24 @@ pub struct RenderOptions {
 #[derive(Clone, Debug, PartialEq)]
 pub struct ServerConfig {
     pub port: u16,
+    pub health_port: Option<u16>,
     pub content_dir: PathBuf,
     pub render_options: RenderOptions,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum HealthListenerMode {
+    Disabled,
+    SharedWithMain,
+    Dedicated(u16),
 }
 
 #[derive(Envconfig)]
 struct RawServerConfig {
     #[envconfig(from = "PORT", default = "8000")]
     port: String,
+    #[envconfig(from = "PORT_HEALTH")]
+    health_port: Option<String>,
     #[envconfig(from = "CONTENT_DIR")]
     content_dir: Option<String>,
     #[envconfig(from = "IMAGE_PROFILE", default = "baseline")]
@@ -188,6 +198,12 @@ impl ServerConfig {
             .port
             .parse::<u16>()
             .map_err(|_| "PORT は 0-65535 の数値で指定してください".to_string())?;
+        let health_port = match raw.health_port.as_deref().map(str::trim) {
+            Some("") | None => None,
+            Some(raw_health_port) => Some(raw_health_port.parse::<u16>().map_err(|_| {
+                "PORT_HEALTH は 0-65535 の数値で指定してください".to_string()
+            })?),
+        };
         let content_dir = raw
             .content_dir
             .map(PathBuf::from)
@@ -221,9 +237,18 @@ impl ServerConfig {
 
         Ok(Self {
             port,
+            health_port,
             content_dir,
             render_options,
         })
+    }
+
+    pub fn health_listener_mode(&self) -> HealthListenerMode {
+        match self.health_port {
+            None => HealthListenerMode::Disabled,
+            Some(port) if port == self.port => HealthListenerMode::SharedWithMain,
+            Some(port) => HealthListenerMode::Dedicated(port),
+        }
     }
 }
 
@@ -355,6 +380,7 @@ mod tests {
     fn config_uses_defaults_when_env_is_missing() {
         let _lock = env_lock().lock().expect("env lock");
         let _port = EnvGuard::unset("PORT");
+        let _health_port = EnvGuard::unset("PORT_HEALTH");
         let _content = EnvGuard::unset("CONTENT_DIR");
         let _profile = EnvGuard::unset("IMAGE_PROFILE");
         let _compare = EnvGuard::unset("COMPARE_WITH_BASELINE");
@@ -368,6 +394,8 @@ mod tests {
         let config = ServerConfig::from_env().expect("default config");
 
         assert_eq!(config.port, 8000);
+        assert_eq!(config.health_port, None);
+        assert_eq!(config.health_listener_mode(), HealthListenerMode::Disabled);
         assert_eq!(config.content_dir, default_content_dir());
         assert_eq!(config.render_options.profile, ImageProfile::Baseline);
         assert_eq!(
@@ -382,6 +410,7 @@ mod tests {
     fn config_uses_env_overrides() {
         let _lock = env_lock().lock().expect("env lock");
         let _port = EnvGuard::set("PORT", "8100");
+        let _health_port = EnvGuard::set("PORT_HEALTH", "8101");
         let _content = EnvGuard::set("CONTENT_DIR", "/tmp/override");
         let _profile = EnvGuard::set("IMAGE_PROFILE", "color-priority");
         let _compare = EnvGuard::set("COMPARE_WITH_BASELINE", "1");
@@ -395,6 +424,11 @@ mod tests {
         let config = ServerConfig::from_env().expect("env config");
 
         assert_eq!(config.port, 8100);
+        assert_eq!(config.health_port, Some(8101));
+        assert_eq!(
+            config.health_listener_mode(),
+            HealthListenerMode::Dedicated(8101)
+        );
         assert_eq!(config.content_dir, PathBuf::from("/tmp/override"));
         assert_eq!(config.render_options.profile, ImageProfile::ColorPriority);
         assert_eq!(
@@ -419,6 +453,28 @@ mod tests {
         let err = ServerConfig::from_env().expect_err("invalid port");
 
         assert!(err.contains("PORT"));
+    }
+
+    #[test]
+    fn invalid_health_port_is_rejected() {
+        let _lock = env_lock().lock().expect("env lock");
+        let _health_port = EnvGuard::set("PORT_HEALTH", "abc");
+
+        let err = ServerConfig::from_env().expect_err("invalid health port");
+
+        assert!(err.contains("PORT_HEALTH"));
+    }
+
+    #[test]
+    fn same_health_port_uses_shared_mode() {
+        let _lock = env_lock().lock().expect("env lock");
+        let _port = EnvGuard::set("PORT", "8200");
+        let _health_port = EnvGuard::set("PORT_HEALTH", "8200");
+
+        let config = ServerConfig::from_env().expect("shared mode config");
+
+        assert_eq!(config.health_port, Some(8200));
+        assert_eq!(config.health_listener_mode(), HealthListenerMode::SharedWithMain);
     }
 
     #[test]
