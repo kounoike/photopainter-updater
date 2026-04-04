@@ -8,6 +8,7 @@
 #include "GUI_BMPfile.h"
 #include "GUI_Paint.h"
 #include "epaper_port.h"
+#include "esp_crt_bundle.h"
 #include "esp_heap_caps.h"
 #include "esp_http_client.h"
 #include "esp_log.h"
@@ -50,6 +51,10 @@ void SetErrorDetail(char* buffer, size_t buffer_size, const char* message) {
         return;
     }
     snprintf(buffer, buffer_size, "%s", message);
+}
+
+bool IsHttpsUrl(const char* url) {
+    return url != nullptr && strncmp(url, "https://", 8) == 0;
 }
 
 esp_err_t HttpEventHandler(esp_http_client_event_t* evt) {
@@ -149,13 +154,17 @@ esp_err_t ValidateBinaryTransfer(char* error_detail, size_t error_detail_size) {
     return ESP_OK;
 }
 
-esp_err_t PerformHttpGet(const char* url, char* error_detail, size_t error_detail_size) {
+esp_err_t PerformHttpGet(const char* url, const char* bearer_token, bool insecure, char* error_detail,
+                        size_t error_detail_size) {
     esp_http_client_config_t config = {};
     config.url = url;
     config.timeout_ms = kHttpTimeoutMs;
     config.event_handler = HttpEventHandler;
     config.buffer_size = 4096;
     config.disable_auto_redirect = false;
+    if (IsHttpsUrl(url) && !insecure) {
+        config.crt_bundle_attach = esp_crt_bundle_attach;
+    }
 
     esp_http_client_handle_t client = esp_http_client_init(&config);
     if (client == nullptr) {
@@ -164,6 +173,11 @@ esp_err_t PerformHttpGet(const char* url, char* error_detail, size_t error_detai
     }
 
     esp_http_client_set_header(client, "Connection", "close");
+    if (bearer_token != nullptr && bearer_token[0] != '\0') {
+        char auth_header[540];
+        snprintf(auth_header, sizeof(auth_header), "Bearer %s", bearer_token);
+        esp_http_client_set_header(client, "Authorization", auth_header);
+    }
     esp_err_t err = esp_http_client_perform(client);
     int status_code = esp_http_client_get_status_code(client);
     esp_http_client_cleanup(client);
@@ -254,7 +268,8 @@ esp_err_t InitializeDisplayPipeline() {
     return ESP_OK;
 }
 
-esp_err_t DownloadImageToSdCard(const char* url, const char* output_path, char* error_detail, size_t error_detail_size) {
+esp_err_t DownloadImageToSdCard(const char* url, const char* bearer_token, bool insecure, const char* output_path,
+                                char* error_detail, size_t error_detail_size) {
     if (url == nullptr || output_path == nullptr) {
         SetErrorDetail(error_detail, error_detail_size, "invalid download arguments");
         return ESP_ERR_INVALID_ARG;
@@ -268,7 +283,7 @@ esp_err_t DownloadImageToSdCard(const char* url, const char* output_path, char* 
 
     s_http_bytes_written = 0;
     s_http_transfer_mode = HttpTransferMode::kFile;
-    esp_err_t err = PerformHttpGet(url, error_detail, error_detail_size);
+    esp_err_t err = PerformHttpGet(url, bearer_token, insecure, error_detail, error_detail_size);
 
     fclose(s_http_output);
     s_http_output = nullptr;
@@ -282,7 +297,8 @@ esp_err_t DownloadImageToSdCard(const char* url, const char* output_path, char* 
     return ESP_OK;
 }
 
-esp_err_t DownloadBinaryFrameToDisplay(const char* url, char* error_detail, size_t error_detail_size) {
+esp_err_t DownloadBinaryFrameToDisplay(const char* url, const char* bearer_token, bool insecure, char* error_detail,
+                                       size_t error_detail_size) {
     if (url == nullptr) {
         SetErrorDetail(error_detail, error_detail_size, "invalid binary download arguments");
         return ESP_ERR_INVALID_ARG;
@@ -299,7 +315,7 @@ esp_err_t DownloadBinaryFrameToDisplay(const char* url, char* error_detail, size
     s_http_transfer_mode = HttpTransferMode::kBinary;
     ResetBinaryTransferState();
 
-    esp_err_t err = PerformHttpGet(url, error_detail, error_detail_size);
+    esp_err_t err = PerformHttpGet(url, bearer_token, insecure, error_detail, error_detail_size);
     s_http_transfer_mode = HttpTransferMode::kNone;
     if (err != ESP_OK) {
         return err;

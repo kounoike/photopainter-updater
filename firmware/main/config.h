@@ -8,6 +8,8 @@ struct FirmwareConfig {
     char wifi_ssid[33];
     char wifi_password[65];
     char image_url[257];
+    char bearer_token[513];
+    bool insecure;
 };
 
 esp_err_t LoadConfigFromSdCard(const char* path, FirmwareConfig* out_config, char* error_detail, size_t error_detail_size);

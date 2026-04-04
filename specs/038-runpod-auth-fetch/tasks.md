@@ -15,7 +15,7 @@
 
 **Purpose**: 外部認証付き取得の契約と実装境界を固定する
 
-- [ ] T001 `specs/038-runpod-auth-fetch/spec.md`、`plan.md`、`contracts/authenticated-fetch-contract.md` を照合し、`bearer_token`・`insecure`・`https://` の前提を実装開始条件として確定する
+- [X] T001 `specs/038-runpod-auth-fetch/spec.md`、`plan.md`、`contracts/authenticated-fetch-contract.md` を照合し、`bearer_token`・`insecure`・`https://` の前提を実装開始条件として確定する
 
 ---
 
@@ -25,9 +25,9 @@
 
 **CRITICAL**: この phase 完了まで user story 実装を開始しない
 
-- [ ] T002 `firmware/main/config.h` に `insecure` と `bearer_token` を含む `FirmwareConfig` の新規フィールド定義と関連関数宣言を追加し、`specs/038-runpod-auth-fetch/data-model.md` と整合させる
-- [ ] T003 [P] `firmware/main/config.cc` に `http://` / `https://` の URL scheme 検証、`insecure` の既定値 `false` 正規化、`bearer_token` の型不正・空文字検出を実装する
-- [ ] T004 [P] `firmware/main/display_update.h` と `firmware/main/display_update.cc` に `bearer_token` と HTTPS transport policy を受け取るダウンロード API 変更を実装する
+- [X] T002 `firmware/main/config.h` に `insecure` と `bearer_token` を含む `FirmwareConfig` の新規フィールド定義と関連関数宣言を追加し、`specs/038-runpod-auth-fetch/data-model.md` と整合させる
+- [X] T003 [P] `firmware/main/config.cc` に `http://` / `https://` の URL scheme 検証、`insecure` の既定値 `false` 正規化、`bearer_token` の型不正・空文字検出を実装する
+- [X] T004 [P] `firmware/main/display_update.h` と `firmware/main/display_update.cc` に `bearer_token` と HTTPS transport policy を受け取るダウンロード API 変更を実装する
 
 **Checkpoint**: config schema と HTTP client 設定責務が確定していること
 
@@ -41,13 +41,13 @@
 
 ### Verification for User Story 1
 
-- [ ] T005 [US1] `specs/038-runpod-auth-fetch/quickstart.md` に Bearer 認証付き HTTPS 更新の確認手順を実装前提として整理する
+- [X] T005 [US1] `specs/038-runpod-auth-fetch/quickstart.md` に Bearer 認証付き HTTPS 更新の確認手順を実装前提として整理する
 
 ### Implementation for User Story 1
 
-- [ ] T006 [US1] `firmware/main/config.h` と `firmware/main/config.cc` に `bearer_token` 保持、`https://` 受理、空文字拒否を実装する
-- [ ] T007 [US1] `firmware/main/display_update.h` と `firmware/main/display_update.cc` に `Authorization: Bearer <token>` ヘッダ付与を実装する
-- [ ] T008 [US1] `firmware/main/update_job.cc` に認証設定を含む画像取得呼び出しを反映し、BMP / binary 両経路で Bearer 認証付き HTTPS を使えるようにする
+- [X] T006 [US1] `firmware/main/config.h` と `firmware/main/config.cc` に `bearer_token` 保持、`https://` 受理、空文字拒否を実装する
+- [X] T007 [US1] `firmware/main/display_update.h` と `firmware/main/display_update.cc` に `Authorization: Bearer <token>` ヘッダ付与を実装する
+- [X] T008 [US1] `firmware/main/update_job.cc` に認証設定を含む画像取得呼び出しを反映し、BMP / binary 両経路で Bearer 認証付き HTTPS を使えるようにする
 
 **Checkpoint**: Bearer 認証付き HTTPS 更新が独立して成功できること
 
@@ -61,13 +61,13 @@
 
 ### Verification for User Story 2
 
-- [ ] T009 [US2] `specs/038-runpod-auth-fetch/quickstart.md` に未検証 HTTPS と安全側既定値の確認手順を整理する
+- [X] T009 [US2] `specs/038-runpod-auth-fetch/quickstart.md` に未検証 HTTPS と安全側既定値の確認手順を整理する
 
 ### Implementation for User Story 2
 
-- [ ] T010 [US2] `firmware/main/display_update.cc` に certificate bundle を使う通常 HTTPS 経路と `insecure: true` の未検証 HTTPS 経路を両立する client 設定を実装し、BMP / binary 両経路で verified HTTPS を維持する
-- [ ] T011 [US2] `firmware/main/config.cc` と `firmware/main/update_job.cc` で `insecure` 未設定時を `false` として扱い、HTTP 回帰と安全側既定値を維持する
-- [ ] T012 [US2] `docs/firmware-http-epaper.md` に `bearer_token` と `insecure` を併用する外部 HTTPS 運用手順と注意点を追記する
+- [X] T010 [US2] `firmware/main/display_update.cc` に certificate bundle を使う通常 HTTPS 経路と `insecure: true` の未検証 HTTPS 経路を両立する client 設定を実装し、BMP / binary 両経路で verified HTTPS を維持する
+- [X] T011 [US2] `firmware/main/config.cc` と `firmware/main/update_job.cc` で `insecure` 未設定時を `false` として扱い、HTTP 回帰と安全側既定値を維持する
+- [X] T012 [US2] `docs/firmware-http-epaper.md` に `bearer_token` と `insecure` を併用する外部 HTTPS 運用手順と注意点を追記する
 
 **Checkpoint**: 未検証 HTTPS 例外設定と既定安全挙動が独立して確認できること
 
@@ -81,12 +81,12 @@
 
 ### Verification for User Story 3
 
-- [ ] T013 [US3] `specs/038-runpod-auth-fetch/quickstart.md` に設定不備と認証失敗の確認手順を整理する
+- [X] T013 [US3] `specs/038-runpod-auth-fetch/quickstart.md` に設定不備と認証失敗の確認手順を整理する
 
 ### Implementation for User Story 3
 
-- [ ] T014 [US3] `firmware/main/config.cc` に `bearer_token` 型不正、空文字、`insecure` 型不正の検出とエラー詳細生成を実装する
-- [ ] T015 [US3] `firmware/main/update_job.cc` と `docs/firmware-http-epaper.md` に config error、認証失敗、通信失敗の切り分け観点を反映する
+- [X] T014 [US3] `firmware/main/config.cc` に `bearer_token` 型不正、空文字、`insecure` 型不正の検出とエラー詳細生成を実装する
+- [X] T015 [US3] `firmware/main/update_job.cc` と `docs/firmware-http-epaper.md` に config error、認証失敗、通信失敗の切り分け観点を反映する
 
 **Checkpoint**: 設定不備と認証失敗が画像取得失敗全般と区別されること
 
@@ -96,9 +96,9 @@
 
 **Purpose**: 最終整合とビルド回帰確認を行う
 
-- [ ] T016 [P] `firmware/` で `idf.py build` を実行し、`firmware/main/config.*`、`display_update.*`、`update_job.cc` の変更がビルド可能であることを確認する
-- [ ] T017 `specs/038-runpod-auth-fetch/plan.md`、`contracts/authenticated-fetch-contract.md`、`tasks.md` の記述整合を確認する
-- [ ] T018 `docs/firmware-http-epaper.md` と `specs/038-runpod-auth-fetch/quickstart.md` の確認手順が一致することを確認する
+- [X] T016 [P] `firmware/` で `idf.py build` を実行し、`firmware/main/config.*`、`display_update.*`、`update_job.cc` の変更がビルド可能であることを確認する
+- [X] T017 `specs/038-runpod-auth-fetch/plan.md`、`contracts/authenticated-fetch-contract.md`、`tasks.md` の記述整合を確認する
+- [X] T018 `docs/firmware-http-epaper.md` と `specs/038-runpod-auth-fetch/quickstart.md` の確認手順が一致することを確認する
 
 ---
 
