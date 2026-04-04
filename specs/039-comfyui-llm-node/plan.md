@@ -73,7 +73,7 @@ compose.yml
 - `generic` は family 固有制御の代替ではなく best-effort mode として扱う
 - model 保存先は環境変数 `COMFYUI_LLM_MODEL_CACHE_DIR` を一次参照とし、未設定時は backend 既定保存先へ fallback する
 - `model_id` は Hugging Face Hub の `user/repo` を前提とし、`llama-cpp` では任意入力 `model_file` で repo 内 GGUF を補助指定できる
-- JSON/schema 検証は `jsonschema` を使い、構造化出力が要求された場合は `lm-format-enforcer` による generation-time constraint を優先する
+- JSON/schema 検証は `jsonschema` を使い、構造化出力が要求された場合は `lm-format-enforcer` による generation-time constraint を優先し、適用できない backend/path では明示 failure にする
 - retry は parse 失敗または schema 不一致に限って最大少数回とし、backend や model 自体の失敗は即失敗とする
 - node は文字列を後続へ渡す non-output node とし、成功時は単一 `STRING` を返し、失敗時は例外で workflow を止める
 

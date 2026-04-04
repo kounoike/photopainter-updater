@@ -110,6 +110,7 @@ LLM failed: schema_error after 3 attempts
 - `json_output=true` の場合、node は generation-time structured output を優先する
 - `json_schema` がある場合、node は schema 準拠の結果だけを成功扱いにする
 - 自由文 cleanup だけで JSON mode の成功を作ってはならない
+- 選択された backend または model 解決経路で constraint を適用できない場合、node は明示 failure を返さなければならない
 
 ## 8. Out of Scope
 

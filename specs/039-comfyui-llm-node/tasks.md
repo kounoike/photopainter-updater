@@ -66,12 +66,12 @@
 ### Verification for User Story 2
 
 - [ ] T013 [US2] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_contract.py` に `json_output`、`json_schema`、単一 `STRING` 出力、structured output 契約の検証を追加する
-- [ ] T014 [US2] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` に constrained JSON 成功、schema 成功、schema 不正、constraint なし text mode 非適用を検証する unit test を追加する
+- [ ] T014 [US2] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` に constrained JSON 成功、schema 成功、schema 不正、constraint 非対応 backend/path の明示 failure、constraint なし text mode 非適用を検証する unit test を追加する
 - [ ] T015 [US2] `specs/039-comfyui-llm-node/quickstart.md` に JSON mode、schema 指定、generation-time constraint の確認手順を反映する
 
 ### Implementation for User Story 2
 
-- [ ] T016 [US2] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に `lm-format-enforcer` を使った `transformers` 向け generation-time structured output 経路を実装する
+- [ ] T016 [US2] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に `lm-format-enforcer` を使った generation-time structured output helper を実装し、対応 backend/path ではそれを使い、非対応経路では明示 failure にする
 - [ ] T017 [US2] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に `json_output=true` 時の JSON parse、`json_schema` parse、`jsonschema` validation、成功時の単一 `STRING` 返却を実装する
 - [ ] T018 [US2] `comfyui/custom_node/comfyui-photopainter-custom/README.md` に JSON mode、schema 指定、structured output 制約、成功条件を追記する
 
