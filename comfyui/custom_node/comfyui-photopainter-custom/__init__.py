@@ -690,6 +690,7 @@ def _run_llama_cpp_generation(
 
     kwargs: dict[str, Any] = {
         "repo_id": config.model_id,
+        "n_ctx": 0,
         "n_gpu_layers": -1,
         "verbose": False,
     }
