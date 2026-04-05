@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import gc
 import json
 import os
 import re
@@ -622,6 +623,10 @@ def _run_transformers_generation(
     messages: list[dict[str, str]],
 ) -> str:
     torch, AutoModelForCausalLM, AutoTokenizer = _load_transformers_modules()
+    tokenizer = None
+    model = None
+    inputs = None
+    generated = None
 
     try:
         tokenizer = AutoTokenizer.from_pretrained(
@@ -638,47 +643,56 @@ def _run_transformers_generation(
     except Exception as exc:
         raise _backend_error(f"failed to load transformers model: {exc}") from exc
 
-    prompt_text = _apply_transformers_chat_template(tokenizer, messages, think_plan)
-    inputs = tokenizer(prompt_text, return_tensors="pt")
-    context_window = _infer_transformers_context_window(model, tokenizer)
-
-    hf_device_map = getattr(model, "hf_device_map", None)
-    if hf_device_map is None:
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        if hasattr(model, "to"):
-            model.to(device)
-        inputs = {name: tensor.to(device) for name, tensor in inputs.items()}
-
-    generate_kwargs: dict[str, Any] = {
-        "max_new_tokens": config.max_tokens,
-        "do_sample": config.temperature > 0,
-    }
-    if config.temperature > 0:
-        generate_kwargs["temperature"] = config.temperature
-    if context_window is not None and (inputs["input_ids"].shape[-1] + config.max_tokens) > context_window:
-        raise _backend_error(
-            f"requested tokens ({inputs['input_ids'].shape[-1] + config.max_tokens}) exceed model context window of {context_window}"
-        )
-
-    parser = _build_structured_output_parser(config, structured_output_plan)
-    if parser is not None:
-        build_prefix_allowed_tokens_fn = _load_lmfe_transformers_builder()
-        try:
-            generate_kwargs["prefix_allowed_tokens_fn"] = build_prefix_allowed_tokens_fn(tokenizer, parser)
-        except Exception as exc:
-            raise _backend_error(f"failed to configure transformers structured output: {exc}") from exc
-
     try:
-        generated = model.generate(**inputs, **generate_kwargs)
-    except Exception as exc:
-        raise _backend_error(f"transformers generation failed: {exc}") from exc
+        prompt_text = _apply_transformers_chat_template(tokenizer, messages, think_plan)
+        inputs = tokenizer(prompt_text, return_tensors="pt")
+        context_window = _infer_transformers_context_window(model, tokenizer)
 
-    prompt_length = inputs["input_ids"].shape[-1]
-    output_tokens = generated[0][prompt_length:]
-    output_text = tokenizer.decode(output_tokens, skip_special_tokens=True).strip()
-    if not output_text:
-        raise _backend_error("transformers generation returned empty output")
-    return output_text
+        hf_device_map = getattr(model, "hf_device_map", None)
+        if hf_device_map is None:
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+            if hasattr(model, "to"):
+                model.to(device)
+            inputs = {name: tensor.to(device) for name, tensor in inputs.items()}
+
+        generate_kwargs: dict[str, Any] = {
+            "max_new_tokens": config.max_tokens,
+            "do_sample": config.temperature > 0,
+        }
+        if config.temperature > 0:
+            generate_kwargs["temperature"] = config.temperature
+        if context_window is not None and (inputs["input_ids"].shape[-1] + config.max_tokens) > context_window:
+            raise _backend_error(
+                f"requested tokens ({inputs['input_ids'].shape[-1] + config.max_tokens}) exceed model context window of {context_window}"
+            )
+
+        parser = _build_structured_output_parser(config, structured_output_plan)
+        if parser is not None:
+            build_prefix_allowed_tokens_fn = _load_lmfe_transformers_builder()
+            try:
+                generate_kwargs["prefix_allowed_tokens_fn"] = build_prefix_allowed_tokens_fn(tokenizer, parser)
+            except Exception as exc:
+                raise _backend_error(f"failed to configure transformers structured output: {exc}") from exc
+
+        try:
+            generated = model.generate(**inputs, **generate_kwargs)
+        except Exception as exc:
+            raise _backend_error(f"transformers generation failed: {exc}") from exc
+
+        prompt_length = inputs["input_ids"].shape[-1]
+        output_tokens = generated[0][prompt_length:]
+        output_text = tokenizer.decode(output_tokens, skip_special_tokens=True).strip()
+        if not output_text:
+            raise _backend_error("transformers generation returned empty output")
+        return output_text
+    finally:
+        del generated
+        del inputs
+        del model
+        del tokenizer
+        gc.collect()
+        if torch.cuda.is_available() and hasattr(torch.cuda, "empty_cache"):
+            torch.cuda.empty_cache()
 
 
 def _extract_llama_content(response: object) -> str:
@@ -722,6 +736,7 @@ def _run_llama_cpp_generation(
     messages: list[dict[str, str]],
 ) -> str:
     Llama = _load_llama_cpp_module()
+    llm = None
 
     kwargs: dict[str, Any] = {
         "repo_id": config.model_id,
@@ -754,6 +769,7 @@ def _run_llama_cpp_generation(
         except Exception as exc:
             raise _backend_error(f"failed to configure llama-cpp structured output: {exc}") from exc
 
+    response = None
     try:
         if context_window is not None:
             prompt_text = _render_messages_as_text(messages)
@@ -764,9 +780,13 @@ def _run_llama_cpp_generation(
                     f"requested tokens ({requested}) exceed model context window of {context_window}"
                 )
         response = llm.create_chat_completion(**create_kwargs)
+        return _extract_llama_content(response)
     except Exception as exc:
         raise _backend_error(f"llama-cpp generation failed: {exc}") from exc
-    return _extract_llama_content(response)
+    finally:
+        del response
+        del llm
+        gc.collect()
 
 
 def _run_generation_attempt(config: LlmNodeConfig, retry_feedback: str | None = None) -> str:
