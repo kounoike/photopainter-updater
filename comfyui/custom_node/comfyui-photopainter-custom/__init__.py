@@ -823,15 +823,13 @@ class PhotopainterLlmGenerate:
                 "user_prompt": ("STRING", {"default": "", "multiline": True}),
                 "backend": (list(SUPPORTED_BACKENDS),),
                 "model_id": ("STRING", {"default": "Qwen/Qwen3.5-4B", "multiline": False}),
+                "model_file": ("STRING", {"default": "", "multiline": False}),
                 "think_mode": (list(SUPPORTED_THINK_MODES),),
                 "json_output": ("BOOLEAN", {"default": False}),
+                "json_schema": ("STRING", {"default": "", "multiline": True}),
                 "max_retries": ("INT", {"default": 1, "min": 0, "max": 5}),
                 "temperature": ("FLOAT", {"default": 1.0, "min": 0.0, "step": 0.1}),
                 "max_tokens": ("INT", {"default": 2048, "min": 1, "max": 8192}),
-            },
-            "optional": {
-                "model_file": ("STRING", {"default": "", "multiline": False}),
-                "json_schema": ("STRING", {"default": "", "multiline": True}),
             },
         }
 

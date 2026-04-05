@@ -97,13 +97,12 @@ class ContractTests(unittest.TestCase):
 
         input_types = node.INPUT_TYPES()
         required = input_types["required"]
-        optional = input_types["optional"]
         self.assertEqual(required["backend"][0], list(self.module.SUPPORTED_BACKENDS))
         self.assertEqual(required["think_mode"][0], list(self.module.SUPPORTED_THINK_MODES))
         self.assertEqual(required["temperature"][1]["default"], 1.0)
         self.assertEqual(required["max_tokens"][1]["default"], 2048)
-        self.assertIn("model_file", optional)
-        self.assertIn("json_schema", optional)
+        self.assertIn("model_file", required)
+        self.assertIn("json_schema", required)
 
     def test_llm_cache_env_contract(self):
         temp_dir = MODULE_PATH.parent / "tmp-cache"
