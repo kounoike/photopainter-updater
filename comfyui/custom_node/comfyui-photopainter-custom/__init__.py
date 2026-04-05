@@ -41,7 +41,6 @@ class LlmNodeConfig:
     max_retries: int
     temperature: float
     max_tokens: int
-    max_context: int
     cache_dir: str | None
 
 
@@ -301,16 +300,6 @@ def _normalize_max_tokens(value: object) -> int:
     return max_tokens
 
 
-def _normalize_max_context(value: object) -> int:
-    try:
-        max_context = int(value)
-    except (TypeError, ValueError) as exc:
-        raise _config_error("max_context must be an integer") from exc
-    if max_context < 0:
-        raise _config_error("max_context must be >= 0")
-    return max_context
-
-
 def _resolve_llm_cache_dir() -> str | None:
     configured = os.environ.get(LLM_CACHE_DIR_ENV, "").strip()
     if not configured:
@@ -474,7 +463,6 @@ def _build_llm_config(
     max_retries: object,
     temperature: object,
     max_tokens: object,
-    max_context: object,
 ) -> LlmNodeConfig:
     normalized_backend = _normalize_backend(backend)
     normalized_model_id = _normalize_hf_repo_id(model_id)
@@ -487,7 +475,6 @@ def _build_llm_config(
     normalized_retries = _normalize_max_retries(max_retries)
     normalized_temperature = _normalize_temperature(temperature)
     normalized_max_tokens = _normalize_max_tokens(max_tokens)
-    normalized_max_context = _normalize_max_context(max_context)
     cache_dir = _resolve_llm_cache_dir()
 
     parsed_schema = None
@@ -507,7 +494,6 @@ def _build_llm_config(
         max_retries=normalized_retries,
         temperature=normalized_temperature,
         max_tokens=normalized_max_tokens,
-        max_context=normalized_max_context,
         cache_dir=cache_dir,
     )
 
@@ -559,6 +545,33 @@ def _build_structured_output_parser(
         return JsonSchemaParser(structured_output_plan.schema)
     except Exception as exc:
         raise _backend_error(f"failed to initialize structured output parser: {exc}") from exc
+
+
+def _infer_transformers_context_window(model: Any, tokenizer: Any) -> int | None:
+    config = getattr(model, "config", None)
+    for attr in ("max_position_embeddings", "n_positions", "max_seq_len", "seq_length"):
+        value = getattr(config, attr, None) if config is not None else None
+        if isinstance(value, int) and value > 0:
+            return value
+
+    tokenizer_value = getattr(tokenizer, "model_max_length", None)
+    if isinstance(tokenizer_value, int) and 0 < tokenizer_value < 10_000_000:
+        return tokenizer_value
+    return None
+
+
+def _infer_llama_cpp_context_window(llm: Any) -> int | None:
+    candidate = getattr(llm, "n_ctx", None)
+    if callable(candidate):
+        try:
+            value = candidate()
+        except Exception:
+            value = None
+    else:
+        value = candidate
+    if isinstance(value, int) and value > 0:
+        return value
+    return None
 
 
 def _apply_transformers_chat_template(
@@ -613,6 +626,7 @@ def _run_transformers_generation(
 
     prompt_text = _apply_transformers_chat_template(tokenizer, messages, think_plan)
     inputs = tokenizer(prompt_text, return_tensors="pt")
+    context_window = _infer_transformers_context_window(model, tokenizer)
 
     hf_device_map = getattr(model, "hf_device_map", None)
     if hf_device_map is None:
@@ -627,6 +641,10 @@ def _run_transformers_generation(
     }
     if config.temperature > 0:
         generate_kwargs["temperature"] = config.temperature
+    if context_window is not None and (inputs["input_ids"].shape[-1] + config.max_tokens) > context_window:
+        raise _backend_error(
+            f"requested tokens ({inputs['input_ids'].shape[-1] + config.max_tokens}) exceed model context window of {context_window}"
+        )
 
     parser = _build_structured_output_parser(config, structured_output_plan)
     if parser is not None:
@@ -672,7 +690,6 @@ def _run_llama_cpp_generation(
 
     kwargs: dict[str, Any] = {
         "repo_id": config.model_id,
-        "n_ctx": config.max_context,
         "n_gpu_layers": -1,
         "verbose": False,
     }
@@ -685,6 +702,7 @@ def _run_llama_cpp_generation(
         llm = Llama.from_pretrained(**kwargs)
     except Exception as exc:
         raise _backend_error(f"failed to load llama-cpp model: {exc}") from exc
+    context_window = _infer_llama_cpp_context_window(llm)
 
     create_kwargs: dict[str, Any] = {
         "messages": messages,
@@ -701,6 +719,14 @@ def _run_llama_cpp_generation(
             raise _backend_error(f"failed to configure llama-cpp structured output: {exc}") from exc
 
     try:
+        if context_window is not None:
+            prompt_text = _render_messages_as_text(messages)
+            prompt_tokens = llm.tokenize(prompt_text.encode("utf-8"), add_bos=False)
+            requested = len(prompt_tokens) + config.max_tokens
+            if requested > context_window:
+                raise _backend_error(
+                    f"requested tokens ({requested}) exceed model context window of {context_window}"
+                )
         response = llm.create_chat_completion(**create_kwargs)
     except Exception as exc:
         raise _backend_error(f"llama-cpp generation failed: {exc}") from exc
@@ -801,7 +827,6 @@ class PhotopainterLlmGenerate:
                 "max_retries": ("INT", {"default": 1, "min": 0, "max": 5}),
                 "temperature": ("FLOAT", {"default": 1.0, "min": 0.0, "step": 0.1}),
                 "max_tokens": ("INT", {"default": 2048, "min": 1, "max": 8192}),
-                "max_context": ("INT", {"default": 0, "min": 0, "max": 131072}),
             },
             "optional": {
                 "model_file": ("STRING", {"default": "", "multiline": False}),
@@ -826,7 +851,6 @@ class PhotopainterLlmGenerate:
         max_retries,
         temperature,
         max_tokens,
-        max_context,
         model_file="",
         json_schema="",
     ):
@@ -842,7 +866,6 @@ class PhotopainterLlmGenerate:
             max_retries=max_retries,
             temperature=temperature,
             max_tokens=max_tokens,
-            max_context=max_context,
         )
         output_text, attempts = _generate_llm_output(config)
         summary = (

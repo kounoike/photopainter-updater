@@ -123,6 +123,7 @@ class FakeTorchModule:
 class FakeTokenizer:
     def __init__(self):
         self.chat_template_calls = []
+        self.model_max_length = 4096
 
     def apply_chat_template(self, messages, **kwargs):
         self.chat_template_calls.append(kwargs)
@@ -147,6 +148,7 @@ class FakeModel:
         self.hf_device_map = None
         self.to_device = None
         self.generate_calls = []
+        self.config = type("Config", (), {"max_position_embeddings": 4096})()
 
     def to(self, device):
         self.to_device = device
@@ -180,6 +182,13 @@ class FakeAutoModel:
 class FakeLlamaInstance:
     def __init__(self):
         self.calls = []
+        self._n_ctx = 4096
+
+    def n_ctx(self):
+        return self._n_ctx
+
+    def tokenize(self, data, add_bos=False):
+        return [1, 2, 3]
 
     def create_chat_completion(self, **kwargs):
         self.calls.append(kwargs)
@@ -264,7 +273,6 @@ class NodeLogicTests(unittest.TestCase):
                 max_retries=1,
                 temperature=1.0,
                 max_tokens=32,
-                max_context=0,
             )
 
     def test_invalid_schema_is_rejected_before_generation(self):
@@ -281,7 +289,6 @@ class NodeLogicTests(unittest.TestCase):
                 1,
                 1.0,
                 32,
-                0,
                 json_schema='{"type":"array"}',
             )
 
@@ -304,7 +311,6 @@ class NodeLogicTests(unittest.TestCase):
             1,
             1.0,
             32,
-            0,
         )
 
         self.assertEqual(result["result"], ("hello from llm",))
@@ -325,7 +331,6 @@ class NodeLogicTests(unittest.TestCase):
             1,
             1.0,
             32,
-            0,
             json_schema=json.dumps(
                 {
                     "type": "object",
@@ -353,7 +358,6 @@ class NodeLogicTests(unittest.TestCase):
             max_retries=1,
             temperature=1.0,
             max_tokens=32,
-            max_context=0,
         )
         plan = self.module._resolve_think_control(config)
 
@@ -373,7 +377,6 @@ class NodeLogicTests(unittest.TestCase):
             max_retries=1,
             temperature=1.0,
             max_tokens=32,
-            max_context=0,
         )
         with self.assertRaisesRegex(RuntimeError, r"think_mode_error: qwen think_mode requires a Qwen family model"):
             self.module._resolve_think_control(config)
@@ -391,7 +394,6 @@ class NodeLogicTests(unittest.TestCase):
             max_retries=1,
             temperature=1.0,
             max_tokens=32,
-            max_context=0,
         )
         plan = self.module._resolve_think_control(config)
         messages = self.module._build_messages(config, plan)
@@ -410,7 +412,6 @@ class NodeLogicTests(unittest.TestCase):
             max_retries=1,
             temperature=1.0,
             max_tokens=32,
-            max_context=0,
         )
         plan = self.module._resolve_think_control(config)
         self.assertEqual(plan.family, "deepseek_r1")
@@ -437,7 +438,6 @@ class NodeLogicTests(unittest.TestCase):
             max_retries=1,
             temperature=1.0,
             max_tokens=32,
-            max_context=0,
         )
 
         output, attempts_used = self.module._generate_llm_output(config)
@@ -459,7 +459,6 @@ class NodeLogicTests(unittest.TestCase):
             max_retries=1,
             temperature=1.0,
             max_tokens=32,
-            max_context=0,
         )
 
         with self.assertRaisesRegex(RuntimeError, r"schema_error: 'positive_prompt' is a required property"):
@@ -481,7 +480,6 @@ class NodeLogicTests(unittest.TestCase):
             max_retries=3,
             temperature=1.0,
             max_tokens=32,
-            max_context=0,
         )
 
         with self.assertRaisesRegex(RuntimeError, r"backend_error: model load failed"):
@@ -501,7 +499,6 @@ class NodeLogicTests(unittest.TestCase):
             max_retries=0,
             temperature=1.0,
             max_tokens=16,
-            max_context=0,
         )
         plan = self.module._resolve_think_control(config)
         messages = self.module._build_messages(config, plan)
@@ -534,7 +531,6 @@ class NodeLogicTests(unittest.TestCase):
             max_retries=0,
             temperature=1.0,
             max_tokens=16,
-            max_context=0,
         )
         plan = self.module._resolve_think_control(config)
         messages = self.module._build_messages(config, plan)
@@ -571,7 +567,6 @@ class NodeLogicTests(unittest.TestCase):
             max_retries=0,
             temperature=1.0,
             max_tokens=16,
-            max_context=0,
         )
         plan = self.module._resolve_think_control(config)
         messages = self.module._build_messages(config, plan)
@@ -601,7 +596,6 @@ class NodeLogicTests(unittest.TestCase):
             max_retries=0,
             temperature=1.0,
             max_tokens=16,
-            max_context=0,
         )
         plan = self.module._resolve_think_control(config)
         messages = self.module._build_messages(config, plan)
