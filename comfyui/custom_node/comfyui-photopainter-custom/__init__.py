@@ -24,7 +24,7 @@ HF_REPO_ID_PATTERN = re.compile(r"^[A-Za-z0-9][\w.-]*/[\w.-]+$")
 
 GENERIC_THINK_PROMPT = "Think carefully before answering, but return only the final answer."
 DEEPSEEK_R1_THINK_PROMPT = "Use a DeepSeek-R1-style reasoning pass internally, then return only the final answer."
-FINAL_ONLY_PROMPT = "Return only the final answer."
+FINAL_ONLY_PROMPT = "Return only the final answer. Do not output any reasoning or thinking content."
 
 
 @dataclass(frozen=True)
@@ -680,6 +680,22 @@ def _extract_llama_content(response: object) -> str:
     return normalized
 
 
+def _sanitize_generation_output(config: LlmNodeConfig, output_text: str) -> str:
+    normalized = output_text.strip()
+    family = _detect_model_family(config.model_id)
+
+    if family == "qwen":
+        if "</think>" in normalized:
+            final = normalized.rsplit("</think>", 1)[-1].strip()
+            if final:
+                return final
+            raise _backend_error("generation returned only a qwen think block without final content")
+        if normalized.startswith("<think>"):
+            raise _backend_error("generation returned an incomplete qwen think block without final content")
+
+    return normalized
+
+
 def _run_llama_cpp_generation(
     config: LlmNodeConfig,
     think_plan: ThinkControlPlan,
@@ -754,7 +770,7 @@ def _retry_feedback(attempt: int, error_kind: str, detail: str) -> str:
 
 
 def _validate_generation_output(config: LlmNodeConfig, output_text: str) -> str:
-    normalized = output_text.strip()
+    normalized = _sanitize_generation_output(config, output_text)
     if not normalized:
         raise _backend_error("generation returned empty output")
 

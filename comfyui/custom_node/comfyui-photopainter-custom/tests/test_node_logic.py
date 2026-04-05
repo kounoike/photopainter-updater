@@ -444,6 +444,43 @@ class NodeLogicTests(unittest.TestCase):
         self.assertEqual(json.loads(output)["positive_prompt"], "ok")
         self.assertEqual(attempts_used, 2)
 
+    def test_qwen_think_block_is_stripped_from_final_output(self):
+        config = self.module._build_llm_config(
+            backend="transformers",
+            model_id="Qwen/Qwen3.5-4B",
+            model_file="",
+            system_prompt="system",
+            user_prompt="user",
+            think_mode="off",
+            json_output=False,
+            json_schema="",
+            max_retries=0,
+            temperature=1.0,
+            max_tokens=32,
+        )
+        sanitized = self.module._validate_generation_output(
+            config,
+            "<think>internal reasoning</think>\nFinal answer.",
+        )
+        self.assertEqual(sanitized, "Final answer.")
+
+    def test_incomplete_qwen_think_block_is_failure(self):
+        config = self.module._build_llm_config(
+            backend="transformers",
+            model_id="Qwen/Qwen3.5-4B",
+            model_file="",
+            system_prompt="system",
+            user_prompt="user",
+            think_mode="off",
+            json_output=False,
+            json_schema="",
+            max_retries=0,
+            temperature=1.0,
+            max_tokens=32,
+        )
+        with self.assertRaisesRegex(RuntimeError, r"backend_error: generation returned an incomplete qwen think block"):
+            self.module._validate_generation_output(config, "<think>internal reasoning")
+
     def test_schema_retry_exhaustion_raises_schema_error(self):
         self.module._load_jsonschema_module = lambda: FakeJsonSchemaModule
         self.module._run_generation_attempt = lambda config, retry_feedback=None: "{}"
