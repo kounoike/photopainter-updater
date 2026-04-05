@@ -42,7 +42,7 @@
 - `json_output`: JSON mode を有効化するか
 - `json_schema`: 任意の JSON Schema 文字列
 - `max_retries`: parse failure / schema mismatch の retry 上限
-- `temperature`, `max_tokens`: 推論パラメータ
+- `temperature`, `max_tokens`, `max_context`: 推論パラメータ
 
 ### `backend` と `think_mode` の違い
 
@@ -66,6 +66,13 @@
 - `json_schema` がある場合は `lm-format-enforcer` と `jsonschema` の両方で制約します
 - 選択した backend / model 経路で structured output constraint を適用できない場合は、
   自由文 fallback ではなく明示 failure にします
+
+### `max_tokens` と `max_context`
+
+- `max_tokens` は生成する出力 token の上限です
+- `max_context` は主に `llama-cpp` backend の context window (`n_ctx`) です
+- `max_context=0` は model metadata の既定 context length を使います
+- 長い system/user prompt を `llama-cpp` へ渡す場合、`max_tokens` だけ増やしても context overflow は解消しません
 
 ### model cache
 

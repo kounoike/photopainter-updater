@@ -41,6 +41,7 @@ class LlmNodeConfig:
     max_retries: int
     temperature: float
     max_tokens: int
+    max_context: int
     cache_dir: str | None
 
 
@@ -300,6 +301,16 @@ def _normalize_max_tokens(value: object) -> int:
     return max_tokens
 
 
+def _normalize_max_context(value: object) -> int:
+    try:
+        max_context = int(value)
+    except (TypeError, ValueError) as exc:
+        raise _config_error("max_context must be an integer") from exc
+    if max_context < 0:
+        raise _config_error("max_context must be >= 0")
+    return max_context
+
+
 def _resolve_llm_cache_dir() -> str | None:
     configured = os.environ.get(LLM_CACHE_DIR_ENV, "").strip()
     if not configured:
@@ -463,6 +474,7 @@ def _build_llm_config(
     max_retries: object,
     temperature: object,
     max_tokens: object,
+    max_context: object,
 ) -> LlmNodeConfig:
     normalized_backend = _normalize_backend(backend)
     normalized_model_id = _normalize_hf_repo_id(model_id)
@@ -475,6 +487,7 @@ def _build_llm_config(
     normalized_retries = _normalize_max_retries(max_retries)
     normalized_temperature = _normalize_temperature(temperature)
     normalized_max_tokens = _normalize_max_tokens(max_tokens)
+    normalized_max_context = _normalize_max_context(max_context)
     cache_dir = _resolve_llm_cache_dir()
 
     parsed_schema = None
@@ -494,6 +507,7 @@ def _build_llm_config(
         max_retries=normalized_retries,
         temperature=normalized_temperature,
         max_tokens=normalized_max_tokens,
+        max_context=normalized_max_context,
         cache_dir=cache_dir,
     )
 
@@ -658,6 +672,7 @@ def _run_llama_cpp_generation(
 
     kwargs: dict[str, Any] = {
         "repo_id": config.model_id,
+        "n_ctx": config.max_context,
         "n_gpu_layers": -1,
         "verbose": False,
     }
@@ -786,6 +801,7 @@ class PhotopainterLlmGenerate:
                 "max_retries": ("INT", {"default": 1, "min": 0, "max": 5}),
                 "temperature": ("FLOAT", {"default": 1.0, "min": 0.0, "step": 0.1}),
                 "max_tokens": ("INT", {"default": 2048, "min": 1, "max": 8192}),
+                "max_context": ("INT", {"default": 0, "min": 0, "max": 131072}),
             },
             "optional": {
                 "model_file": ("STRING", {"default": "", "multiline": False}),
@@ -810,6 +826,7 @@ class PhotopainterLlmGenerate:
         max_retries,
         temperature,
         max_tokens,
+        max_context,
         model_file="",
         json_schema="",
     ):
@@ -825,6 +842,7 @@ class PhotopainterLlmGenerate:
             max_retries=max_retries,
             temperature=temperature,
             max_tokens=max_tokens,
+            max_context=max_context,
         )
         output_text, attempts = _generate_llm_output(config)
         summary = (

@@ -264,6 +264,7 @@ class NodeLogicTests(unittest.TestCase):
                 max_retries=1,
                 temperature=1.0,
                 max_tokens=32,
+                max_context=0,
             )
 
     def test_invalid_schema_is_rejected_before_generation(self):
@@ -280,6 +281,7 @@ class NodeLogicTests(unittest.TestCase):
                 1,
                 1.0,
                 32,
+                0,
                 json_schema='{"type":"array"}',
             )
 
@@ -302,6 +304,7 @@ class NodeLogicTests(unittest.TestCase):
             1,
             1.0,
             32,
+            0,
         )
 
         self.assertEqual(result["result"], ("hello from llm",))
@@ -322,6 +325,7 @@ class NodeLogicTests(unittest.TestCase):
             1,
             1.0,
             32,
+            0,
             json_schema=json.dumps(
                 {
                     "type": "object",
@@ -349,6 +353,7 @@ class NodeLogicTests(unittest.TestCase):
             max_retries=1,
             temperature=1.0,
             max_tokens=32,
+            max_context=0,
         )
         plan = self.module._resolve_think_control(config)
 
@@ -368,6 +373,7 @@ class NodeLogicTests(unittest.TestCase):
             max_retries=1,
             temperature=1.0,
             max_tokens=32,
+            max_context=0,
         )
         with self.assertRaisesRegex(RuntimeError, r"think_mode_error: qwen think_mode requires a Qwen family model"):
             self.module._resolve_think_control(config)
@@ -385,6 +391,7 @@ class NodeLogicTests(unittest.TestCase):
             max_retries=1,
             temperature=1.0,
             max_tokens=32,
+            max_context=0,
         )
         plan = self.module._resolve_think_control(config)
         messages = self.module._build_messages(config, plan)
@@ -403,6 +410,7 @@ class NodeLogicTests(unittest.TestCase):
             max_retries=1,
             temperature=1.0,
             max_tokens=32,
+            max_context=0,
         )
         plan = self.module._resolve_think_control(config)
         self.assertEqual(plan.family, "deepseek_r1")
@@ -429,6 +437,7 @@ class NodeLogicTests(unittest.TestCase):
             max_retries=1,
             temperature=1.0,
             max_tokens=32,
+            max_context=0,
         )
 
         output, attempts_used = self.module._generate_llm_output(config)
@@ -450,6 +459,7 @@ class NodeLogicTests(unittest.TestCase):
             max_retries=1,
             temperature=1.0,
             max_tokens=32,
+            max_context=0,
         )
 
         with self.assertRaisesRegex(RuntimeError, r"schema_error: 'positive_prompt' is a required property"):
@@ -471,6 +481,7 @@ class NodeLogicTests(unittest.TestCase):
             max_retries=3,
             temperature=1.0,
             max_tokens=32,
+            max_context=0,
         )
 
         with self.assertRaisesRegex(RuntimeError, r"backend_error: model load failed"):
@@ -490,6 +501,7 @@ class NodeLogicTests(unittest.TestCase):
             max_retries=0,
             temperature=1.0,
             max_tokens=16,
+            max_context=0,
         )
         plan = self.module._resolve_think_control(config)
         messages = self.module._build_messages(config, plan)
@@ -522,6 +534,7 @@ class NodeLogicTests(unittest.TestCase):
             max_retries=0,
             temperature=1.0,
             max_tokens=16,
+            max_context=0,
         )
         plan = self.module._resolve_think_control(config)
         messages = self.module._build_messages(config, plan)
@@ -558,6 +571,7 @@ class NodeLogicTests(unittest.TestCase):
             max_retries=0,
             temperature=1.0,
             max_tokens=16,
+            max_context=0,
         )
         plan = self.module._resolve_think_control(config)
         messages = self.module._build_messages(config, plan)
@@ -587,6 +601,7 @@ class NodeLogicTests(unittest.TestCase):
             max_retries=0,
             temperature=1.0,
             max_tokens=16,
+            max_context=0,
         )
         plan = self.module._resolve_think_control(config)
         messages = self.module._build_messages(config, plan)

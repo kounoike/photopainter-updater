@@ -102,6 +102,7 @@ class ContractTests(unittest.TestCase):
         self.assertEqual(required["think_mode"][0], list(self.module.SUPPORTED_THINK_MODES))
         self.assertEqual(required["temperature"][1]["default"], 1.0)
         self.assertEqual(required["max_tokens"][1]["default"], 2048)
+        self.assertEqual(required["max_context"][1]["default"], 0)
         self.assertIn("model_file", optional)
         self.assertIn("json_schema", optional)
 
