@@ -65,6 +65,7 @@ class StructuredOutputPlan:
 
 @dataclass(frozen=True)
 class GenerationDebugInfo:
+    backend: str
     family: str | None
     think_mode: str
     quantization_mode: str
@@ -76,6 +77,10 @@ class GenerationDebugInfo:
     raw_had_think_block: bool
     sanitized_output: bool
     attempts: int
+    retry_count: int
+    retry_reason: str | None
+    context_window: int | None
+    model_file: str | None
 
 
 def _normalize_url(url: str) -> str:
@@ -533,6 +538,66 @@ def _build_llm_config(
     )
 
 
+def _build_transformers_llm_config(
+    *,
+    system_prompt: object,
+    user_prompt: object,
+    model_id: object,
+    quantization_mode: object,
+    think_mode: object,
+    json_output: object,
+    json_schema: object,
+    max_retries: object,
+    temperature: object,
+    max_tokens: object,
+) -> LlmNodeConfig:
+    return _build_llm_config(
+        backend="transformers",
+        model_id=model_id,
+        model_file="",
+        quantization_mode=quantization_mode,
+        system_prompt=system_prompt,
+        user_prompt=user_prompt,
+        think_mode=think_mode,
+        json_output=json_output,
+        json_schema=json_schema,
+        max_retries=max_retries,
+        temperature=temperature,
+        max_tokens=max_tokens,
+    )
+
+
+def _build_llama_cpp_llm_config(
+    *,
+    system_prompt: object,
+    user_prompt: object,
+    model_id: object,
+    model_file: object,
+    json_output: object,
+    json_schema: object,
+    max_retries: object,
+    temperature: object,
+    max_tokens: object,
+) -> LlmNodeConfig:
+    config = _build_llm_config(
+        backend="llama-cpp",
+        model_id=model_id,
+        model_file=model_file,
+        quantization_mode="none",
+        system_prompt=system_prompt,
+        user_prompt=user_prompt,
+        think_mode="off",
+        json_output=json_output,
+        json_schema=json_schema,
+        max_retries=max_retries,
+        temperature=temperature,
+        max_tokens=max_tokens,
+    )
+    if config.model_file is None:
+        raise _config_error("model_file must not be empty for llama-cpp backend")
+    return config
+
+
 def _build_messages(
     config: LlmNodeConfig,
     think_plan: ThinkControlPlan,
@@ -641,7 +706,7 @@ def _run_transformers_generation(
     think_plan: ThinkControlPlan,
     structured_output_plan: StructuredOutputPlan,
     messages: list[dict[str, str]],
-) -> str:
+) -> tuple[str, int | None]:
     torch, AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig = _load_transformers_modules()
     tokenizer = None
     model = None
@@ -720,7 +785,7 @@ def _run_transformers_generation(
         output_text = tokenizer.decode(output_tokens, skip_special_tokens=True).strip()
         if not output_text:
             raise _backend_error("transformers generation returned empty output")
-        return output_text
+        return output_text, context_window
     finally:
         del generated
         del inputs
@@ -770,7 +835,7 @@ def _run_llama_cpp_generation(
     think_plan: ThinkControlPlan,
     structured_output_plan: StructuredOutputPlan,
     messages: list[dict[str, str]],
-) -> str:
+) -> tuple[str, int | None]:
     Llama = _load_llama_cpp_module()
     llm = None
 
@@ -816,7 +881,7 @@ def _run_llama_cpp_generation(
                     f"requested tokens ({requested}) exceed model context window of {context_window}"
                 )
         response = llm.create_chat_completion(**create_kwargs)
-        return _extract_llama_content(response)
+        return _extract_llama_content(response), context_window
     except Exception as exc:
         raise _backend_error(f"llama-cpp generation failed: {exc}") from exc
     finally:
@@ -825,7 +890,9 @@ def _run_llama_cpp_generation(
         gc.collect()
 
 
-def _run_generation_attempt(config: LlmNodeConfig, retry_feedback: str | None = None) -> str:
+def _run_generation_attempt(
+    config: LlmNodeConfig, retry_feedback: str | None = None
+) -> tuple[str, int | None]:
     think_plan = _resolve_think_control(config)
     structured_output_plan = _build_structured_output_plan(config)
     messages = _build_messages(config, think_plan, retry_feedback)
@@ -870,13 +937,15 @@ def _validate_generation_output(config: LlmNodeConfig, output_text: str) -> tupl
 def _generate_llm_output(config: LlmNodeConfig) -> tuple[str, str, GenerationDebugInfo]:
     retry_feedback: str | None = None
     total_attempts = config.max_retries + 1
+    retry_reason: str | None = None
 
     for attempt in range(1, total_attempts + 1):
         think_plan = _resolve_think_control(config)
-        output_text = _run_generation_attempt(config, retry_feedback)
+        output_text, context_window = _run_generation_attempt(config, retry_feedback)
         try:
             validated, validation_debug = _validate_generation_output(config, output_text)
             debug_info = GenerationDebugInfo(
+                backend=config.backend,
                 family=think_plan.family,
                 think_mode=config.think_mode,
                 quantization_mode=config.quantization_mode,
@@ -890,6 +959,10 @@ def _generate_llm_output(config: LlmNodeConfig) -> tuple[str, str, GenerationDeb
                 raw_had_think_block=validation_debug["raw_had_think_block"],
                 sanitized_output=validation_debug["sanitized_output"],
                 attempts=attempt,
+                retry_count=attempt - 1,
+                retry_reason=retry_reason,
+                context_window=context_window,
+                model_file=config.model_file,
             )
             return validated, output_text, debug_info
         except RuntimeError as exc:
@@ -899,6 +972,7 @@ def _generate_llm_output(config: LlmNodeConfig) -> tuple[str, str, GenerationDeb
             if attempt >= total_attempts:
                 raise
             error_kind, _, message = detail.partition(": ")
+            retry_reason = error_kind or None
             retry_feedback = _retry_feedback(attempt, error_kind, message)
 
     raise _backend_error("generation exhausted without producing output")
@@ -926,23 +1000,60 @@ class PhotopainterPngPost:
         return {"ui": {"text": [f"{message} [{normalized_url}]"]}, "result": ()}
 
 
-class PhotopainterLlmGenerate:
+def _build_llm_debug_json(debug_info: GenerationDebugInfo) -> str:
+    return json.dumps(
+        {
+            "attempts": debug_info.attempts,
+            "backend": debug_info.backend,
+            "context_window": debug_info.context_window,
+            "control_kind": debug_info.control_kind,
+            "documented_control_available": debug_info.documented_control_available,
+            "fallback_to_generic_prompt": debug_info.fallback_to_generic_prompt,
+            "family": debug_info.family,
+            "json_output": debug_info.json_output,
+            "model_file": debug_info.model_file,
+            "quantization_mode": debug_info.quantization_mode,
+            "raw_had_think_block": debug_info.raw_had_think_block,
+            "requested_enable_thinking": debug_info.requested_enable_thinking,
+            "retry_count": debug_info.retry_count,
+            "retry_reason": debug_info.retry_reason,
+            "sanitized_output": debug_info.sanitized_output,
+            "think_mode": debug_info.think_mode,
+        },
+        ensure_ascii=True,
+        sort_keys=True,
+    )
+
+
+def _build_llm_summary(node_label: str, config: LlmNodeConfig, debug_info: GenerationDebugInfo) -> str:
+    summary_parts = [
+        f"LLM success: {node_label}",
+        config.model_id,
+        f"attempts={debug_info.attempts}",
+    ]
+    if config.backend == "transformers":
+        summary_parts.append(f"think_mode={config.think_mode}")
+        summary_parts.append(f"quantization_mode={config.quantization_mode}")
+    if debug_info.retry_reason is not None:
+        summary_parts.append(f"retry_reason={debug_info.retry_reason}")
+    return " / ".join(summary_parts)
+
+
+class PhotopainterTransformersLlmGenerate:
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
                 "system_prompt": ("STRING", {"default": "You are a helpful assistant.", "multiline": True}),
                 "user_prompt": ("STRING", {"default": "", "multiline": True}),
-                "backend": (list(SUPPORTED_BACKENDS),),
                 "model_id": ("STRING", {"default": "Qwen/Qwen3.5-4B", "multiline": False}),
-                "model_file": ("STRING", {"default": "", "multiline": False}),
                 "quantization_mode": (list(SUPPORTED_QUANTIZATION_MODES),),
                 "think_mode": (list(SUPPORTED_THINK_MODES),),
                 "json_output": ("BOOLEAN", {"default": False}),
                 "json_schema": ("STRING", {"default": "", "multiline": True}),
                 "max_retries": ("INT", {"default": 1, "min": 0, "max": 5}),
                 "temperature": ("FLOAT", {"default": 1.0, "min": 0.0, "step": 0.1}),
-                "max_tokens": ("INT", {"default": 2048, "min": 1, "max": 8192}),
+                "max_tokens": ("INT", {"default": 2048, "min": 1, "max": 262144}),
             },
         }
 
@@ -956,24 +1067,20 @@ class PhotopainterLlmGenerate:
         self,
         system_prompt,
         user_prompt,
-        backend,
         model_id,
+        quantization_mode,
         think_mode,
         json_output,
+        json_schema,
         max_retries,
         temperature,
         max_tokens,
-        model_file="",
-        json_schema="",
-        quantization_mode="none",
     ):
-        config = _build_llm_config(
-            backend=backend,
-            model_id=model_id,
-            model_file=model_file,
-            quantization_mode=quantization_mode,
+        config = _build_transformers_llm_config(
             system_prompt=system_prompt,
             user_prompt=user_prompt,
+            model_id=model_id,
+            quantization_mode=quantization_mode,
             think_mode=think_mode,
             json_output=json_output,
             json_schema=json_schema,
@@ -982,36 +1089,71 @@ class PhotopainterLlmGenerate:
             max_tokens=max_tokens,
         )
         output_text, raw_text, debug_info = _generate_llm_output(config)
-        summary = (
-            f"LLM success: {config.backend} / {config.model_id} / "
-            f"think_mode={config.think_mode} / attempts={debug_info.attempts}"
-        )
-        debug_json = json.dumps(
-            {
-                "family": debug_info.family,
-                "think_mode": debug_info.think_mode,
-                "quantization_mode": debug_info.quantization_mode,
-                "documented_control_available": debug_info.documented_control_available,
-                "control_kind": debug_info.control_kind,
-                "requested_enable_thinking": debug_info.requested_enable_thinking,
-                "fallback_to_generic_prompt": debug_info.fallback_to_generic_prompt,
-                "json_output": debug_info.json_output,
-                "raw_had_think_block": debug_info.raw_had_think_block,
-                "sanitized_output": debug_info.sanitized_output,
-                "attempts": debug_info.attempts,
+        summary = _build_llm_summary("transformers", config, debug_info)
+        debug_json = _build_llm_debug_json(debug_info)
+        return {"ui": {"text": [summary]}, "result": (output_text, debug_json, raw_text)}
+
+
+class PhotopainterLlamaCppLlmGenerate:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "system_prompt": ("STRING", {"default": "You are a helpful assistant.", "multiline": True}),
+                "user_prompt": ("STRING", {"default": "", "multiline": True}),
+                "model_id": ("STRING", {"default": "bartowski/Qwen_Qwen3.5-4B-GGUF", "multiline": False}),
+                "model_file": ("STRING", {"default": "Qwen_Qwen3.5-4B-Q4_K_M.gguf", "multiline": False}),
+                "json_output": ("BOOLEAN", {"default": False}),
+                "json_schema": ("STRING", {"default": "", "multiline": True}),
+                "max_retries": ("INT", {"default": 1, "min": 0, "max": 5}),
+                "temperature": ("FLOAT", {"default": 1.0, "min": 0.0, "step": 0.1}),
+                "max_tokens": ("INT", {"default": 2048, "min": 1, "max": 262144}),
             },
-            ensure_ascii=True,
-            sort_keys=True,
+        }
+
+    RETURN_TYPES = ("STRING", "STRING", "STRING")
+    RETURN_NAMES = ("output_text", "debug_json", "raw_text")
+    FUNCTION = "generate_text"
+    OUTPUT_NODE = False
+    CATEGORY = "photopainter/llm"
+
+    def generate_text(
+        self,
+        system_prompt,
+        user_prompt,
+        model_id,
+        model_file,
+        json_output,
+        json_schema,
+        max_retries,
+        temperature,
+        max_tokens,
+    ):
+        config = _build_llama_cpp_llm_config(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            model_id=model_id,
+            model_file=model_file,
+            json_output=json_output,
+            json_schema=json_schema,
+            max_retries=max_retries,
+            temperature=temperature,
+            max_tokens=max_tokens,
         )
+        output_text, raw_text, debug_info = _generate_llm_output(config)
+        summary = _build_llm_summary("llama-cpp", config, debug_info)
+        debug_json = _build_llm_debug_json(debug_info)
         return {"ui": {"text": [summary]}, "result": (output_text, debug_json, raw_text)}
 
 
 NODE_CLASS_MAPPINGS = {
     "PhotopainterPngPost": PhotopainterPngPost,
-    "PhotopainterLlmGenerate": PhotopainterLlmGenerate,
+    "PhotopainterTransformersLlmGenerate": PhotopainterTransformersLlmGenerate,
+    "PhotopainterLlamaCppLlmGenerate": PhotopainterLlamaCppLlmGenerate,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "PhotopainterPngPost": "PhotoPainter PNG POST",
-    "PhotopainterLlmGenerate": "PhotoPainter LLM Generate",
+    "PhotopainterTransformersLlmGenerate": "PhotoPainter LLM Generate (Transformers)",
+    "PhotopainterLlamaCppLlmGenerate": "PhotoPainter LLM Generate (llama-cpp)",
 }

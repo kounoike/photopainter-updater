@@ -50,6 +50,8 @@ COPY custom_node/comfyui-photopainter-custom ${COMFYUI_HOME}/custom_nodes/comfyu
 COPY install-custom-nodes.sh /usr/local/bin/install-custom-nodes
 COPY entrypoint.sh /usr/local/bin/photopainter-comfyui-entrypoint
 
+# transformers node: transformers / bitsandbytes / accelerate / lm-format-enforcer
+# llama-cpp node: llama-cpp-python wheel
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv pip install --system \
       torch \

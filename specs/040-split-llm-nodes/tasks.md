@@ -16,8 +16,8 @@
 
 **Purpose**: backend 分離の前提となる契約差分と検証観点を具体化する
 
-- [ ] T001 `specs/040-split-llm-nodes/contracts/comfyui-node-contracts.md` と `specs/040-split-llm-nodes/quickstart.md` を見直し、旧単一ノード削除、新ノード名、3 出力契約、retry が JSON parse/schema failure 限定であることを反映する
-- [ ] T002 `comfyui/custom_node/comfyui-photopainter-custom/tests/test_contract.py` に追加する node metadata 検証項目を洗い出し、旧単一ノード削除、2 ノード追加、backend 別入力差分の観点を task 実装順へ反映する
+- [X] T001 `specs/040-split-llm-nodes/contracts/comfyui-node-contracts.md` と `specs/040-split-llm-nodes/quickstart.md` を見直し、旧単一ノード削除、新ノード名、3 出力契約、retry が JSON parse/schema failure 限定であることを反映する
+- [X] T002 `comfyui/custom_node/comfyui-photopainter-custom/tests/test_contract.py` に追加する node metadata 検証項目を洗い出し、旧単一ノード削除、2 ノード追加、backend 別入力差分の観点を task 実装順へ反映する
 
 ---
 
@@ -27,9 +27,9 @@
 
 **CRITICAL**: この phase 完了まで user story 実装を開始しない
 
-- [ ] T003 `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` の共通 helper を整理し、backend 非依存の config / debug / JSON/schema / memory release ロジックを node class から切り離す
-- [ ] T004 `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` に共通 helper 再編後も structured output、debug 出力、memory release、retry が JSON parse/schema failure 限定であることを確認する単体検証を追加する
-- [ ] T005 `comfyui/custom_node/comfyui-photopainter-custom/README.md` に backend 分離の前提、旧単一ノード削除、3 出力契約、retry 条件、debug で retry 理由を確認できることを追記する
+- [X] T003 `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` の共通 helper を整理し、backend 非依存の config / debug / JSON/schema / memory release ロジックを node class から切り離す
+- [X] T004 `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` に共通 helper 再編後も structured output、debug 出力、memory release、retry が JSON parse/schema failure 限定であることを確認する単体検証を追加する
+- [X] T005 `comfyui/custom_node/comfyui-photopainter-custom/README.md` に backend 分離の前提、旧単一ノード削除、3 出力契約、retry 条件、debug で retry 理由を確認できることを追記する
 
 **Checkpoint**: backend 分離後も再利用する共通 helper と debug 契約が固定されていること
 
@@ -43,16 +43,16 @@
 
 ### Verification for User Story 1
 
-- [ ] T006 [P] [US1] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_contract.py` に `PhotopainterTransformersLlmGenerate` の metadata 契約を追加し、`model_file` が存在しないことと `quantization_mode` が存在することを検証する
-- [ ] T007 [P] [US1] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` に `transformers` 専用ノードの生成経路、`quantization_mode`、`requested_enable_thinking`、Gemma documented control、retry 理由、3 出力契約を検証するテストを追加する
-- [ ] T008 [US1] `specs/040-split-llm-nodes/quickstart.md` の Transformers 移行手順を実装内容に合わせて更新し、`bnb_4bit` の手動確認例と retry/debug 確認手順を追記する
+- [X] T006 [P] [US1] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_contract.py` に `PhotopainterTransformersLlmGenerate` の metadata 契約を追加し、`model_file` が存在しないことと `quantization_mode` が存在することを検証する
+- [X] T007 [P] [US1] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` に `transformers` 専用ノードの生成経路、`quantization_mode`、`requested_enable_thinking`、Gemma documented control、retry 理由、3 出力契約を検証するテストを追加する
+- [X] T008 [US1] `specs/040-split-llm-nodes/quickstart.md` の Transformers 移行手順を実装内容に合わせて更新し、`bnb_4bit` の手動確認例と retry/debug 確認手順を追記する
 
 ### Implementation for User Story 1
 
-- [ ] T009 [US1] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に `PhotopainterTransformersLlmGenerate` を追加し、`model_id`、`quantization_mode`、`think_mode`、`json_output`、`json_schema`、3 出力だけを持つ UI 契約を実装する
-- [ ] T010 [US1] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` の debug 出力に Transformers 専用情報（`quantization_mode`、`requested_enable_thinking`、Gemma documented control、retry 理由）を維持し、旧単一ノードに依存しないよう接続する
-- [ ] T011 [US1] `comfyui/custom_node/comfyui-photopainter-custom/README.md` に `PhotoPainter LLM Generate (Transformers)` の入力と移行手順を追記する
-- [ ] T012 [US1] `comfyui/Dockerfile` の依存説明と `transformers` 量子化前提を `comfyui/custom_node/comfyui-photopainter-custom/README.md` と整合させる
+- [X] T009 [US1] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に `PhotopainterTransformersLlmGenerate` を追加し、`model_id`、`quantization_mode`、`think_mode`、`json_output`、`json_schema`、3 出力だけを持つ UI 契約を実装する
+- [X] T010 [US1] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` の debug 出力に Transformers 専用情報（`quantization_mode`、`requested_enable_thinking`、Gemma documented control、retry 理由）を維持し、旧単一ノードに依存しないよう接続する
+- [X] T011 [US1] `comfyui/custom_node/comfyui-photopainter-custom/README.md` に `PhotoPainter LLM Generate (Transformers)` の入力と移行手順を追記する
+- [X] T012 [US1] `comfyui/Dockerfile` の依存説明と `transformers` 量子化前提を `comfyui/custom_node/comfyui-photopainter-custom/README.md` と整合させる
 
 **Checkpoint**: `transformers` 専用ノードが単独で検証可能であること
 
@@ -66,15 +66,15 @@
 
 ### Verification for User Story 2
 
-- [ ] T013 [P] [US2] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_contract.py` に `PhotopainterLlamaCppLlmGenerate` の metadata 契約を追加し、`model_file` が必須で `think_mode` と `quantization_mode` が存在しないことを検証する
-- [ ] T014 [P] [US2] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` に `llama-cpp` 専用ノードの生成経路、GGUF validation、retry 理由、3 出力契約を検証するテストを追加する
-- [ ] T015 [US2] `specs/040-split-llm-nodes/quickstart.md` の llama-cpp 移行手順を実装内容に合わせて更新し、retry/debug 確認手順を追記する
+- [X] T013 [P] [US2] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_contract.py` に `PhotopainterLlamaCppLlmGenerate` の metadata 契約を追加し、`model_file` が必須で `think_mode` と `quantization_mode` が存在しないことを検証する
+- [X] T014 [P] [US2] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` に `llama-cpp` 専用ノードの生成経路、GGUF validation、retry 理由、3 出力契約を検証するテストを追加する
+- [X] T015 [US2] `specs/040-split-llm-nodes/quickstart.md` の llama-cpp 移行手順を実装内容に合わせて更新し、retry/debug 確認手順を追記する
 
 ### Implementation for User Story 2
 
-- [ ] T016 [US2] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に `PhotopainterLlamaCppLlmGenerate` を追加し、`model_id`、`model_file`、`json_output`、`json_schema`、3 出力だけを持つ UI 契約を実装する
-- [ ] T017 [US2] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` で `llama-cpp` 専用ノードから `think_mode` と `quantization_mode` を完全に切り離し、GGUF validation、JSON failure 限定 retry、debug 出力に責務を限定する
-- [ ] T018 [US2] `comfyui/custom_node/comfyui-photopainter-custom/README.md` に `PhotoPainter LLM Generate (llama-cpp)` の入力と移行手順を追記する
+- [X] T016 [US2] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に `PhotopainterLlamaCppLlmGenerate` を追加し、`model_id`、`model_file`、`json_output`、`json_schema`、3 出力だけを持つ UI 契約を実装する
+- [X] T017 [US2] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` で `llama-cpp` 専用ノードから `think_mode` と `quantization_mode` を完全に切り離し、GGUF validation、JSON failure 限定 retry、debug 出力に責務を限定する
+- [X] T018 [US2] `comfyui/custom_node/comfyui-photopainter-custom/README.md` に `PhotoPainter LLM Generate (llama-cpp)` の入力と移行手順を追記する
 
 **Checkpoint**: `llama-cpp` 専用ノードが単独で検証可能であること
 
@@ -88,15 +88,15 @@
 
 ### Verification for User Story 3
 
-- [ ] T019 [P] [US3] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_contract.py` に `NODE_CLASS_MAPPINGS` / `NODE_DISPLAY_NAME_MAPPINGS` の 2 ノード共存契約を追加する
-- [ ] T020 [P] [US3] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` に両専用ノードの debug 出力差分、retry 理由表示差分、旧単一ノード不在を確認するテストを追加する
-- [ ] T021 [US3] `comfyui/workflows/README.md` と関連 workflow JSON に新ノード名を反映し、backend 比較手順を更新する
+- [X] T019 [P] [US3] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_contract.py` に `NODE_CLASS_MAPPINGS` / `NODE_DISPLAY_NAME_MAPPINGS` の 2 ノード共存契約を追加する
+- [X] T020 [P] [US3] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` に両専用ノードの debug 出力差分、retry 理由表示差分、旧単一ノード不在を確認するテストを追加する
+- [X] T021 [US3] `comfyui/workflows/README.md` と関連 workflow JSON に新ノード名を反映し、backend 比較手順を更新する
 
 ### Implementation for User Story 3
 
-- [ ] T022 [US3] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` から旧 `PhotopainterLlmGenerate` と単一 display name を削除し、2 ノードの `NODE_CLASS_MAPPINGS` / `NODE_DISPLAY_NAME_MAPPINGS` に置き換える
-- [ ] T023 [US3] `comfyui/workflows/llm-*.json` と `comfyui/workflows/README.md` を新ノード名と backend 別入力に合わせて更新する
-- [ ] T024 [US3] `comfyui/custom_node/comfyui-photopainter-custom/README.md` に旧単一ノード削除と新ノードへの対応表を追記する
+- [X] T022 [US3] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` から旧 `PhotopainterLlmGenerate` と単一 display name を削除し、2 ノードの `NODE_CLASS_MAPPINGS` / `NODE_DISPLAY_NAME_MAPPINGS` に置き換える
+- [X] T023 [US3] `comfyui/workflows/llm-*.json` と `comfyui/workflows/README.md` を新ノード名と backend 別入力に合わせて更新する
+- [X] T024 [US3] `comfyui/custom_node/comfyui-photopainter-custom/README.md` に旧単一ノード削除と新ノードへの対応表を追記する
 
 **Checkpoint**: backend ごとの違いが ComfyUI UI と文書で明確に識別できること
 
@@ -106,9 +106,9 @@
 
 **Purpose**: backend 分離後の整合と横断確認
 
-- [ ] T025 [P] `python -m py_compile comfyui/custom_node/comfyui-photopainter-custom/__init__.py` と `python -m unittest discover -s comfyui/custom_node/comfyui-photopainter-custom/tests -v` を再実行し、結果を確認する
-- [ ] T026 `comfyui/custom_node/comfyui-photopainter-custom/README.md`、`comfyui/workflows/README.md`、`specs/040-split-llm-nodes/quickstart.md` の用語と node 名を整合させる
-- [ ] T027 `comfyui/Dockerfile` と backend 分離後の依存説明が `transformers` / `llama-cpp` の責務分離と一致しているか確認する
+- [X] T025 [P] `python -m py_compile comfyui/custom_node/comfyui-photopainter-custom/__init__.py` と `python -m unittest discover -s comfyui/custom_node/comfyui-photopainter-custom/tests -v` を再実行し、結果を確認する
+- [X] T026 `comfyui/custom_node/comfyui-photopainter-custom/README.md`、`comfyui/workflows/README.md`、`specs/040-split-llm-nodes/quickstart.md` の用語と node 名を整合させる
+- [X] T027 `comfyui/Dockerfile` と backend 分離後の依存説明が `transformers` / `llama-cpp` の責務分離と一致しているか確認する
 
 ---
 

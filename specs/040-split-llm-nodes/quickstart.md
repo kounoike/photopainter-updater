@@ -12,6 +12,8 @@
 4. `model_file` は捨てる
 5. 必要なら `quantization_mode=bnb_4bit` または `bnb_8bit` を選ぶ
 6. `debug_json` と `raw_text` で think 制御と structured output を確認する
+7. `bnb_4bit` を使う場合は、まず短い prompt で手動確認してから本番 workflow へ組み込む
+8. `debug_json.retry_count` と `debug_json.retry_reason` で JSON retry の有無を確認する
 
 ## llama-cpp ノードへ移行
 
@@ -20,9 +22,11 @@
 3. GGUF repo の `model_id` と `model_file` を設定する
 4. `think_mode` は存在しないので削除する
 5. `debug_json` と `raw_text` で GGUF 実行結果を確認する
+6. `debug_json.context_window` と `debug_json.retry_reason` で context / retry 状態を確認する
 
 ## 検証観点
 
 - `transformers` ノードに `model_file` が無いこと
 - `llama-cpp` ノードに `quantization_mode` と `think_mode` が無いこと
 - どちらも `output_text`, `debug_json`, `raw_text` の 3 出力を持つこと
+- retry は `json_parse_error` または `schema_error` の場合に限ること

@@ -1,0 +1,59 @@
+{
+  "last_node_id": 1,
+  "last_link_id": 0,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "PhotopainterTransformersLlmGenerate",
+      "pos": [
+        120,
+        120
+      ],
+      "size": [
+        380,
+        460
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "output_text",
+          "type": "STRING",
+          "links": []
+        },
+        {
+          "name": "debug_json",
+          "type": "STRING",
+          "links": []
+        },
+        {
+          "name": "raw_text",
+          "type": "STRING",
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PhotopainterTransformersLlmGenerate"
+      },
+      "widgets_values": [
+        "You are a concise assistant.",
+        "Say hello in one short sentence.",
+        "Qwen/Qwen3.5-4B",
+        "bnb_4bit",
+        "off",
+        false,
+        "",
+        1,
+        1.0,
+        256
+      ]
+    }
+  ],
+  "links": [],
+  "groups": [],
+  "config": {},
+  "extra": {},
+  "version": 0.4
+}

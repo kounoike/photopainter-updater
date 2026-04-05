@@ -87,24 +87,62 @@ class ContractTests(unittest.TestCase):
         self.assertEqual(node.CATEGORY, "photopainter/http")
         self.assertEqual(self.module.NODE_DISPLAY_NAME_MAPPINGS["PhotopainterPngPost"], "PhotoPainter PNG POST")
 
-    def test_llm_node_metadata_contract(self):
-        self.assertIn("PhotopainterLlmGenerate", self.module.NODE_CLASS_MAPPINGS)
-        node = self.module.PhotopainterLlmGenerate
+    def test_transformers_llm_node_metadata_contract(self):
+        self.assertIn("PhotopainterTransformersLlmGenerate", self.module.NODE_CLASS_MAPPINGS)
+        self.assertNotIn("PhotopainterLlmGenerate", self.module.NODE_CLASS_MAPPINGS)
+
+        node = self.module.PhotopainterTransformersLlmGenerate
         self.assertEqual(node.RETURN_TYPES, ("STRING", "STRING", "STRING"))
         self.assertEqual(node.RETURN_NAMES, ("output_text", "debug_json", "raw_text"))
         self.assertFalse(node.OUTPUT_NODE)
         self.assertEqual(node.CATEGORY, "photopainter/llm")
-        self.assertEqual(self.module.NODE_DISPLAY_NAME_MAPPINGS["PhotopainterLlmGenerate"], "PhotoPainter LLM Generate")
+        self.assertEqual(
+            self.module.NODE_DISPLAY_NAME_MAPPINGS["PhotopainterTransformersLlmGenerate"],
+            "PhotoPainter LLM Generate (Transformers)",
+        )
 
-        input_types = node.INPUT_TYPES()
-        required = input_types["required"]
-        self.assertEqual(required["backend"][0], list(self.module.SUPPORTED_BACKENDS))
+        required = node.INPUT_TYPES()["required"]
+        self.assertNotIn("model_file", required)
         self.assertEqual(required["quantization_mode"][0], list(self.module.SUPPORTED_QUANTIZATION_MODES))
         self.assertEqual(required["think_mode"][0], list(self.module.SUPPORTED_THINK_MODES))
-        self.assertEqual(required["temperature"][1]["default"], 1.0)
-        self.assertEqual(required["max_tokens"][1]["default"], 2048)
+        self.assertEqual(required["max_tokens"][1]["max"], 262144)
+
+    def test_llama_cpp_llm_node_metadata_contract(self):
+        self.assertIn("PhotopainterLlamaCppLlmGenerate", self.module.NODE_CLASS_MAPPINGS)
+
+        node = self.module.PhotopainterLlamaCppLlmGenerate
+        self.assertEqual(node.RETURN_TYPES, ("STRING", "STRING", "STRING"))
+        self.assertEqual(node.RETURN_NAMES, ("output_text", "debug_json", "raw_text"))
+        self.assertFalse(node.OUTPUT_NODE)
+        self.assertEqual(node.CATEGORY, "photopainter/llm")
+        self.assertEqual(
+            self.module.NODE_DISPLAY_NAME_MAPPINGS["PhotopainterLlamaCppLlmGenerate"],
+            "PhotoPainter LLM Generate (llama-cpp)",
+        )
+
+        required = node.INPUT_TYPES()["required"]
         self.assertIn("model_file", required)
-        self.assertIn("json_schema", required)
+        self.assertNotIn("quantization_mode", required)
+        self.assertNotIn("think_mode", required)
+        self.assertEqual(required["max_tokens"][1]["max"], 262144)
+
+    def test_node_mappings_only_expose_split_llm_nodes(self):
+        self.assertEqual(
+            set(self.module.NODE_CLASS_MAPPINGS),
+            {
+                "PhotopainterPngPost",
+                "PhotopainterTransformersLlmGenerate",
+                "PhotopainterLlamaCppLlmGenerate",
+            },
+        )
+        self.assertEqual(
+            set(self.module.NODE_DISPLAY_NAME_MAPPINGS),
+            {
+                "PhotopainterPngPost",
+                "PhotopainterTransformersLlmGenerate",
+                "PhotopainterLlamaCppLlmGenerate",
+            },
+        )
 
     def test_llm_cache_env_contract(self):
         temp_dir = MODULE_PATH.parent / "tmp-cache"

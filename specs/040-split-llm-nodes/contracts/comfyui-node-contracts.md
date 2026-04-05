@@ -25,7 +25,8 @@
 
 ### Notes
 - `model_file` は存在しない
-- `debug_json` は `quantization_mode`, `requested_enable_thinking` を含む
+- `debug_json` は `quantization_mode`, `requested_enable_thinking`, `retry_count`, `retry_reason` を含む
+- retry は `json_parse_error` または `schema_error` の場合に限定する
 
 ## LlamaCpp Node Contract
 
@@ -52,7 +53,8 @@
 ### Notes
 - `think_mode` は存在しない
 - `quantization_mode` は存在しない
-- `debug_json` は GGUF / context window / validation 状態を含む
+- `debug_json` は GGUF / context window / validation 状態と `retry_reason` を含む
+- retry は `json_parse_error` または `schema_error` の場合に限定する
 
 ## Migration Contract
 - 旧 `PhotopainterLlmGenerate` は削除する

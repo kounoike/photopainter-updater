@@ -5,97 +5,97 @@
 ## Node 一覧
 
 - `PhotoPainter PNG POST`
-- `PhotoPainter LLM Generate`
+- `PhotoPainter LLM Generate (Transformers)`
+- `PhotoPainter LLM Generate (llama-cpp)`
+
+旧 `PhotoPainter LLM Generate` は削除しました。backend ごとの責務差を UI で明確にするため、
+LLM node は 2 つへ分離しています。
 
 ## `PhotoPainter PNG POST`
 
 `PhotoPainter PNG POST` は、ComfyUI の `IMAGE` 入力を `Content-Type: image/png`
 の raw body として任意 URL へ `POST` する終端ノードです。
 
-## 入力
+### 入力
 
 - `image`: ComfyUI の単一 `IMAGE`
 - `url`: `http` または `https` の送信先 URL
 
-## 挙動
+### 挙動
 
 - 画像は 1 回の node 実行につき 1 枚だけ送信します
 - 送信成功条件は `200 OK` 固定です
 - 成功時は UI summary に status と応答本文要約を表示します
 - URL 不正、入力不足、接続失敗、`200` 以外の status は例外になり、workflow を失敗扱いにします
 
-## `PhotoPainter LLM Generate`
+## `PhotoPainter LLM Generate (Transformers)`
 
-`PhotoPainter LLM Generate` は、ComfyUI workflow 内でローカル LLM 推論を行い、
-成功時に単一 `STRING` 出力を返す通常ノードです。`json_output=true` のときは、
-その `STRING` が valid JSON 文字列になります。失敗時は例外を投げ、workflow を
-失敗扱いにします。
+`transformers` backend 専用の local LLM node です。Hugging Face の通常重みを前提にし、
+`think_mode` と `quantization_mode` を扱います。
 
 ### 入力
 
-- `system_prompt`: system message 文字列
-- `user_prompt`: user message 文字列
-- `backend`: `transformers` または `llama-cpp`
+- `system_prompt`
+- `user_prompt`
 - `model_id`: Hugging Face Hub の `user/repo`
-- `model_file`: 任意。主に `llama-cpp` で repo 内 GGUF を指定
 - `quantization_mode`: `none` / `bnb_8bit` / `bnb_4bit`
 - `think_mode`: `off` / `generic` / `qwen` / `gemma` / `deepseek_r1`
-- `json_output`: JSON mode を有効化するか
-- `json_schema`: 任意の JSON Schema 文字列
-- `max_retries`: parse failure / schema mismatch の retry 上限
-- `temperature`, `max_tokens`: 推論パラメータ
+- `json_output`
+- `json_schema`
+- `max_retries`
+- `temperature`
+- `max_tokens`
 
-### `backend` と `think_mode` の違い
+### backend 固有仕様
 
-- `backend` は推論実行基盤の選択です
-- `think_mode` は model family ごとの think 制御方針です
+- `model_file` は存在しません
+- `quantization_mode` は `bitsandbytes` と `accelerate` を使った load-time quantization です
+- Qwen/Gemma 系では documented think 制御を優先します
+- `debug_json` には少なくとも `quantization_mode`、`requested_enable_thinking`、
+  `control_kind`、`retry_reason`、`raw_had_think_block`、`sanitized_output` を含みます
 
-`think_mode` は単なる共通 prompt 文言ではなく、family ごとの documented control が
-ある場合はそれを優先して使います。`generic` だけは best-effort の汎用 mode です。
+## `PhotoPainter LLM Generate (llama-cpp)`
 
-### `think_mode`
+`llama-cpp` backend 専用の local LLM node です。GGUF repo と `model_file` を前提にします。
 
-- `off`: documented な think 無効化方法があればそれを優先し、無ければ通常生成に戻る
-- `generic`: best-effort の汎用 mode。特定 model での thinking 挙動は保証しない
-- `qwen`: Qwen 系向け mode。対応 family 以外では `think_mode_error`
-- `gemma`: Gemma 系向け mode。対応 family 以外では `think_mode_error`
-- `deepseek_r1`: DeepSeek R1 系向け mode。対応 family 以外では `think_mode_error`
+### 入力
+
+- `system_prompt`
+- `user_prompt`
+- `model_id`: Hugging Face Hub の `user/repo`
+- `model_file`: repo 内 GGUF file 名
+- `json_output`
+- `json_schema`
+- `max_retries`
+- `temperature`
+- `max_tokens`
+
+### backend 固有仕様
+
+- `think_mode` は存在しません
+- `quantization_mode` は存在しません
+- `model_file` は必須です
+- `debug_json` には少なくとも `model_file`、`context_window`、`retry_reason` を含みます
+
+## 共通仕様
 
 ### JSON mode
 
 - `json_output=true` のとき、node は generation-time structured output を優先します
 - `json_schema` がある場合は `lm-format-enforcer` と `jsonschema` の両方で制約します
-- 選択した backend / model 経路で structured output constraint を適用できない場合は、
-  自由文 fallback ではなく明示 failure にします
+- structured output constraint を適用できない場合は自由文 fallback ではなく明示 failure にします
 
-### quantization
+### Retry
 
-- `quantization_mode` は `transformers` backend 専用です
-- `bnb_8bit` / `bnb_4bit` は `bitsandbytes` と `accelerate` を使った load-time quantization です
-- 事前に量子化済み checkpoint を作る必要はありません
-- VRAM が厳しい環境で Qwen3.5 9B を試すなら、まず `bnb_4bit` が現実的です
+- retry は `json_parse_error` または `schema_error` の場合に限ります
+- `backend_error` や `think_mode_error` では retry しません
+- `debug_json` で `retry_count` と `retry_reason` を確認できます
 
-### context と `max_tokens`
-
-- `max_tokens` は生成する出力 token の上限です
-- context window は backend ごとに model metadata から自動取得します
-- `transformers` は model config / tokenizer metadata、`llama-cpp` は model default の `n_ctx` を使います
-- 長い system/user prompt を使う場合、`max_tokens` だけ増やしても context overflow は解消しません
-
-### model cache
-
-`COMFYUI_LLM_MODEL_CACHE_DIR` を `.env` に設定すると、ComfyUI container へその値が渡され、
-custom node はプロセス環境変数として参照します。未設定時は backend 既定保存先を使います。
-
-```text
-COMFYUI_LLM_MODEL_CACHE_DIR=./comfyui-data/llm-models
-```
-
-### 出力
+### Output
 
 - 成功時: 3 つの `STRING`
 - `output_text`: text mode では plain text、json mode では valid JSON string
-- `debug_json`: family 判定、think control、quantization mode、sanitization の有無など
+- `debug_json`: backend 固有設定を含む JSON object 文字列
 - `raw_text`: sanitize 前の生出力
 - 失敗時: 例外
 
@@ -106,6 +106,32 @@ COMFYUI_LLM_MODEL_CACHE_DIR=./comfyui-data/llm-models
 - `backend_error`: import 失敗、model load 失敗、推論実行失敗
 - `json_parse_error`: `json_output=true` で JSON parse 不能
 - `schema_error`: schema mismatch
+
+### model cache
+
+`COMFYUI_LLM_MODEL_CACHE_DIR` を `.env` に設定すると、ComfyUI container へその値が渡され、
+custom node はプロセス環境変数として参照します。未設定時は backend 既定保存先を使います。
+
+```text
+COMFYUI_LLM_MODEL_CACHE_DIR=./comfyui-data/llm-models
+```
+
+## 旧単一ノードからの移行
+
+### `backend=transformers` だった場合
+
+1. 旧ノードを削除する
+2. `PhotoPainter LLM Generate (Transformers)` を配置する
+3. `system_prompt`、`user_prompt`、`model_id`、`json_output`、`json_schema` を移す
+4. `think_mode` を必要に応じて設定する
+5. 必要なら `quantization_mode=bnb_4bit` を使う
+
+### `backend=llama-cpp` だった場合
+
+1. 旧ノードを削除する
+2. `PhotoPainter LLM Generate (llama-cpp)` を配置する
+3. `system_prompt`、`user_prompt`、`model_id`、`model_file`、`json_output`、`json_schema` を移す
+4. 旧 `think_mode` と `quantization_mode` は削除する
 
 ## 026 との接続例
 
@@ -128,27 +154,18 @@ docker compose build comfyui
 docker compose up -d comfyui
 ```
 
-node 読み込み確認:
-
-```bash
-docker compose logs --tail=200 comfyui
-```
-
-読み込み失敗がなければ ComfyUI の Add Node から `PhotoPainter PNG POST` を選べます。
-
 repo 側ソースを更新したあとは ComfyUI image を再 build します。
 
 ```bash
-docker compose build comfyui
-docker compose up -d comfyui
+docker compose up -d --build comfyui
 ```
 
-container を作り直して確認したい場合:
+## workflow 例
 
-```bash
-docker compose down
-docker compose up -d comfyui
-```
+backend 別の簡易 workflow 例は `comfyui/workflows/` にあります。
+
+- `llm-smoke-transformers.json`
+- `llm-smoke-llama-cpp.json`
 
 ## テスト
 
