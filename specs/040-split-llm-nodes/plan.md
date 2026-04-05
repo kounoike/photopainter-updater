@@ -7,14 +7,14 @@
 
 ## Summary
 
-既存の単一 `PhotoPainter LLM Generate` ノードを削除し、`transformers` 専用ノードと `llama-cpp` 専用ノードへ分離する。`transformers` 側には `quantization_mode` と family ごとの think 制御を集中させ、`llama-cpp` 側には GGUF / `model_file` / context window validation を集中させる。共通の JSON/schema 検証、debug 出力、メモリ解放 helper は再利用しつつ、UI 契約と node 名を backend ごとに明確に分ける。
+既存の単一 `PhotoPainter LLM Generate` ノードを削除し、`transformers` 専用ノードと `llama-cpp` 専用ノードへ分離する。`transformers` 側には `quantization_mode` と family ごとの think 制御を集中させ、`llama-cpp` 側には GGUF / `model_file` / context window validation を集中させる。共通の JSON/schema 検証、debug 出力、メモリ解放 helper は再利用しつつ、retry は JSON parse / schema failure 限定で維持し、UI 契約と node 名を backend ごとに明確に分ける。
 
 ## Technical Context
 
 **Language/Version**: Python 3.12（ComfyUI custom node runtime）  
 **Primary Dependencies**: ComfyUI custom node backend API、`transformers`、`bitsandbytes`、`accelerate`、`llama-cpp-python`、`lm-format-enforcer`、`jsonschema`  
 **Storage**: ローカルファイル（ComfyUI container 内 model cache、必要に応じた bind mount 永続ディレクトリ）  
-**Testing**: `python -m py_compile`、`python -m unittest discover -s comfyui/custom_node/comfyui-photopainter-custom/tests -v`、ComfyUI 手動 workflow 確認  
+**Testing**: `python -m py_compile`、`python -m unittest discover -s comfyui/custom_node/comfyui-photopainter-custom/tests -v`、ComfyUI 手動 workflow 確認（Gemma documented control、JSON retry 理由、`bnb_4bit` を含む）  
 **Target Platform**: Docker Compose 上の ComfyUI GPU container  
 **Project Type**: ComfyUI workflow integration / custom node library  
 **Performance Goals**: backend 固有 UI により設定ミスを減らし、`transformers` 本命経路では 12GB 級 VRAM でも `bnb_4bit` を使った Qwen3.5 9B 試行を可能にする。画像生成本体の VRAM を優先するため、生成後は backend メモリを解放する。  
@@ -72,6 +72,7 @@ specs/
 
 - backend 分離時にどこまで共通 helper を残すかを決める
 - `transformers` 側の `quantization_mode` を node 契約に固定する
+- Qwen/Gemma documented control と retry 理由表示を debug 契約へ固定する
 - `llama-cpp` 側から `think_mode` を完全に外す
 - 旧単一ノード削除後の移行手順を定義する
 
