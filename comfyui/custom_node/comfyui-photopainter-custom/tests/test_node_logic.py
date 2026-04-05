@@ -305,6 +305,7 @@ class NodeLogicTests(unittest.TestCase):
                     think_mode="off",
                     documented_control_available=True,
                     control_kind="qwen_enable_thinking",
+                    requested_enable_thinking=False,
                     fallback_to_generic_prompt=False,
                     json_output=False,
                     raw_had_think_block=False,
@@ -331,6 +332,7 @@ class NodeLogicTests(unittest.TestCase):
         debug_json = json.loads(result["result"][1])
         self.assertEqual(result["result"][2], "<think>debug</think>\nhello from llm")
         self.assertEqual(debug_json["family"], "qwen")
+        self.assertFalse(debug_json["requested_enable_thinking"])
         self.assertFalse(debug_json["raw_had_think_block"])
         self.assertEqual(observed["config"].model_id, "Qwen/Qwen3.5-4B")
         self.assertIn("attempts=1", result["ui"]["text"][0])
@@ -345,6 +347,7 @@ class NodeLogicTests(unittest.TestCase):
                 think_mode="generic",
                 documented_control_available=False,
                 control_kind=None,
+                requested_enable_thinking=None,
                 fallback_to_generic_prompt=True,
                 json_output=True,
                 raw_had_think_block=False,
@@ -377,6 +380,7 @@ class NodeLogicTests(unittest.TestCase):
 
         self.assertEqual(json.loads(result["result"][0])["positive_prompt"], "a")
         self.assertTrue(json.loads(result["result"][1])["json_output"])
+        self.assertIsNone(json.loads(result["result"][1])["requested_enable_thinking"])
         self.assertEqual(json.loads(result["result"][2])["positive_prompt"], "a")
 
     def test_qwen_off_uses_documented_thinking_disable_control(self):
@@ -479,6 +483,7 @@ class NodeLogicTests(unittest.TestCase):
         self.assertEqual(raw_text, '{"positive_prompt":"ok"}')
         self.assertEqual(debug_info.attempts, 2)
         self.assertTrue(debug_info.json_output)
+        self.assertIsNone(debug_info.requested_enable_thinking)
 
     def test_qwen_think_block_is_stripped_from_final_output(self):
         config = self.module._build_llm_config(

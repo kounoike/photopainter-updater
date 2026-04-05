@@ -66,6 +66,7 @@ class GenerationDebugInfo:
     think_mode: str
     documented_control_available: bool
     control_kind: str | None
+    requested_enable_thinking: bool | None
     fallback_to_generic_prompt: bool
     json_output: bool
     raw_had_think_block: bool
@@ -824,6 +825,9 @@ def _generate_llm_output(config: LlmNodeConfig) -> tuple[str, str, GenerationDeb
                 think_mode=config.think_mode,
                 documented_control_available=think_plan.documented_control_available,
                 control_kind=think_plan.control_kind,
+                requested_enable_thinking=(
+                    think_plan.think_mode != "off" if think_plan.control_kind == "qwen_enable_thinking" else None
+                ),
                 fallback_to_generic_prompt=think_plan.fallback_to_generic_prompt,
                 json_output=config.json_output,
                 raw_had_think_block=validation_debug["raw_had_think_block"],
@@ -928,6 +932,7 @@ class PhotopainterLlmGenerate:
                 "think_mode": debug_info.think_mode,
                 "documented_control_available": debug_info.documented_control_available,
                 "control_kind": debug_info.control_kind,
+                "requested_enable_thinking": debug_info.requested_enable_thinking,
                 "fallback_to_generic_prompt": debug_info.fallback_to_generic_prompt,
                 "json_output": debug_info.json_output,
                 "raw_had_think_block": debug_info.raw_had_think_block,
