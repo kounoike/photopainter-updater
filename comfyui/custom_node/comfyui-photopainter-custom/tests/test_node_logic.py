@@ -376,6 +376,10 @@ class NodeLogicTests(unittest.TestCase):
                 off_enforcement_supported=True,
                 off_enforcement_guaranteed=True,
                 off_failure_reason=None,
+                continuation_supported=True,
+                continuation_used=True,
+                continuation_count=1,
+                continuation_stop_reason="completed_after_continuation",
             ),
         )
 
@@ -404,6 +408,9 @@ class NodeLogicTests(unittest.TestCase):
         self.assertTrue(debug_json["off_enforcement_supported"])
         self.assertTrue(debug_json["off_enforcement_guaranteed"])
         self.assertIsNone(debug_json["off_failure_reason"])
+        self.assertTrue(debug_json["continuation_supported"])
+        self.assertTrue(debug_json["continuation_used"])
+        self.assertEqual(debug_json["continuation_count"], 1)
         self.assertEqual(debug_json["retry_reason"], "json_parse_error")
         self.assertEqual(debug_json["response_budget"], "auto")
         self.assertEqual(debug_json["resolved_max_tokens"], 768)
@@ -439,6 +446,10 @@ class NodeLogicTests(unittest.TestCase):
                 off_enforcement_supported=None,
                 off_enforcement_guaranteed=None,
                 off_failure_reason=None,
+                continuation_supported=False,
+                continuation_used=False,
+                continuation_count=0,
+                continuation_stop_reason="continuation is not supported for backend=llama-cpp",
             ),
         )
         node = self.module.PhotopainterLlamaCppLlmGenerate()
@@ -562,9 +573,9 @@ class NodeLogicTests(unittest.TestCase):
 
     def test_json_parse_retry_then_success(self):
         self.module._load_jsonschema_module = lambda: FakeJsonSchemaModule
-        attempts = iter([("not-json", 4096, 120, 256), ('{"positive_prompt":"ok"}', 4096, 120, 256)])
+        attempts = iter([("not-json", 4096, 120, 256, 2), ('{"positive_prompt":"ok"}', 4096, 120, 256, 2)])
 
-        def fake_attempt(config, retry_feedback=None):
+        def fake_attempt(config, retry_feedback=None, custom_messages=None):
             return next(attempts)
 
         self.module._run_generation_attempt = fake_attempt
@@ -592,7 +603,7 @@ class NodeLogicTests(unittest.TestCase):
 
     def test_schema_retry_exhaustion_raises_schema_error(self):
         self.module._load_jsonschema_module = lambda: FakeJsonSchemaModule
-        self.module._run_generation_attempt = lambda config, retry_feedback=None: ("{}", 4096, 120, 256)
+        self.module._run_generation_attempt = lambda config, retry_feedback=None, custom_messages=None: ("{}", 4096, 120, 256, 2)
         config = self.module._build_transformers_llm_config(
             system_prompt="system",
             user_prompt="user",
@@ -611,7 +622,7 @@ class NodeLogicTests(unittest.TestCase):
             self.module._generate_llm_output(config)
 
     def test_backend_failure_is_not_retried(self):
-        self.module._run_generation_attempt = lambda config, retry_feedback=None: (_ for _ in ()).throw(
+        self.module._run_generation_attempt = lambda config, retry_feedback=None, custom_messages=None: (_ for _ in ()).throw(
             RuntimeError("backend_error: model load failed")
         )
         config = self.module._build_transformers_llm_config(
@@ -710,7 +721,7 @@ class NodeLogicTests(unittest.TestCase):
         plan = self.module._resolve_think_control(config)
         messages = self.module._build_messages(config, plan)
 
-        output, context_window, prompt_tokens, resolved_max_tokens = self.module._run_transformers_generation(
+        output, context_window, prompt_tokens, resolved_max_tokens, output_tokens = self.module._run_transformers_generation(
             config,
             plan,
             self.module._build_structured_output_plan(config),
@@ -721,6 +732,7 @@ class NodeLogicTests(unittest.TestCase):
         self.assertEqual(context_window, 4096)
         self.assertEqual(prompt_tokens, 3)
         self.assertEqual(resolved_max_tokens, 16)
+        self.assertEqual(output_tokens, 2)
         kwargs = FakeAutoTokenizer.last_instance.chat_template_calls[-1]
         self.assertEqual(kwargs["chat_template_kwargs"]["enable_thinking"], False)
 
@@ -792,7 +804,7 @@ class NodeLogicTests(unittest.TestCase):
         plan = self.module._resolve_think_control(config)
         messages = self.module._build_messages(config, plan)
 
-        output, _, _, resolved_max_tokens = self.module._run_transformers_generation(
+        output, _, _, resolved_max_tokens, output_tokens = self.module._run_transformers_generation(
             config,
             plan,
             self.module._build_structured_output_plan(config),
@@ -801,6 +813,7 @@ class NodeLogicTests(unittest.TestCase):
 
         self.assertEqual(output, '{"prompt":"ok"}')
         self.assertEqual(resolved_max_tokens, 16)
+        self.assertEqual(output_tokens, 2)
         generate_kwargs = FakeAutoModel.last_instance.generate_calls[-1]
         self.assertEqual(generate_kwargs["prefix_allowed_tokens_fn"], "prefix-fn")
 
@@ -827,7 +840,7 @@ class NodeLogicTests(unittest.TestCase):
         plan = self.module._resolve_think_control(config)
         messages = self.module._build_messages(config, plan)
 
-        output, _, _, _ = self.module._run_transformers_generation(
+        output, _, _, _, _ = self.module._run_transformers_generation(
             config,
             plan,
             self.module._build_structured_output_plan(config),
@@ -898,7 +911,7 @@ class NodeLogicTests(unittest.TestCase):
         plan = self.module._resolve_think_control(config)
         messages = self.module._build_messages(config, plan)
 
-        output, context_window, prompt_tokens, resolved_max_tokens = self.module._run_llama_cpp_generation(
+        output, context_window, prompt_tokens, resolved_max_tokens, output_tokens = self.module._run_llama_cpp_generation(
             config,
             plan,
             self.module._build_structured_output_plan(config),
@@ -909,6 +922,7 @@ class NodeLogicTests(unittest.TestCase):
         self.assertEqual(context_window, 4096)
         self.assertEqual(prompt_tokens, 3)
         self.assertEqual(resolved_max_tokens, 16)
+        self.assertEqual(output_tokens, 3)
         self.assertEqual(FakeLlama.last_kwargs["filename"], "model.gguf")
         self.assertEqual(FakeLlama.last_instance.calls[-1]["logits_processor"], ["logits-processor"])
 
@@ -937,6 +951,10 @@ class NodeLogicTests(unittest.TestCase):
                 off_enforcement_supported=None,
                 off_enforcement_guaranteed=None,
                 off_failure_reason=None,
+                continuation_supported=False,
+                continuation_used=False,
+                continuation_count=0,
+                continuation_stop_reason="continuation is not supported for backend=llama-cpp",
             )
         )
         parsed = json.loads(debug_json)
@@ -949,6 +967,89 @@ class NodeLogicTests(unittest.TestCase):
         self.assertIn("retry_reason", parsed)
         self.assertIn("off_enforcement_supported", parsed)
         self.assertIn("off_enforcement_guaranteed", parsed)
+        self.assertIn("continuation_count", parsed)
+
+    def test_generate_llm_output_continues_long_text_response(self):
+        calls = {"count": 0}
+
+        def fake_attempt(config, retry_feedback=None, custom_messages=None):
+            calls["count"] += 1
+            if calls["count"] == 1:
+                return ("First half ", 4096, 120, 2, 2)
+            return ("second half.", 4096, 130, 2, 1)
+
+        self.module._run_generation_attempt = fake_attempt
+        config = self.module._build_transformers_llm_config(
+            system_prompt="system",
+            user_prompt="user",
+            model_id="Qwen/Qwen3.5-4B",
+            quantization_mode="none",
+            think_mode="generic",
+            json_output=False,
+            json_schema="",
+            max_retries=0,
+            temperature=1.0,
+            response_budget="manual",
+            max_tokens=32,
+        )
+
+        output, raw_text, debug_info = self.module._generate_llm_output(config)
+        self.assertEqual(output, "First half second half.")
+        self.assertEqual(raw_text, "First half second half.")
+        self.assertTrue(debug_info.continuation_supported)
+        self.assertTrue(debug_info.continuation_used)
+        self.assertEqual(debug_info.continuation_count, 1)
+        self.assertEqual(debug_info.continuation_stop_reason, "completed_after_continuation")
+
+    def test_generate_llm_output_does_not_continue_when_not_needed(self):
+        calls = {"count": 0}
+
+        def fake_attempt(config, retry_feedback=None, custom_messages=None):
+            calls["count"] += 1
+            return ("Done.", 4096, 120, 4, 1)
+
+        self.module._run_generation_attempt = fake_attempt
+        config = self.module._build_transformers_llm_config(
+            system_prompt="system",
+            user_prompt="user",
+            model_id="Qwen/Qwen3.5-4B",
+            quantization_mode="none",
+            think_mode="generic",
+            json_output=False,
+            json_schema="",
+            max_retries=0,
+            temperature=1.0,
+            response_budget="manual",
+            max_tokens=32,
+        )
+
+        output, _, debug_info = self.module._generate_llm_output(config)
+        self.assertEqual(output, "Done.")
+        self.assertEqual(calls["count"], 1)
+        self.assertTrue(debug_info.continuation_supported)
+        self.assertFalse(debug_info.continuation_used)
+        self.assertEqual(debug_info.continuation_count, 0)
+
+    def test_continuation_is_disabled_for_think_off(self):
+        self.module._run_generation_attempt = lambda config, retry_feedback=None, custom_messages=None: ("Final.", 4096, 120, 4, 1)
+        config = self.module._build_transformers_llm_config(
+            system_prompt="system",
+            user_prompt="user",
+            model_id="Qwen/Qwen3.5-4B",
+            quantization_mode="none",
+            think_mode="off",
+            json_output=False,
+            json_schema="",
+            max_retries=0,
+            temperature=1.0,
+            response_budget="manual",
+            max_tokens=32,
+        )
+
+        _, _, debug_info = self.module._generate_llm_output(config)
+        self.assertFalse(debug_info.continuation_supported)
+        self.assertFalse(debug_info.continuation_used)
+        self.assertIn("think_mode=off", debug_info.continuation_stop_reason)
 
     def test_auto_response_budget_resolves_from_prompt_tokens_and_think_mode(self):
         config = self.module._build_transformers_llm_config(

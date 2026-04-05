@@ -28,6 +28,7 @@ HF_REPO_ID_PATTERN = re.compile(r"^[A-Za-z0-9][\w.-]*/[\w.-]+$")
 GENERIC_THINK_PROMPT = "Think carefully before answering, but return only the final answer."
 DEEPSEEK_R1_THINK_PROMPT = "Use a DeepSeek-R1-style reasoning pass internally, then return only the final answer."
 FINAL_ONLY_PROMPT = "Return only the final answer. Do not output any reasoning or thinking content."
+DEFAULT_MAX_CONTINUATIONS = 3
 
 
 @dataclass(frozen=True)
@@ -91,6 +92,10 @@ class GenerationDebugInfo:
     off_enforcement_supported: bool | None
     off_enforcement_guaranteed: bool | None
     off_failure_reason: str | None
+    continuation_supported: bool | None
+    continuation_used: bool
+    continuation_count: int
+    continuation_stop_reason: str | None
 
 
 def _normalize_url(url: str) -> str:
@@ -675,6 +680,22 @@ def _build_messages(
     ]
 
 
+def _build_continuation_messages(
+    config: LlmNodeConfig,
+    think_plan: ThinkControlPlan,
+    current_output: str,
+) -> list[dict[str, str]]:
+    messages = _build_messages(config, think_plan)
+    messages.append({"role": "assistant", "content": current_output})
+    messages.append(
+        {
+            "role": "user",
+            "content": "Continue the previous answer from exactly where it stopped. Do not repeat prior text. Output only the continuation.",
+        }
+    )
+    return messages
+
+
 def _require_think_off_support(think_plan: ThinkControlPlan) -> None:
     if think_plan.think_mode != "off":
         return
@@ -825,7 +846,7 @@ def _run_transformers_generation(
     think_plan: ThinkControlPlan,
     structured_output_plan: StructuredOutputPlan,
     messages: list[dict[str, str]],
-) -> tuple[str, int | None, int | None, int]:
+) -> tuple[str, int | None, int | None, int, int]:
     torch, AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig = _load_transformers_modules()
     tokenizer = None
     model = None
@@ -910,7 +931,7 @@ def _run_transformers_generation(
         output_text = tokenizer.decode(output_tokens, skip_special_tokens=True).strip()
         if not output_text:
             raise _backend_error("transformers generation returned empty output")
-        return output_text, context_window, prompt_tokens, resolved_max_tokens
+        return output_text, context_window, prompt_tokens, resolved_max_tokens, len(output_tokens)
     finally:
         del generated
         del inputs
@@ -964,7 +985,7 @@ def _run_llama_cpp_generation(
     think_plan: ThinkControlPlan,
     structured_output_plan: StructuredOutputPlan,
     messages: list[dict[str, str]],
-) -> tuple[str, int | None, int | None, int]:
+) -> tuple[str, int | None, int | None, int, int | None]:
     Llama = _load_llama_cpp_module()
     llm = None
 
@@ -1017,7 +1038,13 @@ def _run_llama_cpp_generation(
                     f"requested tokens ({requested}) exceed model context window of {context_window}"
                 )
         response = llm.create_chat_completion(**create_kwargs)
-        return _extract_llama_content(response), context_window, prompt_tokens, resolved_max_tokens
+        output_text = _extract_llama_content(response)
+        output_tokens = None
+        try:
+            output_tokens = len(llm.tokenize(output_text.encode("utf-8"), add_bos=False))
+        except Exception:
+            output_tokens = None
+        return output_text, context_window, prompt_tokens, resolved_max_tokens, output_tokens
     except Exception as exc:
         raise _backend_error(f"llama-cpp generation failed: {exc}") from exc
     finally:
@@ -1027,11 +1054,13 @@ def _run_llama_cpp_generation(
 
 
 def _run_generation_attempt(
-    config: LlmNodeConfig, retry_feedback: str | None = None
-) -> tuple[str, int | None, int | None, int]:
+    config: LlmNodeConfig,
+    retry_feedback: str | None = None,
+    custom_messages: list[dict[str, str]] | None = None,
+) -> tuple[str, int | None, int | None, int, int | None]:
     think_plan = _resolve_think_control(config)
     structured_output_plan = _build_structured_output_plan(config)
-    messages = _build_messages(config, think_plan, retry_feedback)
+    messages = custom_messages or _build_messages(config, think_plan, retry_feedback)
 
     if config.backend == "transformers":
         return _run_transformers_generation(config, think_plan, structured_output_plan, messages)
@@ -1070,6 +1099,70 @@ def _validate_generation_output(config: LlmNodeConfig, output_text: str) -> tupl
     return normalized, debug
 
 
+def _resolve_continuation_support(config: LlmNodeConfig) -> tuple[bool, str | None]:
+    if config.json_output:
+        return False, "continuation is disabled for json_output=true"
+    if config.think_mode == "off":
+        return False, "continuation is disabled for think_mode=off"
+    if config.backend != "transformers":
+        return False, f"continuation is not supported for backend={config.backend}"
+    return True, None
+
+
+def _append_text_fragment(current_output: str, next_fragment: str) -> str:
+    if not current_output:
+        return next_fragment
+    if not next_fragment:
+        return current_output
+    if current_output[-1].isspace() or next_fragment[0].isspace():
+        return f"{current_output}{next_fragment}"
+    if current_output[-1].isalnum() and next_fragment[0].isalnum():
+        return f"{current_output} {next_fragment}"
+    return f"{current_output}{next_fragment}"
+
+
+def _continue_validated_text_output(
+    config: LlmNodeConfig,
+    think_plan: ThinkControlPlan,
+    initial_validated: str,
+    initial_raw: str,
+    initial_output_tokens: int | None,
+    initial_resolved_max_tokens: int,
+) -> tuple[str, str, int, str]:
+    combined_validated = initial_validated
+    combined_raw = initial_raw
+    continuation_count = 0
+    last_fragment = initial_validated
+    output_tokens = initial_output_tokens
+    resolved_max_tokens = initial_resolved_max_tokens
+
+    while output_tokens is not None and output_tokens >= resolved_max_tokens:
+        if continuation_count >= DEFAULT_MAX_CONTINUATIONS:
+            raise _backend_error("generation continuation reached the configured limit before completing the answer")
+
+        messages = _build_continuation_messages(config, think_plan, combined_validated)
+        next_output, _, _, next_resolved_max_tokens, next_output_tokens = _run_generation_attempt(
+            config,
+            custom_messages=messages,
+        )
+        next_validated, next_debug = _validate_generation_output(config, next_output)
+        fragment = next_validated.strip()
+        if not fragment or fragment == last_fragment:
+            raise _backend_error("generation continuation made no progress")
+        if next_debug["raw_had_think_block"]:
+            raise _backend_error("generation continuation returned thinking content")
+
+        combined_validated = _append_text_fragment(combined_validated, next_validated)
+        combined_raw = _append_text_fragment(combined_raw, next_output)
+        continuation_count += 1
+        last_fragment = next_validated
+        output_tokens = next_output_tokens
+        resolved_max_tokens = next_resolved_max_tokens
+
+    stop_reason = "completed_after_continuation" if continuation_count else "completed_without_continuation"
+    return combined_validated, combined_raw, continuation_count, stop_reason
+
+
 def _generate_llm_output(config: LlmNodeConfig) -> tuple[str, str, GenerationDebugInfo]:
     retry_feedback: str | None = None
     total_attempts = config.max_retries + 1
@@ -1077,11 +1170,36 @@ def _generate_llm_output(config: LlmNodeConfig) -> tuple[str, str, GenerationDeb
 
     for attempt in range(1, total_attempts + 1):
         think_plan = _resolve_think_control(config)
-        output_text, context_window, prompt_tokens, resolved_max_tokens = _run_generation_attempt(
+        continuation_supported, continuation_unsupported_reason = _resolve_continuation_support(config)
+        output_text, context_window, prompt_tokens, resolved_max_tokens, output_tokens = _run_generation_attempt(
             config, retry_feedback
         )
         try:
             validated, validation_debug = _validate_generation_output(config, output_text)
+            continuation_used = False
+            continuation_count = 0
+            continuation_stop_reason = (
+                "completed_without_continuation" if continuation_supported else continuation_unsupported_reason
+            )
+            final_validated = validated
+            final_raw = output_text
+
+            if continuation_supported and not validation_debug["raw_had_think_block"]:
+                (
+                    final_validated,
+                    final_raw,
+                    continuation_count,
+                    continuation_stop_reason,
+                ) = _continue_validated_text_output(
+                    config,
+                    think_plan,
+                    validated,
+                    output_text,
+                    output_tokens,
+                    resolved_max_tokens,
+                )
+                continuation_used = continuation_count > 0
+
             debug_info = GenerationDebugInfo(
                 backend=config.backend,
                 family=think_plan.family,
@@ -1113,8 +1231,12 @@ def _generate_llm_output(config: LlmNodeConfig) -> tuple[str, str, GenerationDeb
                     else None
                 ),
                 off_failure_reason=think_plan.off_failure_reason,
+                continuation_supported=continuation_supported,
+                continuation_used=continuation_used,
+                continuation_count=continuation_count,
+                continuation_stop_reason=continuation_stop_reason,
             )
-            return validated, output_text, debug_info
+            return final_validated, final_raw, debug_info
         except RuntimeError as exc:
             detail = str(exc)
             if not detail.startswith(("json_parse_error:", "schema_error:")):
@@ -1174,6 +1296,10 @@ def _build_llm_debug_json(debug_info: GenerationDebugInfo) -> str:
             "off_enforcement_supported": debug_info.off_enforcement_supported,
             "off_enforcement_guaranteed": debug_info.off_enforcement_guaranteed,
             "off_failure_reason": debug_info.off_failure_reason,
+            "continuation_supported": debug_info.continuation_supported,
+            "continuation_used": debug_info.continuation_used,
+            "continuation_count": debug_info.continuation_count,
+            "continuation_stop_reason": debug_info.continuation_stop_reason,
             "think_mode": debug_info.think_mode,
         },
         ensure_ascii=True,

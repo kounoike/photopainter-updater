@@ -16,8 +16,8 @@
 
 **Purpose**: continuation の対象条件と非対象条件を実装前に固定する
 
-- [ ] T001 `specs/042-continue-long-answers/contracts/continuation-contract.md` と `specs/042-continue-long-answers/quickstart.md` を見直し、長文回答 continuation、非対象ケース、停止理由を実装観点へ固定する
-- [ ] T002 `comfyui/custom_node/comfyui-photopainter-custom/tests/test_contract.py` と `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` に追加する continuation 観点を洗い出し、task 実行順へ反映する
+- [X] T001 `specs/042-continue-long-answers/contracts/continuation-contract.md` と `specs/042-continue-long-answers/quickstart.md` を見直し、長文回答 continuation、非対象ケース、停止理由を実装観点へ固定する
+- [X] T002 `comfyui/custom_node/comfyui-photopainter-custom/tests/test_contract.py` と `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` に追加する continuation 観点を洗い出し、task 実行順へ反映する
 
 ---
 
@@ -27,9 +27,9 @@
 
 **CRITICAL**: この phase 完了まで user story 実装を開始しない
 
-- [ ] T003 `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に continuation 可否判定、上限回数、進展検知、停止理由を表す helper を追加する
-- [ ] T004 `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` の debug 生成 helper を更新し、`continuation_used`、`continuation_count`、`continuation_stop_reason` を返せるようにする
-- [ ] T005 `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` に Foundational helper の単体検証を追加し、非対象ケースと進展なし停止を確認する
+- [X] T003 `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に continuation 可否判定、上限回数、進展検知、停止理由を表す helper を追加する
+- [X] T004 `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` の debug 生成 helper を更新し、`continuation_used`、`continuation_count`、`continuation_stop_reason` を返せるようにする
+- [X] T005 `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` に Foundational helper の単体検証を追加し、非対象ケースと進展なし停止を確認する
 
 **Checkpoint**: continuation の対象条件、停止条件、debug 契約が helper レベルで固定されていること
 
@@ -43,14 +43,14 @@
 
 ### Verification for User Story 1
 
-- [ ] T006 [P] [US1] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` に long answer continuation 成功、continuation 不要、上限到達のテストを追加する
-- [ ] T007 [US1] `specs/042-continue-long-answers/quickstart.md` の continuation 成功確認手順を実装内容に合わせて更新する
+- [X] T006 [P] [US1] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` に long answer continuation 成功、continuation 不要、上限到達のテストを追加する
+- [X] T007 [US1] `specs/042-continue-long-answers/quickstart.md` の continuation 成功確認手順を実装内容に合わせて更新する
 
 ### Implementation for User Story 1
 
-- [ ] T008 [US1] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` の generation 実行経路を更新し、text mode の長文回答に continuation を適用する
-- [ ] T009 [US1] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` で generation 断片の連結と完結判定を実装し、完結した `output_text` / `raw_text` を返す
-- [ ] T010 [US1] `comfyui/custom_node/comfyui-photopainter-custom/README.md` に長文回答 continuation の条件と上限を追記する
+- [X] T008 [US1] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` の generation 実行経路を更新し、text mode の長文回答に continuation を適用する
+- [X] T009 [US1] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` で generation 断片の連結と完結判定を実装し、完結した `output_text` / `raw_text` を返す
+- [X] T010 [US1] `comfyui/custom_node/comfyui-photopainter-custom/README.md` に長文回答 continuation の条件と上限を追記する
 
 **Checkpoint**: text mode の長文回答が独立して最後まで返せること
 
@@ -64,14 +64,14 @@
 
 ### Verification for User Story 2
 
-- [ ] T011 [P] [US2] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` に `continuation_used`、`continuation_count`、`continuation_stop_reason` の期待値テストを追加する
-- [ ] T012 [P] [US2] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_contract.py` に continuation debug 項目の contract test を追加する
-- [ ] T013 [US2] `specs/042-continue-long-answers/contracts/continuation-contract.md` と `specs/042-continue-long-answers/quickstart.md` を実装済み debug 項目へ揃える
+- [X] T011 [P] [US2] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` に `continuation_used`、`continuation_count`、`continuation_stop_reason` の期待値テストを追加する
+- [X] T012 [P] [US2] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_contract.py` に continuation debug 項目の contract test を追加する
+- [X] T013 [US2] `specs/042-continue-long-answers/contracts/continuation-contract.md` と `specs/042-continue-long-answers/quickstart.md` を実装済み debug 項目へ揃える
 
 ### Implementation for User Story 2
 
-- [ ] T014 [US2] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` の `GenerationDebugInfo` と `debug_json` 組み立てを更新し、continuation 情報を反映する
-- [ ] T015 [US2] `comfyui/custom_node/comfyui-photopainter-custom/README.md` に continuation debug の見方を追記する
+- [X] T014 [US2] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` の `GenerationDebugInfo` と `debug_json` 組み立てを更新し、continuation 情報を反映する
+- [X] T015 [US2] `comfyui/custom_node/comfyui-photopainter-custom/README.md` に continuation debug の見方を追記する
 
 **Checkpoint**: continuation の有無と停止理由を `debug_json` だけで判別できること
 
@@ -85,14 +85,14 @@
 
 ### Verification for User Story 3
 
-- [ ] T016 [P] [US3] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` に `think_mode=off` 非 continuation、JSON mode 非 continuation、進展なし停止のテストを追加する
-- [ ] T017 [US3] `specs/042-continue-long-answers/quickstart.md` の非対象ケース確認手順を実装内容へ合わせて更新する
+- [X] T016 [P] [US3] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` に `think_mode=off` 非 continuation、JSON mode 非 continuation、進展なし停止のテストを追加する
+- [X] T017 [US3] `specs/042-continue-long-answers/quickstart.md` の非対象ケース確認手順を実装内容へ合わせて更新する
 
 ### Implementation for User Story 3
 
-- [ ] T018 [US3] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に `think_mode=off` / JSON mode / 未対応 backend の continuation 禁止条件を実装する
-- [ ] T019 [US3] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に進展なし停止と上限停止を実装する
-- [ ] T020 [US3] `comfyui/custom_node/comfyui-photopainter-custom/README.md` に非対象ケースと停止条件を明記する
+- [X] T018 [US3] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に `think_mode=off` / JSON mode / 未対応 backend の continuation 禁止条件を実装する
+- [X] T019 [US3] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に進展なし停止と上限停止を実装する
+- [X] T020 [US3] `comfyui/custom_node/comfyui-photopainter-custom/README.md` に非対象ケースと停止条件を明記する
 
 **Checkpoint**: continuation が既存厳格契約を壊さず、無限継続しないこと
 
@@ -102,8 +102,8 @@
 
 **Purpose**: 文書・テスト・実装の横断整合を確認する
 
-- [ ] T021 [P] `python -m py_compile comfyui/custom_node/comfyui-photopainter-custom/__init__.py` と `python -m unittest discover -s comfyui/custom_node/comfyui-photopainter-custom/tests -v` を実行し、continuation 回帰を確認する
-- [ ] T022 `comfyui/custom_node/comfyui-photopainter-custom/README.md`、`specs/042-continue-long-answers/quickstart.md`、`specs/042-continue-long-answers/contracts/continuation-contract.md` の用語を整合させる
+- [X] T021 [P] `python -m py_compile comfyui/custom_node/comfyui-photopainter-custom/__init__.py` と `python -m unittest discover -s comfyui/custom_node/comfyui-photopainter-custom/tests -v` を実行し、continuation 回帰を確認する
+- [X] T022 `comfyui/custom_node/comfyui-photopainter-custom/README.md`、`specs/042-continue-long-answers/quickstart.md`、`specs/042-continue-long-answers/contracts/continuation-contract.md` の用語を整合させる
 
 ---
 

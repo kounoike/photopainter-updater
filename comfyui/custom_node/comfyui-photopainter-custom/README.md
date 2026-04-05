@@ -58,8 +58,11 @@ LLM node は 2 つへ分離しています。
 - tokenizer/chat template が `enable_thinking` 引数を受け付けず fallback した場合も `think_mode=off` は failure になります
 - `debug_json` には少なくとも `quantization_mode`、`requested_enable_thinking`、
   `control_kind`、`retry_reason`、`raw_had_think_block`、`sanitized_output`、
-  `off_enforcement_supported`、`off_enforcement_guaranteed`、`off_failure_reason` を含みます
+  `off_enforcement_supported`、`off_enforcement_guaranteed`、`off_failure_reason`、
+  `continuation_supported`、`continuation_used`、`continuation_count`、`continuation_stop_reason` を含みます
 - default は `temperature=0.7`、`response_budget=auto`、`max_tokens=512` です。`manual` を選ばない限り `max_tokens` は token 数と think 設定から内部で解決します
+- text mode の長文回答は continuation により自動で続きを取りにいけます
+- continuation は現状 `transformers` backend の text mode に限定し、`think_mode=off` と `json_output=true` では使いません
 
 ## `PhotoPainter LLM Generate (llama-cpp)`
 
@@ -155,6 +158,14 @@ COMFYUI_LLM_MODEL_CACHE_DIR=./comfyui-data/llm-models
   - documented disable 非対応 family
   - tokenizer/chat template が `enable_thinking=False` を受け付けない
   - `raw_text` に reasoning trace が出た
+
+## 長文回答 continuation
+
+- 1 回目の generation が token 予算いっぱいで本文途中までしか返していないと判断した場合、node は continuation を試みます
+- continuation 成功時は `output_text` と `raw_text` に連結済み本文を返します
+- continuation は無限に続かず、回数上限または進展なしで停止します
+- `debug_json.continuation_used`、`debug_json.continuation_count`、`debug_json.continuation_stop_reason` で状況を確認できます
+- 現在は `transformers` backend の text mode が対象で、`think_mode=off` と `json_output=true` は continuation 対象外です
 
 ### `backend=llama-cpp` だった場合
 

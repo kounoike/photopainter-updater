@@ -177,11 +177,50 @@ class ContractTests(unittest.TestCase):
                 off_enforcement_supported=True,
                 off_enforcement_guaranteed=True,
                 off_failure_reason=None,
+                continuation_supported=True,
+                continuation_used=False,
+                continuation_count=0,
+                continuation_stop_reason="completed_without_continuation",
             )
         )
         self.assertIn('"off_enforcement_supported": true', debug_json)
         self.assertIn('"off_enforcement_guaranteed": true', debug_json)
         self.assertIn('"off_failure_reason": null', debug_json)
+
+    def test_debug_contract_exposes_continuation_fields(self):
+        debug_json = self.module._build_llm_debug_json(
+            self.module.GenerationDebugInfo(
+                backend="transformers",
+                family="qwen",
+                think_mode="generic",
+                quantization_mode="none",
+                documented_control_available=False,
+                control_kind=None,
+                requested_enable_thinking=None,
+                fallback_to_generic_prompt=True,
+                json_output=False,
+                raw_had_think_block=False,
+                sanitized_output=False,
+                attempts=1,
+                retry_count=0,
+                retry_reason=None,
+                context_window=4096,
+                prompt_tokens=64,
+                response_budget="manual",
+                resolved_max_tokens=32,
+                model_file=None,
+                off_enforcement_supported=None,
+                off_enforcement_guaranteed=None,
+                off_failure_reason=None,
+                continuation_supported=True,
+                continuation_used=True,
+                continuation_count=2,
+                continuation_stop_reason="completed_after_continuation",
+            )
+        )
+        self.assertIn('"continuation_supported": true', debug_json)
+        self.assertIn('"continuation_used": true', debug_json)
+        self.assertIn('"continuation_count": 2', debug_json)
 
     def test_llm_cache_env_contract(self):
         temp_dir = MODULE_PATH.parent / "tmp-cache"
