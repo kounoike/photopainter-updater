@@ -99,6 +99,7 @@ class ContractTests(unittest.TestCase):
         input_types = node.INPUT_TYPES()
         required = input_types["required"]
         self.assertEqual(required["backend"][0], list(self.module.SUPPORTED_BACKENDS))
+        self.assertEqual(required["quantization_mode"][0], list(self.module.SUPPORTED_QUANTIZATION_MODES))
         self.assertEqual(required["think_mode"][0], list(self.module.SUPPORTED_THINK_MODES))
         self.assertEqual(required["temperature"][1]["default"], 1.0)
         self.assertEqual(required["max_tokens"][1]["default"], 2048)

@@ -176,7 +176,13 @@ class FakeAutoModel:
     @classmethod
     def from_pretrained(cls, *args, **kwargs):
         cls.last_instance = FakeModel()
+        cls.last_instance.from_pretrained_kwargs = kwargs
         return cls.last_instance
+
+
+class FakeBitsAndBytesConfig:
+    def __init__(self, **kwargs):
+        self.kwargs = kwargs
 
 
 class FakeLlamaInstance:
@@ -275,6 +281,23 @@ class NodeLogicTests(unittest.TestCase):
                 max_tokens=32,
             )
 
+    def test_quantization_mode_is_rejected_for_llama_cpp(self):
+        with self.assertRaisesRegex(ValueError, "config_error: quantization_mode is only supported with transformers backend"):
+            self.module._build_llm_config(
+                backend="llama-cpp",
+                model_id="Qwen/Qwen3.5-4B",
+                model_file="model.gguf",
+                quantization_mode="bnb_4bit",
+                system_prompt="system",
+                user_prompt="user",
+                think_mode="off",
+                json_output=False,
+                json_schema="",
+                max_retries=1,
+                temperature=1.0,
+                max_tokens=32,
+            )
+
     def test_invalid_schema_is_rejected_before_generation(self):
         self.module._load_jsonschema_module = lambda: FakeJsonSchemaModule
         node = self.module.PhotopainterLlmGenerate()
@@ -303,6 +326,7 @@ class NodeLogicTests(unittest.TestCase):
                 self.module.GenerationDebugInfo(
                     family="qwen",
                     think_mode="off",
+                    quantization_mode="none",
                     documented_control_available=True,
                     control_kind="qwen_enable_thinking",
                     requested_enable_thinking=False,
@@ -332,6 +356,7 @@ class NodeLogicTests(unittest.TestCase):
         debug_json = json.loads(result["result"][1])
         self.assertEqual(result["result"][2], "<think>debug</think>\nhello from llm")
         self.assertEqual(debug_json["family"], "qwen")
+        self.assertEqual(debug_json["quantization_mode"], "none")
         self.assertFalse(debug_json["requested_enable_thinking"])
         self.assertFalse(debug_json["raw_had_think_block"])
         self.assertEqual(observed["config"].model_id, "Qwen/Qwen3.5-4B")
@@ -345,6 +370,7 @@ class NodeLogicTests(unittest.TestCase):
             self.module.GenerationDebugInfo(
                 family="qwen",
                 think_mode="generic",
+                quantization_mode="none",
                 documented_control_available=False,
                 control_kind=None,
                 requested_enable_thinking=None,
@@ -566,7 +592,12 @@ class NodeLogicTests(unittest.TestCase):
             self.module._generate_llm_output(config)
 
     def test_transformers_generation_passes_qwen_enable_thinking_flag(self):
-        self.module._load_transformers_modules = lambda: (FakeTorchModule, FakeAutoModel, FakeAutoTokenizer)
+        self.module._load_transformers_modules = lambda: (
+            FakeTorchModule,
+            FakeAutoModel,
+            FakeAutoTokenizer,
+            FakeBitsAndBytesConfig,
+        )
         config = self.module._build_llm_config(
             backend="transformers",
             model_id="Qwen/Qwen3.5-4B",
@@ -595,7 +626,12 @@ class NodeLogicTests(unittest.TestCase):
         self.assertEqual(kwargs["chat_template_kwargs"]["enable_thinking"], False)
 
     def test_transformers_json_mode_configures_generation_time_constraint(self):
-        self.module._load_transformers_modules = lambda: (FakeTorchModule, FakeAutoModel, FakeAutoTokenizer)
+        self.module._load_transformers_modules = lambda: (
+            FakeTorchModule,
+            FakeAutoModel,
+            FakeAutoTokenizer,
+            FakeBitsAndBytesConfig,
+        )
         self.module._load_lmfe_json_parser = lambda: (lambda schema: {"schema": schema})
         self.module._load_lmfe_transformers_builder = lambda: (lambda tokenizer, parser: "prefix-fn")
         self.module._load_jsonschema_module = lambda: FakeJsonSchemaModule
@@ -626,8 +662,50 @@ class NodeLogicTests(unittest.TestCase):
         generate_kwargs = FakeAutoModel.last_instance.generate_calls[-1]
         self.assertEqual(generate_kwargs["prefix_allowed_tokens_fn"], "prefix-fn")
 
+    def test_transformers_bnb_4bit_passes_quantization_config(self):
+        self.module._load_transformers_modules = lambda: (
+            FakeTorchModule,
+            FakeAutoModel,
+            FakeAutoTokenizer,
+            FakeBitsAndBytesConfig,
+        )
+        config = self.module._build_llm_config(
+            backend="transformers",
+            model_id="Qwen/Qwen3.5-4B",
+            model_file="",
+            quantization_mode="bnb_4bit",
+            system_prompt="system",
+            user_prompt="user",
+            think_mode="off",
+            json_output=False,
+            json_schema="",
+            max_retries=0,
+            temperature=1.0,
+            max_tokens=16,
+        )
+        plan = self.module._resolve_think_control(config)
+        messages = self.module._build_messages(config, plan)
+
+        output = self.module._run_transformers_generation(
+            config,
+            plan,
+            self.module._build_structured_output_plan(config),
+            messages,
+        )
+
+        self.assertEqual(output, "hello world")
+        kwargs = FakeAutoModel.last_instance.from_pretrained_kwargs
+        self.assertEqual(kwargs["device_map"], "auto")
+        self.assertTrue(kwargs["low_cpu_mem_usage"])
+        self.assertEqual(kwargs["quantization_config"].kwargs["load_in_4bit"], True)
+
     def test_structured_output_constraint_failure_is_explicit(self):
-        self.module._load_transformers_modules = lambda: (FakeTorchModule, FakeAutoModel, FakeAutoTokenizer)
+        self.module._load_transformers_modules = lambda: (
+            FakeTorchModule,
+            FakeAutoModel,
+            FakeAutoTokenizer,
+            FakeBitsAndBytesConfig,
+        )
         self.module._load_lmfe_json_parser = lambda: (lambda schema: {"schema": schema})
 
         def raise_constraint_failure():

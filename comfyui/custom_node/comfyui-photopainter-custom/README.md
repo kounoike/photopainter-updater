@@ -38,6 +38,7 @@
 - `backend`: `transformers` または `llama-cpp`
 - `model_id`: Hugging Face Hub の `user/repo`
 - `model_file`: 任意。主に `llama-cpp` で repo 内 GGUF を指定
+- `quantization_mode`: `none` / `bnb_8bit` / `bnb_4bit`
 - `think_mode`: `off` / `generic` / `qwen` / `gemma` / `deepseek_r1`
 - `json_output`: JSON mode を有効化するか
 - `json_schema`: 任意の JSON Schema 文字列
@@ -67,6 +68,13 @@
 - 選択した backend / model 経路で structured output constraint を適用できない場合は、
   自由文 fallback ではなく明示 failure にします
 
+### quantization
+
+- `quantization_mode` は `transformers` backend 専用です
+- `bnb_8bit` / `bnb_4bit` は `bitsandbytes` と `accelerate` を使った load-time quantization です
+- 事前に量子化済み checkpoint を作る必要はありません
+- VRAM が厳しい環境で Qwen3.5 9B を試すなら、まず `bnb_4bit` が現実的です
+
 ### context と `max_tokens`
 
 - `max_tokens` は生成する出力 token の上限です
@@ -85,9 +93,10 @@ COMFYUI_LLM_MODEL_CACHE_DIR=./comfyui-data/llm-models
 
 ### 出力
 
-- 成功時: 単一 `STRING`
-  - text mode: plain text
-  - json mode: valid JSON string
+- 成功時: 3 つの `STRING`
+- `output_text`: text mode では plain text、json mode では valid JSON string
+- `debug_json`: family 判定、think control、quantization mode、sanitization の有無など
+- `raw_text`: sanitize 前の生出力
 - 失敗時: 例外
 
 ### failure kind
@@ -160,7 +169,7 @@ cd comfyui/custom_node/comfyui-photopainter-custom
 python -m venv .venv
 source .venv/bin/activate
 pip install --extra-index-url https://download.pytorch.org/whl/cu128 torch torchvision torchaudio
-pip install transformers jsonschema lm-format-enforcer
+pip install transformers jsonschema lm-format-enforcer accelerate bitsandbytes
 python - <<'PY'
 import torch
 print(torch.cuda.is_available())

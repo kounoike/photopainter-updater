@@ -21,6 +21,7 @@ MODULE_PATH = Path(__file__).resolve()
 LLM_CACHE_DIR_ENV = "COMFYUI_LLM_MODEL_CACHE_DIR"
 SUPPORTED_BACKENDS = ("transformers", "llama-cpp")
 SUPPORTED_THINK_MODES = ("off", "generic", "qwen", "gemma", "deepseek_r1")
+SUPPORTED_QUANTIZATION_MODES = ("none", "bnb_8bit", "bnb_4bit")
 HF_REPO_ID_PATTERN = re.compile(r"^[A-Za-z0-9][\w.-]*/[\w.-]+$")
 
 GENERIC_THINK_PROMPT = "Think carefully before answering, but return only the final answer."
@@ -33,6 +34,7 @@ class LlmNodeConfig:
     backend: str
     model_id: str
     model_file: str | None
+    quantization_mode: str
     system_prompt: str
     user_prompt: str
     think_mode: str
@@ -65,6 +67,7 @@ class StructuredOutputPlan:
 class GenerationDebugInfo:
     family: str | None
     think_mode: str
+    quantization_mode: str
     documented_control_available: bool
     control_kind: str | None
     requested_enable_thinking: bool | None
@@ -280,6 +283,13 @@ def _normalize_think_mode(value: object) -> str:
     return think_mode
 
 
+def _normalize_quantization_mode(value: object) -> str:
+    quantization_mode = str(value or "").strip()
+    if quantization_mode not in SUPPORTED_QUANTIZATION_MODES:
+        raise _config_error(f"unsupported quantization_mode: {quantization_mode or '<empty>'}")
+    return quantization_mode
+
+
 def _normalize_json_schema_text(value: object) -> str | None:
     normalized = str(value or "").strip()
     return normalized or None
@@ -346,7 +356,11 @@ def _load_transformers_modules():
         from transformers import AutoModelForCausalLM, AutoTokenizer  # type: ignore
     except ImportError as exc:
         raise _backend_error("transformers backend dependencies are not installed") from exc
-    return torch, AutoModelForCausalLM, AutoTokenizer
+    try:
+        from transformers import BitsAndBytesConfig  # type: ignore
+    except ImportError:
+        BitsAndBytesConfig = None
+    return torch, AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
 
 def _load_llama_cpp_module():
@@ -470,6 +484,7 @@ def _build_llm_config(
     backend: object,
     model_id: object,
     model_file: object,
+    quantization_mode: object = "none",
     system_prompt: object,
     user_prompt: object,
     think_mode: object,
@@ -482,6 +497,7 @@ def _build_llm_config(
     normalized_backend = _normalize_backend(backend)
     normalized_model_id = _normalize_hf_repo_id(model_id)
     normalized_model_file = _normalize_model_file(model_file)
+    normalized_quantization_mode = _normalize_quantization_mode(quantization_mode)
     normalized_system_prompt = _normalize_prompt(system_prompt, "system_prompt")
     normalized_user_prompt = _normalize_prompt(user_prompt, "user_prompt")
     normalized_think_mode = _normalize_think_mode(think_mode)
@@ -492,6 +508,9 @@ def _build_llm_config(
     normalized_max_tokens = _normalize_max_tokens(max_tokens)
     cache_dir = _resolve_llm_cache_dir()
 
+    if normalized_backend != "transformers" and normalized_quantization_mode != "none":
+        raise _config_error("quantization_mode is only supported with transformers backend")
+
     parsed_schema = None
     if normalized_json_output and normalized_json_schema_text is not None:
         parsed_schema = _validate_schema_text(normalized_json_schema_text)
@@ -500,6 +519,7 @@ def _build_llm_config(
         backend=normalized_backend,
         model_id=normalized_model_id,
         model_file=normalized_model_file,
+        quantization_mode=normalized_quantization_mode,
         system_prompt=normalized_system_prompt,
         user_prompt=normalized_user_prompt,
         think_mode=normalized_think_mode,
@@ -622,13 +642,31 @@ def _run_transformers_generation(
     structured_output_plan: StructuredOutputPlan,
     messages: list[dict[str, str]],
 ) -> str:
-    torch, AutoModelForCausalLM, AutoTokenizer = _load_transformers_modules()
+    torch, AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig = _load_transformers_modules()
     tokenizer = None
     model = None
     inputs = None
     generated = None
 
     try:
+        model_kwargs: dict[str, Any] = {
+            "cache_dir": config.cache_dir,
+            "trust_remote_code": True,
+            "torch_dtype": "auto",
+        }
+        if config.quantization_mode != "none":
+            if BitsAndBytesConfig is None:
+                raise _backend_error("bitsandbytes/accelerate transformers quantization dependencies are not installed")
+            quantization_kwargs: dict[str, Any] = {}
+            if config.quantization_mode == "bnb_8bit":
+                quantization_kwargs["load_in_8bit"] = True
+            elif config.quantization_mode == "bnb_4bit":
+                quantization_kwargs["load_in_4bit"] = True
+                quantization_kwargs["bnb_4bit_compute_dtype"] = getattr(torch, "bfloat16", "bfloat16")
+            model_kwargs["quantization_config"] = BitsAndBytesConfig(**quantization_kwargs)
+            model_kwargs["device_map"] = "auto"
+            model_kwargs["low_cpu_mem_usage"] = True
+
         tokenizer = AutoTokenizer.from_pretrained(
             config.model_id,
             cache_dir=config.cache_dir,
@@ -636,9 +674,7 @@ def _run_transformers_generation(
         )
         model = AutoModelForCausalLM.from_pretrained(
             config.model_id,
-            cache_dir=config.cache_dir,
-            trust_remote_code=True,
-            torch_dtype="auto",
+            **model_kwargs,
         )
     except Exception as exc:
         raise _backend_error(f"failed to load transformers model: {exc}") from exc
@@ -843,6 +879,7 @@ def _generate_llm_output(config: LlmNodeConfig) -> tuple[str, str, GenerationDeb
             debug_info = GenerationDebugInfo(
                 family=think_plan.family,
                 think_mode=config.think_mode,
+                quantization_mode=config.quantization_mode,
                 documented_control_available=think_plan.documented_control_available,
                 control_kind=think_plan.control_kind,
                 requested_enable_thinking=(
@@ -899,6 +936,7 @@ class PhotopainterLlmGenerate:
                 "backend": (list(SUPPORTED_BACKENDS),),
                 "model_id": ("STRING", {"default": "Qwen/Qwen3.5-4B", "multiline": False}),
                 "model_file": ("STRING", {"default": "", "multiline": False}),
+                "quantization_mode": (list(SUPPORTED_QUANTIZATION_MODES),),
                 "think_mode": (list(SUPPORTED_THINK_MODES),),
                 "json_output": ("BOOLEAN", {"default": False}),
                 "json_schema": ("STRING", {"default": "", "multiline": True}),
@@ -927,11 +965,13 @@ class PhotopainterLlmGenerate:
         max_tokens,
         model_file="",
         json_schema="",
+        quantization_mode="none",
     ):
         config = _build_llm_config(
             backend=backend,
             model_id=model_id,
             model_file=model_file,
+            quantization_mode=quantization_mode,
             system_prompt=system_prompt,
             user_prompt=user_prompt,
             think_mode=think_mode,
@@ -950,6 +990,7 @@ class PhotopainterLlmGenerate:
             {
                 "family": debug_info.family,
                 "think_mode": debug_info.think_mode,
+                "quantization_mode": debug_info.quantization_mode,
                 "documented_control_available": debug_info.documented_control_available,
                 "control_kind": debug_info.control_kind,
                 "requested_enable_thinking": debug_info.requested_enable_thinking,
