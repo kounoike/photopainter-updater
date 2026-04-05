@@ -152,6 +152,37 @@ class ContractTests(unittest.TestCase):
             },
         )
 
+    def test_transformers_debug_contract_exposes_think_off_guarantee_fields(self):
+        debug_json = self.module._build_llm_debug_json(
+            self.module.GenerationDebugInfo(
+                backend="transformers",
+                family="qwen",
+                think_mode="off",
+                quantization_mode="none",
+                documented_control_available=True,
+                control_kind="qwen_enable_thinking",
+                requested_enable_thinking=False,
+                fallback_to_generic_prompt=False,
+                json_output=False,
+                raw_had_think_block=False,
+                sanitized_output=False,
+                attempts=1,
+                retry_count=0,
+                retry_reason=None,
+                context_window=4096,
+                prompt_tokens=64,
+                response_budget="manual",
+                resolved_max_tokens=32,
+                model_file=None,
+                off_enforcement_supported=True,
+                off_enforcement_guaranteed=True,
+                off_failure_reason=None,
+            )
+        )
+        self.assertIn('"off_enforcement_supported": true', debug_json)
+        self.assertIn('"off_enforcement_guaranteed": true', debug_json)
+        self.assertIn('"off_failure_reason": null', debug_json)
+
     def test_llm_cache_env_contract(self):
         temp_dir = MODULE_PATH.parent / "tmp-cache"
         try:

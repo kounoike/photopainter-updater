@@ -52,8 +52,13 @@ LLM node は 2 つへ分離しています。
 - `model_file` は存在しません
 - `quantization_mode` は `bitsandbytes` と `accelerate` を使った load-time quantization です
 - Qwen/Gemma 系では documented think 制御を優先します
+- `think_mode=off` は best-effort ではありません。documented disable を保証できる経路だけ成功します
+- 現行の厳格 `off` 成功経路は Qwen 系の `enable_thinking=False` を通せる tokenizer/chat template 経路です
+- Gemma 系や documented disable 非対応 family は `think_mode=off` で明示 failure になります
+- tokenizer/chat template が `enable_thinking` 引数を受け付けず fallback した場合も `think_mode=off` は failure になります
 - `debug_json` には少なくとも `quantization_mode`、`requested_enable_thinking`、
-  `control_kind`、`retry_reason`、`raw_had_think_block`、`sanitized_output` を含みます
+  `control_kind`、`retry_reason`、`raw_had_think_block`、`sanitized_output`、
+  `off_enforcement_supported`、`off_enforcement_guaranteed`、`off_failure_reason` を含みます
 - default は `temperature=0.7`、`response_budget=auto`、`max_tokens=512` です。`manual` を選ばない限り `max_tokens` は token 数と think 設定から内部で解決します
 
 ## `PhotoPainter LLM Generate (llama-cpp)`
@@ -93,6 +98,7 @@ LLM node は 2 つへ分離しています。
 
 - retry は `json_parse_error` または `schema_error` の場合に限ります
 - `backend_error` や `think_mode_error` では retry しません
+- `think_mode=off` の unsupported / trace violation も retry しません
 - `debug_json` で `retry_count` と `retry_reason` を確認できます
 
 ### Response Budget
@@ -109,6 +115,7 @@ LLM node は 2 つへ分離しています。
 - `debug_json`: backend 固有設定を含む JSON object 文字列
 - `raw_text`: sanitize 前の生出力
 - 失敗時: 例外
+- `think_mode=off` では reasoning trace を sanitize して成功扱いにしません
 
 ### failure kind
 
@@ -134,8 +141,20 @@ COMFYUI_LLM_MODEL_CACHE_DIR=./comfyui-data/llm-models
 1. 旧ノードを削除する
 2. `PhotoPainter LLM Generate (Transformers)` を配置する
 3. `system_prompt`、`user_prompt`、`model_id`、`json_output`、`json_schema` を移す
-4. `think_mode` を必要に応じて設定する
+4. `think_mode=off` を使う場合は、まず `debug_json.off_enforcement_guaranteed=true` を確認する
 5. 必要なら `quantization_mode=bnb_4bit` を使う
+
+## `think_mode=off` の見方
+
+- 成功条件:
+  - `debug_json.off_enforcement_supported=true`
+  - `debug_json.off_enforcement_guaranteed=true`
+  - `debug_json.off_failure_reason=null`
+  - `raw_text` に `<think>` 相当が無い
+- 主な failure:
+  - documented disable 非対応 family
+  - tokenizer/chat template が `enable_thinking=False` を受け付けない
+  - `raw_text` に reasoning trace が出た
 
 ### `backend=llama-cpp` だった場合
 
