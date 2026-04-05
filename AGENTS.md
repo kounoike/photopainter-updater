@@ -155,6 +155,8 @@ Use slash commands:
 - Python 3.13（既存 ComfyUI image） + ComfyUI custom node backend API、`transformers`、`llama-cpp-python`、`jsonschema`、Python 標準ライブラリ (039-comfyui-llm-node)
 - ローカルファイル（ComfyUI container 内 model cache、必要に応じた bind mount 永続ディレクトリ） (039-comfyui-llm-node)
 - Python 3.12（ComfyUI custom node runtime） + ComfyUI custom node backend API、`transformers`、`bitsandbytes`、`accelerate`、`llama-cpp-python`、`lm-format-enforcer`、`jsonschema` (040-split-llm-nodes)
+- Python 3.12（ComfyUI custom node runtime） + ComfyUI custom node backend API、`transformers`、`bitsandbytes`、`accelerate`、`lm-format-enforcer`、`jsonschema` (041-enforce-think-off)
+- N/A（runtime 内メモリと既存 local model cache のみ。新規永続化なし） (041-enforce-think-off)
 
 ## Recent Changes
 - 002-add-run-script: Added Bash (POSIX shell) / Python 3 (実行環境) + Python 標準の HTTP 配信機能
