@@ -810,7 +810,7 @@ def _validate_generation_output(config: LlmNodeConfig, output_text: str) -> tupl
     return normalized, debug
 
 
-def _generate_llm_output(config: LlmNodeConfig) -> tuple[str, GenerationDebugInfo]:
+def _generate_llm_output(config: LlmNodeConfig) -> tuple[str, str, GenerationDebugInfo]:
     retry_feedback: str | None = None
     total_attempts = config.max_retries + 1
 
@@ -830,7 +830,7 @@ def _generate_llm_output(config: LlmNodeConfig) -> tuple[str, GenerationDebugInf
                 sanitized_output=validation_debug["sanitized_output"],
                 attempts=attempt,
             )
-            return validated, debug_info
+            return validated, output_text, debug_info
         except RuntimeError as exc:
             detail = str(exc)
             if not detail.startswith(("json_parse_error:", "schema_error:")):
@@ -884,8 +884,8 @@ class PhotopainterLlmGenerate:
             },
         }
 
-    RETURN_TYPES = ("STRING", "STRING")
-    RETURN_NAMES = ("output_text", "debug_json")
+    RETURN_TYPES = ("STRING", "STRING", "STRING")
+    RETURN_NAMES = ("output_text", "debug_json", "raw_text")
     FUNCTION = "generate_text"
     OUTPUT_NODE = False
     CATEGORY = "photopainter/llm"
@@ -917,7 +917,7 @@ class PhotopainterLlmGenerate:
             temperature=temperature,
             max_tokens=max_tokens,
         )
-        output_text, debug_info = _generate_llm_output(config)
+        output_text, raw_text, debug_info = _generate_llm_output(config)
         summary = (
             f"LLM success: {config.backend} / {config.model_id} / "
             f"think_mode={config.think_mode} / attempts={debug_info.attempts}"
@@ -937,7 +937,7 @@ class PhotopainterLlmGenerate:
             ensure_ascii=True,
             sort_keys=True,
         )
-        return {"ui": {"text": [summary]}, "result": (output_text, debug_json)}
+        return {"ui": {"text": [summary]}, "result": (output_text, debug_json, raw_text)}
 
 
 NODE_CLASS_MAPPINGS = {

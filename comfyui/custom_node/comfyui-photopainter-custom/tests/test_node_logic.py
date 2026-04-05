@@ -299,6 +299,7 @@ class NodeLogicTests(unittest.TestCase):
             observed["config"] = config
             return (
                 "hello from llm",
+                "<think>debug</think>\nhello from llm",
                 self.module.GenerationDebugInfo(
                     family="qwen",
                     think_mode="off",
@@ -328,6 +329,7 @@ class NodeLogicTests(unittest.TestCase):
 
         self.assertEqual(result["result"][0], "hello from llm")
         debug_json = json.loads(result["result"][1])
+        self.assertEqual(result["result"][2], "<think>debug</think>\nhello from llm")
         self.assertEqual(debug_json["family"], "qwen")
         self.assertFalse(debug_json["raw_had_think_block"])
         self.assertEqual(observed["config"].model_id, "Qwen/Qwen3.5-4B")
@@ -336,6 +338,7 @@ class NodeLogicTests(unittest.TestCase):
     def test_llm_json_mode_returns_json_string_output(self):
         self.module._load_jsonschema_module = lambda: FakeJsonSchemaModule
         self.module._generate_llm_output = lambda config: (
+            '{"positive_prompt":"a","negative_prompt":"b"}',
             '{"positive_prompt":"a","negative_prompt":"b"}',
             self.module.GenerationDebugInfo(
                 family="qwen",
@@ -374,6 +377,7 @@ class NodeLogicTests(unittest.TestCase):
 
         self.assertEqual(json.loads(result["result"][0])["positive_prompt"], "a")
         self.assertTrue(json.loads(result["result"][1])["json_output"])
+        self.assertEqual(json.loads(result["result"][2])["positive_prompt"], "a")
 
     def test_qwen_off_uses_documented_thinking_disable_control(self):
         config = self.module._build_llm_config(
@@ -470,8 +474,9 @@ class NodeLogicTests(unittest.TestCase):
             max_tokens=32,
         )
 
-        output, debug_info = self.module._generate_llm_output(config)
+        output, raw_text, debug_info = self.module._generate_llm_output(config)
         self.assertEqual(json.loads(output)["positive_prompt"], "ok")
+        self.assertEqual(raw_text, '{"positive_prompt":"ok"}')
         self.assertEqual(debug_info.attempts, 2)
         self.assertTrue(debug_info.json_output)
 
