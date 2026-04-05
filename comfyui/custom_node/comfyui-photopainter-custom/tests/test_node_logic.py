@@ -297,7 +297,20 @@ class NodeLogicTests(unittest.TestCase):
 
         def fake_generate(config):
             observed["config"] = config
-            return "hello from llm", 1
+            return (
+                "hello from llm",
+                self.module.GenerationDebugInfo(
+                    family="qwen",
+                    think_mode="off",
+                    documented_control_available=True,
+                    control_kind="qwen_enable_thinking",
+                    fallback_to_generic_prompt=False,
+                    json_output=False,
+                    raw_had_think_block=False,
+                    sanitized_output=False,
+                    attempts=1,
+                ),
+            )
 
         self.module._generate_llm_output = fake_generate
         node = self.module.PhotopainterLlmGenerate()
@@ -313,13 +326,29 @@ class NodeLogicTests(unittest.TestCase):
             32,
         )
 
-        self.assertEqual(result["result"], ("hello from llm",))
+        self.assertEqual(result["result"][0], "hello from llm")
+        debug_json = json.loads(result["result"][1])
+        self.assertEqual(debug_json["family"], "qwen")
+        self.assertFalse(debug_json["raw_had_think_block"])
         self.assertEqual(observed["config"].model_id, "Qwen/Qwen3.5-4B")
         self.assertIn("attempts=1", result["ui"]["text"][0])
 
     def test_llm_json_mode_returns_json_string_output(self):
         self.module._load_jsonschema_module = lambda: FakeJsonSchemaModule
-        self.module._generate_llm_output = lambda config: ('{"positive_prompt":"a","negative_prompt":"b"}', 1)
+        self.module._generate_llm_output = lambda config: (
+            '{"positive_prompt":"a","negative_prompt":"b"}',
+            self.module.GenerationDebugInfo(
+                family="qwen",
+                think_mode="generic",
+                documented_control_available=False,
+                control_kind=None,
+                fallback_to_generic_prompt=True,
+                json_output=True,
+                raw_had_think_block=False,
+                sanitized_output=False,
+                attempts=1,
+            ),
+        )
         node = self.module.PhotopainterLlmGenerate()
         result = node.generate_text(
             "system",
@@ -344,6 +373,7 @@ class NodeLogicTests(unittest.TestCase):
         )
 
         self.assertEqual(json.loads(result["result"][0])["positive_prompt"], "a")
+        self.assertTrue(json.loads(result["result"][1])["json_output"])
 
     def test_qwen_off_uses_documented_thinking_disable_control(self):
         config = self.module._build_llm_config(
@@ -440,9 +470,10 @@ class NodeLogicTests(unittest.TestCase):
             max_tokens=32,
         )
 
-        output, attempts_used = self.module._generate_llm_output(config)
+        output, debug_info = self.module._generate_llm_output(config)
         self.assertEqual(json.loads(output)["positive_prompt"], "ok")
-        self.assertEqual(attempts_used, 2)
+        self.assertEqual(debug_info.attempts, 2)
+        self.assertTrue(debug_info.json_output)
 
     def test_qwen_think_block_is_stripped_from_final_output(self):
         config = self.module._build_llm_config(
@@ -458,11 +489,13 @@ class NodeLogicTests(unittest.TestCase):
             temperature=1.0,
             max_tokens=32,
         )
-        sanitized = self.module._validate_generation_output(
+        sanitized, debug = self.module._validate_generation_output(
             config,
             "<think>internal reasoning</think>\nFinal answer.",
         )
         self.assertEqual(sanitized, "Final answer.")
+        self.assertTrue(debug["raw_had_think_block"])
+        self.assertTrue(debug["sanitized_output"])
 
     def test_incomplete_qwen_think_block_is_failure(self):
         config = self.module._build_llm_config(

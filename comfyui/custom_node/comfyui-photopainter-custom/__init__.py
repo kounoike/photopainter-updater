@@ -60,6 +60,19 @@ class StructuredOutputPlan:
     schema: dict[str, Any] | None
 
 
+@dataclass(frozen=True)
+class GenerationDebugInfo:
+    family: str | None
+    think_mode: str
+    documented_control_available: bool
+    control_kind: str | None
+    fallback_to_generic_prompt: bool
+    json_output: bool
+    raw_had_think_block: bool
+    sanitized_output: bool
+    attempts: int
+
+
 def _normalize_url(url: str) -> str:
     normalized = (url or "").strip()
     if not normalized:
@@ -680,20 +693,25 @@ def _extract_llama_content(response: object) -> str:
     return normalized
 
 
-def _sanitize_generation_output(config: LlmNodeConfig, output_text: str) -> str:
+def _sanitize_generation_output(config: LlmNodeConfig, output_text: str) -> tuple[str, bool, bool]:
     normalized = output_text.strip()
     family = _detect_model_family(config.model_id)
+    raw_had_think_block = False
+    sanitized_output = False
 
     if family == "qwen":
         if "</think>" in normalized:
+            raw_had_think_block = True
             final = normalized.rsplit("</think>", 1)[-1].strip()
             if final:
-                return final
+                sanitized_output = final != normalized
+                return final, raw_had_think_block, sanitized_output
             raise _backend_error("generation returned only a qwen think block without final content")
         if normalized.startswith("<think>"):
+            raw_had_think_block = True
             raise _backend_error("generation returned an incomplete qwen think block without final content")
 
-    return normalized
+    return normalized, raw_had_think_block, sanitized_output
 
 
 def _run_llama_cpp_generation(
@@ -769,13 +787,18 @@ def _retry_feedback(attempt: int, error_kind: str, detail: str) -> str:
     )
 
 
-def _validate_generation_output(config: LlmNodeConfig, output_text: str) -> str:
-    normalized = _sanitize_generation_output(config, output_text)
+def _validate_generation_output(config: LlmNodeConfig, output_text: str) -> tuple[str, dict[str, Any]]:
+    normalized, raw_had_think_block, sanitized_output = _sanitize_generation_output(config, output_text)
     if not normalized:
         raise _backend_error("generation returned empty output")
 
+    debug = {
+        "raw_had_think_block": raw_had_think_block,
+        "sanitized_output": sanitized_output,
+    }
+
     if not config.json_output:
-        return normalized
+        return normalized, debug
 
     try:
         parsed = json.loads(normalized)
@@ -784,18 +807,30 @@ def _validate_generation_output(config: LlmNodeConfig, output_text: str) -> str:
 
     if config.json_schema is not None:
         _validate_json_instance(parsed, config.json_schema)
-    return normalized
+    return normalized, debug
 
 
-def _generate_llm_output(config: LlmNodeConfig) -> tuple[str, int]:
+def _generate_llm_output(config: LlmNodeConfig) -> tuple[str, GenerationDebugInfo]:
     retry_feedback: str | None = None
     total_attempts = config.max_retries + 1
 
     for attempt in range(1, total_attempts + 1):
+        think_plan = _resolve_think_control(config)
         output_text = _run_generation_attempt(config, retry_feedback)
         try:
-            validated = _validate_generation_output(config, output_text)
-            return validated, attempt
+            validated, validation_debug = _validate_generation_output(config, output_text)
+            debug_info = GenerationDebugInfo(
+                family=think_plan.family,
+                think_mode=config.think_mode,
+                documented_control_available=think_plan.documented_control_available,
+                control_kind=think_plan.control_kind,
+                fallback_to_generic_prompt=think_plan.fallback_to_generic_prompt,
+                json_output=config.json_output,
+                raw_had_think_block=validation_debug["raw_had_think_block"],
+                sanitized_output=validation_debug["sanitized_output"],
+                attempts=attempt,
+            )
+            return validated, debug_info
         except RuntimeError as exc:
             detail = str(exc)
             if not detail.startswith(("json_parse_error:", "schema_error:")):
@@ -849,8 +884,8 @@ class PhotopainterLlmGenerate:
             },
         }
 
-    RETURN_TYPES = ("STRING",)
-    RETURN_NAMES = ("output_text",)
+    RETURN_TYPES = ("STRING", "STRING")
+    RETURN_NAMES = ("output_text", "debug_json")
     FUNCTION = "generate_text"
     OUTPUT_NODE = False
     CATEGORY = "photopainter/llm"
@@ -882,12 +917,27 @@ class PhotopainterLlmGenerate:
             temperature=temperature,
             max_tokens=max_tokens,
         )
-        output_text, attempts = _generate_llm_output(config)
+        output_text, debug_info = _generate_llm_output(config)
         summary = (
             f"LLM success: {config.backend} / {config.model_id} / "
-            f"think_mode={config.think_mode} / attempts={attempts}"
+            f"think_mode={config.think_mode} / attempts={debug_info.attempts}"
         )
-        return {"ui": {"text": [summary]}, "result": (output_text,)}
+        debug_json = json.dumps(
+            {
+                "family": debug_info.family,
+                "think_mode": debug_info.think_mode,
+                "documented_control_available": debug_info.documented_control_available,
+                "control_kind": debug_info.control_kind,
+                "fallback_to_generic_prompt": debug_info.fallback_to_generic_prompt,
+                "json_output": debug_info.json_output,
+                "raw_had_think_block": debug_info.raw_had_think_block,
+                "sanitized_output": debug_info.sanitized_output,
+                "attempts": debug_info.attempts,
+            },
+            ensure_ascii=True,
+            sort_keys=True,
+        )
+        return {"ui": {"text": [summary]}, "result": (output_text, debug_json)}
 
 
 NODE_CLASS_MAPPINGS = {

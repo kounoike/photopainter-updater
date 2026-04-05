@@ -90,7 +90,8 @@ class ContractTests(unittest.TestCase):
     def test_llm_node_metadata_contract(self):
         self.assertIn("PhotopainterLlmGenerate", self.module.NODE_CLASS_MAPPINGS)
         node = self.module.PhotopainterLlmGenerate
-        self.assertEqual(node.RETURN_TYPES, ("STRING",))
+        self.assertEqual(node.RETURN_TYPES, ("STRING", "STRING"))
+        self.assertEqual(node.RETURN_NAMES, ("output_text", "debug_json"))
         self.assertFalse(node.OUTPUT_NODE)
         self.assertEqual(node.CATEGORY, "photopainter/llm")
         self.assertEqual(self.module.NODE_DISPLAY_NAME_MAPPINGS["PhotopainterLlmGenerate"], "PhotoPainter LLM Generate")
