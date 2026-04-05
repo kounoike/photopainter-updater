@@ -46,10 +46,6 @@ RUN git clone --branch "${COMFYUI_REF}" --depth 1 "${COMFYUI_REPO}" "${COMFYUI_H
 
 WORKDIR ${COMFYUI_HOME}
 
-COPY custom_node/comfyui-photopainter-custom ${COMFYUI_HOME}/custom_nodes/comfyui-photopainter-custom
-COPY install-custom-nodes.sh /usr/local/bin/install-custom-nodes
-COPY entrypoint.sh /usr/local/bin/photopainter-comfyui-entrypoint
-
 # transformers node: transformers / bitsandbytes / accelerate / lm-format-enforcer
 # llama-cpp node: llama-cpp-python wheel
 RUN --mount=type=cache,target=/root/.cache/uv \
@@ -64,6 +60,11 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv pip install --system \
       --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu125 \
       llama-cpp-python
+
+COPY custom_node/comfyui-photopainter-custom ${COMFYUI_HOME}/custom_nodes/comfyui-photopainter-custom
+COPY install-custom-nodes.sh /usr/local/bin/install-custom-nodes
+COPY entrypoint.sh /usr/local/bin/photopainter-comfyui-entrypoint
+
 RUN chmod +x /usr/local/bin/install-custom-nodes /usr/local/bin/photopainter-comfyui-entrypoint && \
     /usr/local/bin/install-custom-nodes
 
