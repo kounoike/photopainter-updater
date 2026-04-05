@@ -57,6 +57,8 @@ class ThinkControlPlan:
     control_kind: str | None
     fallback_to_generic_prompt: bool
     prompt_suffix: str | None
+    off_enforcement_supported: bool | None
+    off_failure_reason: str | None
 
 
 @dataclass(frozen=True)
@@ -86,6 +88,9 @@ class GenerationDebugInfo:
     response_budget: str
     resolved_max_tokens: int
     model_file: str | None
+    off_enforcement_supported: bool | None
+    off_enforcement_guaranteed: bool | None
+    off_failure_reason: str | None
 
 
 def _normalize_url(url: str) -> str:
@@ -464,28 +469,55 @@ def _resolve_think_control(config: LlmNodeConfig) -> ThinkControlPlan:
 
     if config.think_mode == "off":
         if family == "qwen":
-            return ThinkControlPlan("off", family, True, "qwen_enable_thinking", False, FINAL_ONLY_PROMPT)
+            return ThinkControlPlan(
+                "off",
+                family,
+                True,
+                "qwen_enable_thinking",
+                False,
+                FINAL_ONLY_PROMPT,
+                True,
+                None,
+            )
         if family == "gemma":
-            return ThinkControlPlan("off", family, True, "gemma_system_token", False, FINAL_ONLY_PROMPT)
-        return ThinkControlPlan("off", family, False, None, False, FINAL_ONLY_PROMPT)
+            return ThinkControlPlan(
+                "off",
+                family,
+                False,
+                None,
+                False,
+                None,
+                False,
+                "think_mode=off is unsupported for Gemma because this node cannot guarantee a documented disable path",
+            )
+        return ThinkControlPlan(
+            "off",
+            family,
+            False,
+            None,
+            False,
+            None,
+            False,
+            "think_mode=off requires a model family with documented disable support",
+        )
 
     if config.think_mode == "generic":
-        return ThinkControlPlan("generic", family, False, None, True, GENERIC_THINK_PROMPT)
+        return ThinkControlPlan("generic", family, False, None, True, GENERIC_THINK_PROMPT, None, None)
 
     if config.think_mode == "qwen":
         if family != "qwen":
             raise _think_mode_error("qwen think_mode requires a Qwen family model")
-        return ThinkControlPlan("qwen", family, True, "qwen_enable_thinking", False, FINAL_ONLY_PROMPT)
+        return ThinkControlPlan("qwen", family, True, "qwen_enable_thinking", False, FINAL_ONLY_PROMPT, None, None)
 
     if config.think_mode == "gemma":
         if family != "gemma":
             raise _think_mode_error("gemma think_mode requires a Gemma family model")
-        return ThinkControlPlan("gemma", family, True, "gemma_system_token", False, FINAL_ONLY_PROMPT)
+        return ThinkControlPlan("gemma", family, True, "gemma_system_token", False, FINAL_ONLY_PROMPT, None, None)
 
     if config.think_mode == "deepseek_r1":
         if family != "deepseek_r1":
             raise _think_mode_error("deepseek_r1 think_mode requires a DeepSeek-R1 family model")
-        return ThinkControlPlan("deepseek_r1", family, False, None, True, DEEPSEEK_R1_THINK_PROMPT)
+        return ThinkControlPlan("deepseek_r1", family, False, None, True, DEEPSEEK_R1_THINK_PROMPT, None, None)
 
     raise _config_error(f"unsupported think_mode: {config.think_mode}")
 
@@ -643,6 +675,14 @@ def _build_messages(
     ]
 
 
+def _require_think_off_support(think_plan: ThinkControlPlan) -> None:
+    if think_plan.think_mode != "off":
+        return
+    if think_plan.off_enforcement_supported:
+        return
+    raise _think_mode_error(think_plan.off_failure_reason or "think_mode=off is unsupported for this model")
+
+
 def _render_messages_as_text(messages: list[dict[str, str]]) -> str:
     rendered = []
     for message in messages:
@@ -752,6 +792,8 @@ def _apply_transformers_chat_template(
 ) -> str:
     apply_chat_template = getattr(tokenizer, "apply_chat_template", None)
     if not callable(apply_chat_template):
+        if think_plan.think_mode == "off" and think_plan.control_kind == "qwen_enable_thinking":
+            raise _think_mode_error("think_mode=off requires tokenizer.apply_chat_template support for qwen disable control")
         return _render_messages_as_text(messages)
 
     kwargs: dict[str, Any] = {
@@ -766,9 +808,15 @@ def _apply_transformers_chat_template(
     try:
         return apply_chat_template(messages, **kwargs)
     except TypeError:
+        if think_plan.think_mode == "off" and think_plan.control_kind == "qwen_enable_thinking":
+            raise _think_mode_error(
+                "think_mode=off requires a tokenizer chat template that supports enable_thinking control"
+            )
         kwargs.pop("chat_template_kwargs", None)
         return apply_chat_template(messages, **kwargs)
     except Exception:
+        if think_plan.think_mode == "off" and think_plan.control_kind == "qwen_enable_thinking":
+            raise _think_mode_error("think_mode=off failed while applying qwen disable control")
         return _render_messages_as_text(messages)
 
 
@@ -816,6 +864,7 @@ def _run_transformers_generation(
         raise _backend_error(f"failed to load transformers model: {exc}") from exc
 
     try:
+        _require_think_off_support(think_plan)
         prompt_text = _apply_transformers_chat_template(tokenizer, messages, think_plan)
         inputs = tokenizer(prompt_text, return_tensors="pt")
         context_window = _infer_transformers_context_window(model, tokenizer)
@@ -890,6 +939,10 @@ def _sanitize_generation_output(config: LlmNodeConfig, output_text: str) -> tupl
     family = _detect_model_family(config.model_id)
     raw_had_think_block = False
     sanitized_output = False
+
+    if config.think_mode == "off" and ("<think>" in normalized or "</think>" in normalized):
+        raw_had_think_block = True
+        raise _backend_error("generation returned reasoning content while think_mode=off")
 
     if family == "qwen":
         if "</think>" in normalized:
@@ -1051,6 +1104,15 @@ def _generate_llm_output(config: LlmNodeConfig) -> tuple[str, str, GenerationDeb
                 response_budget=config.response_budget,
                 resolved_max_tokens=resolved_max_tokens,
                 model_file=config.model_file,
+                off_enforcement_supported=think_plan.off_enforcement_supported,
+                off_enforcement_guaranteed=(
+                    True
+                    if config.think_mode == "off" and think_plan.off_enforcement_supported and not validation_debug["raw_had_think_block"]
+                    else False
+                    if config.think_mode == "off"
+                    else None
+                ),
+                off_failure_reason=think_plan.off_failure_reason,
             )
             return validated, output_text, debug_info
         except RuntimeError as exc:
@@ -1109,6 +1171,9 @@ def _build_llm_debug_json(debug_info: GenerationDebugInfo) -> str:
             "retry_count": debug_info.retry_count,
             "retry_reason": debug_info.retry_reason,
             "sanitized_output": debug_info.sanitized_output,
+            "off_enforcement_supported": debug_info.off_enforcement_supported,
+            "off_enforcement_guaranteed": debug_info.off_enforcement_guaranteed,
+            "off_failure_reason": debug_info.off_failure_reason,
             "think_mode": debug_info.think_mode,
         },
         ensure_ascii=True,

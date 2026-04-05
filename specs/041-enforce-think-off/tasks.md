@@ -16,8 +16,8 @@
 
 **Purpose**: `think_mode=off` 厳格化の契約と検証観点を実装前に固定する
 
-- [ ] T001 `specs/041-enforce-think-off/contracts/think-off-contract.md` と `specs/041-enforce-think-off/quickstart.md` を見直し、unsupported failure、trace violation、debug で見る項目を実装観点へ固定する
-- [ ] T002 `comfyui/custom_node/comfyui-photopainter-custom/tests/test_contract.py` と `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` に追加する `think_mode=off` 厳格化観点を洗い出し、task 実行順へ反映する
+- [X] T001 `specs/041-enforce-think-off/contracts/think-off-contract.md` と `specs/041-enforce-think-off/quickstart.md` を見直し、unsupported failure、trace violation、debug で見る項目を実装観点へ固定する
+- [X] T002 `comfyui/custom_node/comfyui-photopainter-custom/tests/test_contract.py` と `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` に追加する `think_mode=off` 厳格化観点を洗い出し、task 実行順へ反映する
 
 ---
 
@@ -27,9 +27,9 @@
 
 **CRITICAL**: この phase 完了まで user story 実装を開始しない
 
-- [ ] T003 `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に `think_mode=off` 専用の capability 判定と failure reason 表現を追加し、best-effort prompt 成功へ落ちない共通基盤を整備する
-- [ ] T004 `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` の debug 生成 helper を更新し、`off_enforcement_supported`、`off_enforcement_guaranteed`、`off_failure_reason` を返せるようにする
-- [ ] T005 `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` に Foundational helper の期待値を固定する単体検証を追加し、retry 対象外の think control failure を確認する
+- [X] T003 `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` に `think_mode=off` 専用の capability 判定と failure reason 表現を追加し、best-effort prompt 成功へ落ちない共通基盤を整備する
+- [X] T004 `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` の debug 生成 helper を更新し、`off_enforcement_supported`、`off_enforcement_guaranteed`、`off_failure_reason` を返せるようにする
+- [X] T005 `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` に Foundational helper の期待値を固定する単体検証を追加し、retry 対象外の think control failure を確認する
 
 **Checkpoint**: `think_mode=off` の成功条件と failure 理由が helper / debug 契約で固定されていること
 
@@ -43,15 +43,15 @@
 
 ### Verification for User Story 1
 
-- [ ] T006 [P] [US1] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` に Qwen 系 `off` 成功、unsupported family failure、chat template fallback failure を検証するテストを追加する
-- [ ] T007 [P] [US1] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_contract.py` に Transformers ノードの debug 契約項目として `off` guarantee 状態が露出されることを検証する期待値を追加する
-- [ ] T008 [US1] `specs/041-enforce-think-off/quickstart.md` の成功/失敗確認手順を実装内容に合わせて更新する
+- [X] T006 [P] [US1] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` に Qwen 系 `off` 成功、unsupported family failure、chat template fallback failure を検証するテストを追加する
+- [X] T007 [P] [US1] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_contract.py` に Transformers ノードの debug 契約項目として `off` guarantee 状態が露出されることを検証する期待値を追加する
+- [X] T008 [US1] `specs/041-enforce-think-off/quickstart.md` の成功/失敗確認手順を実装内容に合わせて更新する
 
 ### Implementation for User Story 1
 
-- [ ] T009 [US1] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` の `_resolve_think_control` と chat template 適用経路を更新し、`think_mode=off` で documented disable を保証できない場合は failure にする
-- [ ] T010 [US1] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` の generation 実行経路を更新し、`chat_template_kwargs` を捨てる silent fallback を `think_mode=off` では unsupported failure に変える
-- [ ] T011 [US1] `comfyui/custom_node/comfyui-photopainter-custom/README.md` に `think_mode=off` の成功条件、主な unsupported ケース、debug の確認方法を追記する
+- [X] T009 [US1] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` の `_resolve_think_control` と chat template 適用経路を更新し、`think_mode=off` で documented disable を保証できない場合は failure にする
+- [X] T010 [US1] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` の generation 実行経路を更新し、`chat_template_kwargs` を捨てる silent fallback を `think_mode=off` では unsupported failure に変える
+- [X] T011 [US1] `comfyui/custom_node/comfyui-photopainter-custom/README.md` に `think_mode=off` の成功条件、主な unsupported ケース、debug の確認方法を追記する
 
 **Checkpoint**: `think_mode=off` が documented disable を適用できる経路だけで独立して成功すること
 
@@ -65,14 +65,14 @@
 
 ### Verification for User Story 2
 
-- [ ] T012 [P] [US2] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` に `debug_json` の `off_enforcement_supported`、`off_enforcement_guaranteed`、`off_failure_reason` を検証するテストを追加する
-- [ ] T013 [P] [US2] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_contract.py` に `debug_json` 必須キーの期待値更新を追加する
-- [ ] T014 [US2] `specs/041-enforce-think-off/contracts/think-off-contract.md` と `specs/041-enforce-think-off/quickstart.md` を実装済み debug 項目へ揃える
+- [X] T012 [P] [US2] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` に `debug_json` の `off_enforcement_supported`、`off_enforcement_guaranteed`、`off_failure_reason` を検証するテストを追加する
+- [X] T013 [P] [US2] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_contract.py` に `debug_json` 必須キーの期待値更新を追加する
+- [X] T014 [US2] `specs/041-enforce-think-off/contracts/think-off-contract.md` と `specs/041-enforce-think-off/quickstart.md` を実装済み debug 項目へ揃える
 
 ### Implementation for User Story 2
 
-- [ ] T015 [US2] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` の debug 情報組み立てを更新し、`think_mode=off` 成功/失敗の判定結果を `debug_json` へ反映する
-- [ ] T016 [US2] `comfyui/custom_node/comfyui-photopainter-custom/README.md` に `debug_json` の新フィールドと読み方を追記する
+- [X] T015 [US2] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` の debug 情報組み立てを更新し、`think_mode=off` 成功/失敗の判定結果を `debug_json` へ反映する
+- [X] T016 [US2] `comfyui/custom_node/comfyui-photopainter-custom/README.md` に `debug_json` の新フィールドと読み方を追記する
 
 **Checkpoint**: 成功と failure の両方で `debug_json` から `off` の状態を判別できること
 
@@ -86,13 +86,13 @@
 
 ### Verification for User Story 3
 
-- [ ] T017 [P] [US3] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` に `think_mode=off` で reasoning trace を返した場合の failure と、`off` 以外での既存挙動維持を検証するテストを追加する
-- [ ] T018 [US3] `specs/041-enforce-think-off/quickstart.md` に trace violation の手動/模擬確認手順を実装内容へ合わせて更新する
+- [X] T017 [P] [US3] `comfyui/custom_node/comfyui-photopainter-custom/tests/test_node_logic.py` に `think_mode=off` で reasoning trace を返した場合の failure と、`off` 以外での既存挙動維持を検証するテストを追加する
+- [X] T018 [US3] `specs/041-enforce-think-off/quickstart.md` に trace violation の手動/模擬確認手順を実装内容へ合わせて更新する
 
 ### Implementation for User Story 3
 
-- [ ] T019 [US3] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` の output sanitize / validation を更新し、`think_mode=off` で trace が観測された場合は failure にする
-- [ ] T020 [US3] `comfyui/custom_node/comfyui-photopainter-custom/README.md` に `off` では sanitize 救済しないことを明記する
+- [X] T019 [US3] `comfyui/custom_node/comfyui-photopainter-custom/__init__.py` の output sanitize / validation を更新し、`think_mode=off` で trace が観測された場合は failure にする
+- [X] T020 [US3] `comfyui/custom_node/comfyui-photopainter-custom/README.md` に `off` では sanitize 救済しないことを明記する
 
 **Checkpoint**: `think_mode=off` に sanitize 依存の成功経路が残っていないこと
 
@@ -102,8 +102,8 @@
 
 **Purpose**: 文書・テスト・実装の横断整合を確認する
 
-- [ ] T021 [P] `python -m py_compile comfyui/custom_node/comfyui-photopainter-custom/__init__.py` と `python -m unittest discover -s comfyui/custom_node/comfyui-photopainter-custom/tests -v` を実行し、`think_mode=off` 厳格化の回帰を確認する
-- [ ] T022 `comfyui/custom_node/comfyui-photopainter-custom/README.md`、`specs/041-enforce-think-off/quickstart.md`、`specs/041-enforce-think-off/contracts/think-off-contract.md` の用語を整合させる
+- [X] T021 [P] `python -m py_compile comfyui/custom_node/comfyui-photopainter-custom/__init__.py` と `python -m unittest discover -s comfyui/custom_node/comfyui-photopainter-custom/tests -v` を実行し、`think_mode=off` 厳格化の回帰を確認する
+- [X] T022 `comfyui/custom_node/comfyui-photopainter-custom/README.md`、`specs/041-enforce-think-off/quickstart.md`、`specs/041-enforce-think-off/contracts/think-off-contract.md` の用語を整合させる
 
 ---
 

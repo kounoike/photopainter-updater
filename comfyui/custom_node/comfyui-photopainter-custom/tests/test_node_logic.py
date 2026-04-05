@@ -149,6 +149,13 @@ class FakeTokenizer:
         return mapping[tuple(tokens)]
 
 
+class FakeTokenizerWithoutThinkingKwargs(FakeTokenizer):
+    def apply_chat_template(self, messages, **kwargs):
+        if "chat_template_kwargs" in kwargs:
+            raise TypeError("unexpected keyword argument")
+        return super().apply_chat_template(messages, **kwargs)
+
+
 class FakeModel:
     def __init__(self):
         self.hf_device_map = None
@@ -358,16 +365,19 @@ class NodeLogicTests(unittest.TestCase):
                     json_output=False,
                     raw_had_think_block=True,
                     sanitized_output=True,
-                    attempts=2,
-                    retry_count=1,
-                    retry_reason="json_parse_error",
-                    context_window=4096,
-                    prompt_tokens=120,
-                    response_budget="auto",
-                    resolved_max_tokens=768,
-                    model_file=None,
-                ),
-            )
+                attempts=2,
+                retry_count=1,
+                retry_reason="json_parse_error",
+                context_window=4096,
+                prompt_tokens=120,
+                response_budget="auto",
+                resolved_max_tokens=768,
+                model_file=None,
+                off_enforcement_supported=True,
+                off_enforcement_guaranteed=True,
+                off_failure_reason=None,
+            ),
+        )
 
         self.module._generate_llm_output = fake_generate
         node = self.module.PhotopainterTransformersLlmGenerate()
@@ -391,6 +401,9 @@ class NodeLogicTests(unittest.TestCase):
         self.assertEqual(debug_json["backend"], "transformers")
         self.assertEqual(debug_json["quantization_mode"], "bnb_4bit")
         self.assertFalse(debug_json["requested_enable_thinking"])
+        self.assertTrue(debug_json["off_enforcement_supported"])
+        self.assertTrue(debug_json["off_enforcement_guaranteed"])
+        self.assertIsNone(debug_json["off_failure_reason"])
         self.assertEqual(debug_json["retry_reason"], "json_parse_error")
         self.assertEqual(debug_json["response_budget"], "auto")
         self.assertEqual(debug_json["resolved_max_tokens"], 768)
@@ -423,6 +436,9 @@ class NodeLogicTests(unittest.TestCase):
                 response_budget="auto",
                 resolved_max_tokens=1024,
                 model_file="model.gguf",
+                off_enforcement_supported=None,
+                off_enforcement_guaranteed=None,
+                off_failure_reason=None,
             ),
         )
         node = self.module.PhotopainterLlamaCppLlmGenerate()
@@ -467,6 +483,27 @@ class NodeLogicTests(unittest.TestCase):
 
         self.assertTrue(plan.documented_control_available)
         self.assertEqual(plan.control_kind, "qwen_enable_thinking")
+        self.assertTrue(plan.off_enforcement_supported)
+
+    def test_gemma_off_is_unsupported_for_strict_enforcement(self):
+        config = self.module._build_transformers_llm_config(
+            system_prompt="system",
+            user_prompt="user",
+            model_id="google/gemma-4-E4B",
+            quantization_mode="none",
+            think_mode="off",
+            json_output=False,
+            json_schema="",
+            max_retries=1,
+            temperature=1.0,
+            response_budget="manual",
+            max_tokens=32,
+        )
+        plan = self.module._resolve_think_control(config)
+
+        self.assertFalse(plan.documented_control_available)
+        self.assertFalse(plan.off_enforcement_supported)
+        self.assertIn("unsupported for Gemma", plan.off_failure_reason)
 
     def test_family_specific_think_mode_requires_matching_family(self):
         config = self.module._build_transformers_llm_config(
@@ -594,13 +631,30 @@ class NodeLogicTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, r"backend_error: model load failed"):
             self.module._generate_llm_output(config)
 
-    def test_qwen_think_block_is_stripped_from_final_output(self):
+    def test_qwen_off_think_block_is_failure(self):
         config = self.module._build_transformers_llm_config(
             system_prompt="system",
             user_prompt="user",
             model_id="Qwen/Qwen3.5-4B",
             quantization_mode="none",
             think_mode="off",
+            json_output=False,
+            json_schema="",
+            max_retries=0,
+            temperature=1.0,
+            response_budget="manual",
+            max_tokens=32,
+        )
+        with self.assertRaisesRegex(RuntimeError, r"backend_error: generation returned reasoning content while think_mode=off"):
+            self.module._validate_generation_output(config, "<think>internal reasoning</think>\nFinal answer.")
+
+    def test_qwen_non_off_think_block_is_still_sanitized(self):
+        config = self.module._build_transformers_llm_config(
+            system_prompt="system",
+            user_prompt="user",
+            model_id="Qwen/Qwen3.5-4B",
+            quantization_mode="none",
+            think_mode="qwen",
             json_output=False,
             json_schema="",
             max_retries=0,
@@ -630,7 +684,7 @@ class NodeLogicTests(unittest.TestCase):
             response_budget="manual",
             max_tokens=32,
         )
-        with self.assertRaisesRegex(RuntimeError, r"backend_error: generation returned an incomplete qwen think block"):
+        with self.assertRaisesRegex(RuntimeError, r"backend_error: generation returned reasoning content while think_mode=off"):
             self.module._validate_generation_output(config, "<think>internal reasoning")
 
     def test_transformers_generation_passes_qwen_enable_thinking_flag(self):
@@ -669,6 +723,48 @@ class NodeLogicTests(unittest.TestCase):
         self.assertEqual(resolved_max_tokens, 16)
         kwargs = FakeAutoTokenizer.last_instance.chat_template_calls[-1]
         self.assertEqual(kwargs["chat_template_kwargs"]["enable_thinking"], False)
+
+    def test_transformers_off_fails_when_chat_template_drops_disable_control(self):
+        class FakeAutoTokenizerWithoutThinkingKwargs:
+            last_instance = None
+
+            @classmethod
+            def from_pretrained(cls, *args, **kwargs):
+                cls.last_instance = FakeTokenizerWithoutThinkingKwargs()
+                return cls.last_instance
+
+        self.module._load_transformers_modules = lambda: (
+            FakeTorchModule,
+            FakeAutoModel,
+            FakeAutoTokenizerWithoutThinkingKwargs,
+            FakeBitsAndBytesConfig,
+        )
+        config = self.module._build_transformers_llm_config(
+            system_prompt="system",
+            user_prompt="user",
+            model_id="Qwen/Qwen3.5-4B",
+            quantization_mode="none",
+            think_mode="off",
+            json_output=False,
+            json_schema="",
+            max_retries=0,
+            temperature=1.0,
+            response_budget="manual",
+            max_tokens=16,
+        )
+        plan = self.module._resolve_think_control(config)
+        messages = self.module._build_messages(config, plan)
+
+        with self.assertRaisesRegex(
+            RuntimeError,
+            r"think_mode_error: think_mode=off requires a tokenizer chat template that supports enable_thinking control",
+        ):
+            self.module._run_transformers_generation(
+                config,
+                plan,
+                self.module._build_structured_output_plan(config),
+                messages,
+            )
 
     def test_transformers_json_mode_configures_generation_time_constraint(self):
         self.module._load_transformers_modules = lambda: (
@@ -838,6 +934,9 @@ class NodeLogicTests(unittest.TestCase):
                 response_budget="auto",
                 resolved_max_tokens=1024,
                 model_file="model.gguf",
+                off_enforcement_supported=None,
+                off_enforcement_guaranteed=None,
+                off_failure_reason=None,
             )
         )
         parsed = json.loads(debug_json)
@@ -848,6 +947,8 @@ class NodeLogicTests(unittest.TestCase):
         self.assertEqual(parsed["resolved_max_tokens"], 1024)
         self.assertEqual(parsed["model_file"], "model.gguf")
         self.assertIn("retry_reason", parsed)
+        self.assertIn("off_enforcement_supported", parsed)
+        self.assertIn("off_enforcement_guaranteed", parsed)
 
     def test_auto_response_budget_resolves_from_prompt_tokens_and_think_mode(self):
         config = self.module._build_transformers_llm_config(

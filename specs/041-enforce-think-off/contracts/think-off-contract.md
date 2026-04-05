@@ -33,6 +33,7 @@
   - tokenizer/chat template が disable 引数を受け付けず fallback した
   - generation 結果に reasoning trace が含まれた
 - これらの failure は JSON retry 対象外である
+- unsupported / guarantee 不能は `think_mode_error`、reasoning trace は `backend_error` として区別できなければならない
 - failure 時は message または debug から unsupported / trace violation を判別できなければならない
 
 ## Raw Output Contract
