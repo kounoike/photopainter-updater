@@ -22,6 +22,7 @@ LLM_CACHE_DIR_ENV = "COMFYUI_LLM_MODEL_CACHE_DIR"
 SUPPORTED_BACKENDS = ("transformers", "llama-cpp")
 SUPPORTED_THINK_MODES = ("off", "generic", "qwen", "gemma", "deepseek_r1")
 SUPPORTED_QUANTIZATION_MODES = ("none", "bnb_8bit", "bnb_4bit")
+SUPPORTED_RESPONSE_BUDGETS = ("auto", "small", "medium", "large", "manual")
 HF_REPO_ID_PATTERN = re.compile(r"^[A-Za-z0-9][\w.-]*/[\w.-]+$")
 
 GENERIC_THINK_PROMPT = "Think carefully before answering, but return only the final answer."
@@ -43,6 +44,7 @@ class LlmNodeConfig:
     json_schema: dict[str, Any] | None
     max_retries: int
     temperature: float
+    response_budget: str
     max_tokens: int
     cache_dir: str | None
 
@@ -80,6 +82,9 @@ class GenerationDebugInfo:
     retry_count: int
     retry_reason: str | None
     context_window: int | None
+    prompt_tokens: int | None
+    response_budget: str
+    resolved_max_tokens: int
     model_file: str | None
 
 
@@ -330,6 +335,13 @@ def _normalize_max_tokens(value: object) -> int:
     return max_tokens
 
 
+def _normalize_response_budget(value: object) -> str:
+    response_budget = str(value or "").strip()
+    if response_budget not in SUPPORTED_RESPONSE_BUDGETS:
+        raise _config_error(f"unsupported response_budget: {response_budget or '<empty>'}")
+    return response_budget
+
+
 def _resolve_llm_cache_dir() -> str | None:
     configured = os.environ.get(LLM_CACHE_DIR_ENV, "").strip()
     if not configured:
@@ -497,6 +509,7 @@ def _build_llm_config(
     json_schema: object,
     max_retries: object,
     temperature: object,
+    response_budget: object,
     max_tokens: object,
 ) -> LlmNodeConfig:
     normalized_backend = _normalize_backend(backend)
@@ -510,6 +523,7 @@ def _build_llm_config(
     normalized_json_schema_text = _normalize_json_schema_text(json_schema)
     normalized_retries = _normalize_max_retries(max_retries)
     normalized_temperature = _normalize_temperature(temperature)
+    normalized_response_budget = _normalize_response_budget(response_budget)
     normalized_max_tokens = _normalize_max_tokens(max_tokens)
     cache_dir = _resolve_llm_cache_dir()
 
@@ -533,6 +547,7 @@ def _build_llm_config(
         json_schema=parsed_schema,
         max_retries=normalized_retries,
         temperature=normalized_temperature,
+        response_budget=normalized_response_budget,
         max_tokens=normalized_max_tokens,
         cache_dir=cache_dir,
     )
@@ -549,6 +564,7 @@ def _build_transformers_llm_config(
     json_schema: object,
     max_retries: object,
     temperature: object,
+    response_budget: object,
     max_tokens: object,
 ) -> LlmNodeConfig:
     return _build_llm_config(
@@ -563,6 +579,7 @@ def _build_transformers_llm_config(
         json_schema=json_schema,
         max_retries=max_retries,
         temperature=temperature,
+        response_budget=response_budget,
         max_tokens=max_tokens,
     )
 
@@ -577,6 +594,7 @@ def _build_llama_cpp_llm_config(
     json_schema: object,
     max_retries: object,
     temperature: object,
+    response_budget: object,
     max_tokens: object,
 ) -> LlmNodeConfig:
     config = _build_llm_config(
@@ -591,6 +609,7 @@ def _build_llama_cpp_llm_config(
         json_schema=json_schema,
         max_retries=max_retries,
         temperature=temperature,
+        response_budget=response_budget,
         max_tokens=max_tokens,
     )
     if config.model_file is None:
@@ -674,6 +693,58 @@ def _infer_llama_cpp_context_window(llm: Any) -> int | None:
     return None
 
 
+def _resolve_auto_budget_preset(prompt_tokens: int, think_mode: str) -> str:
+    if prompt_tokens < 512:
+        preset = "large"
+    elif prompt_tokens < 2048:
+        preset = "medium"
+    else:
+        preset = "small"
+
+    if think_mode != "off":
+        if preset == "small":
+            return "medium"
+        if preset == "medium":
+            return "large"
+    return preset
+
+
+def _resolve_max_new_tokens(
+    config: LlmNodeConfig,
+    *,
+    prompt_tokens: int,
+    context_window: int | None,
+) -> tuple[int, str]:
+    if config.response_budget == "manual":
+        return config.max_tokens, "manual"
+
+    preset = config.response_budget
+    if preset == "auto":
+        preset = _resolve_auto_budget_preset(prompt_tokens, config.think_mode)
+
+    remaining = None
+    if context_window is not None:
+        remaining = max(1, context_window - prompt_tokens - 128)
+
+    ratio_map = {
+        "small": 0.15,
+        "medium": 0.30,
+        "large": 0.50,
+    }
+    cap_map = {
+        "small": 512,
+        "medium": 1024,
+        "large": 2048,
+    }
+    base = max(128, int((remaining if remaining is not None else 2048) * ratio_map[preset]))
+    resolved = min(cap_map[preset], base)
+    if config.think_mode != "off":
+        resolved = min(max(resolved, 256) + 256, 4096 if preset == "large" else 2048)
+    if remaining is not None:
+        resolved = min(resolved, remaining)
+    return max(1, resolved), preset
+
+
 def _apply_transformers_chat_template(
     tokenizer: Any,
     messages: list[dict[str, str]],
@@ -706,7 +777,7 @@ def _run_transformers_generation(
     think_plan: ThinkControlPlan,
     structured_output_plan: StructuredOutputPlan,
     messages: list[dict[str, str]],
-) -> tuple[str, int | None]:
+) -> tuple[str, int | None, int | None, int]:
     torch, AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig = _load_transformers_modules()
     tokenizer = None
     model = None
@@ -756,15 +827,20 @@ def _run_transformers_generation(
                 model.to(device)
             inputs = {name: tensor.to(device) for name, tensor in inputs.items()}
 
+        prompt_tokens = inputs["input_ids"].shape[-1]
+        resolved_max_tokens, _ = _resolve_max_new_tokens(
+            config, prompt_tokens=prompt_tokens, context_window=context_window
+        )
+
         generate_kwargs: dict[str, Any] = {
-            "max_new_tokens": config.max_tokens,
+            "max_new_tokens": resolved_max_tokens,
             "do_sample": config.temperature > 0,
         }
         if config.temperature > 0:
             generate_kwargs["temperature"] = config.temperature
-        if context_window is not None and (inputs["input_ids"].shape[-1] + config.max_tokens) > context_window:
+        if context_window is not None and (prompt_tokens + resolved_max_tokens) > context_window:
             raise _backend_error(
-                f"requested tokens ({inputs['input_ids'].shape[-1] + config.max_tokens}) exceed model context window of {context_window}"
+                f"requested tokens ({prompt_tokens + resolved_max_tokens}) exceed model context window of {context_window}"
             )
 
         parser = _build_structured_output_parser(config, structured_output_plan)
@@ -780,12 +856,12 @@ def _run_transformers_generation(
         except Exception as exc:
             raise _backend_error(f"transformers generation failed: {exc}") from exc
 
-        prompt_length = inputs["input_ids"].shape[-1]
+        prompt_length = prompt_tokens
         output_tokens = generated[0][prompt_length:]
         output_text = tokenizer.decode(output_tokens, skip_special_tokens=True).strip()
         if not output_text:
             raise _backend_error("transformers generation returned empty output")
-        return output_text, context_window
+        return output_text, context_window, prompt_tokens, resolved_max_tokens
     finally:
         del generated
         del inputs
@@ -835,7 +911,7 @@ def _run_llama_cpp_generation(
     think_plan: ThinkControlPlan,
     structured_output_plan: StructuredOutputPlan,
     messages: list[dict[str, str]],
-) -> tuple[str, int | None]:
+) -> tuple[str, int | None, int | None, int]:
     Llama = _load_llama_cpp_module()
     llm = None
 
@@ -856,9 +932,18 @@ def _run_llama_cpp_generation(
         raise _backend_error(f"failed to load llama-cpp model: {exc}") from exc
     context_window = _infer_llama_cpp_context_window(llm)
 
+    prompt_tokens = None
+    if context_window is not None:
+        prompt_text = _render_messages_as_text(messages)
+        prompt_tokens = len(llm.tokenize(prompt_text.encode("utf-8"), add_bos=False))
+
+    resolved_max_tokens, _ = _resolve_max_new_tokens(
+        config, prompt_tokens=prompt_tokens or 0, context_window=context_window
+    )
+
     create_kwargs: dict[str, Any] = {
         "messages": messages,
-        "max_tokens": config.max_tokens,
+        "max_tokens": resolved_max_tokens,
         "temperature": config.temperature,
     }
 
@@ -872,16 +957,14 @@ def _run_llama_cpp_generation(
 
     response = None
     try:
-        if context_window is not None:
-            prompt_text = _render_messages_as_text(messages)
-            prompt_tokens = llm.tokenize(prompt_text.encode("utf-8"), add_bos=False)
-            requested = len(prompt_tokens) + config.max_tokens
+        if context_window is not None and prompt_tokens is not None:
+            requested = prompt_tokens + resolved_max_tokens
             if requested > context_window:
                 raise _backend_error(
                     f"requested tokens ({requested}) exceed model context window of {context_window}"
                 )
         response = llm.create_chat_completion(**create_kwargs)
-        return _extract_llama_content(response), context_window
+        return _extract_llama_content(response), context_window, prompt_tokens, resolved_max_tokens
     except Exception as exc:
         raise _backend_error(f"llama-cpp generation failed: {exc}") from exc
     finally:
@@ -892,7 +975,7 @@ def _run_llama_cpp_generation(
 
 def _run_generation_attempt(
     config: LlmNodeConfig, retry_feedback: str | None = None
-) -> tuple[str, int | None]:
+) -> tuple[str, int | None, int | None, int]:
     think_plan = _resolve_think_control(config)
     structured_output_plan = _build_structured_output_plan(config)
     messages = _build_messages(config, think_plan, retry_feedback)
@@ -941,7 +1024,9 @@ def _generate_llm_output(config: LlmNodeConfig) -> tuple[str, str, GenerationDeb
 
     for attempt in range(1, total_attempts + 1):
         think_plan = _resolve_think_control(config)
-        output_text, context_window = _run_generation_attempt(config, retry_feedback)
+        output_text, context_window, prompt_tokens, resolved_max_tokens = _run_generation_attempt(
+            config, retry_feedback
+        )
         try:
             validated, validation_debug = _validate_generation_output(config, output_text)
             debug_info = GenerationDebugInfo(
@@ -962,6 +1047,9 @@ def _generate_llm_output(config: LlmNodeConfig) -> tuple[str, str, GenerationDeb
                 retry_count=attempt - 1,
                 retry_reason=retry_reason,
                 context_window=context_window,
+                prompt_tokens=prompt_tokens,
+                response_budget=config.response_budget,
+                resolved_max_tokens=resolved_max_tokens,
                 model_file=config.model_file,
             )
             return validated, output_text, debug_info
@@ -1006,6 +1094,7 @@ def _build_llm_debug_json(debug_info: GenerationDebugInfo) -> str:
             "attempts": debug_info.attempts,
             "backend": debug_info.backend,
             "context_window": debug_info.context_window,
+            "prompt_tokens": debug_info.prompt_tokens,
             "control_kind": debug_info.control_kind,
             "documented_control_available": debug_info.documented_control_available,
             "fallback_to_generic_prompt": debug_info.fallback_to_generic_prompt,
@@ -1014,6 +1103,8 @@ def _build_llm_debug_json(debug_info: GenerationDebugInfo) -> str:
             "model_file": debug_info.model_file,
             "quantization_mode": debug_info.quantization_mode,
             "raw_had_think_block": debug_info.raw_had_think_block,
+            "response_budget": debug_info.response_budget,
+            "resolved_max_tokens": debug_info.resolved_max_tokens,
             "requested_enable_thinking": debug_info.requested_enable_thinking,
             "retry_count": debug_info.retry_count,
             "retry_reason": debug_info.retry_reason,
@@ -1053,6 +1144,7 @@ class PhotopainterTransformersLlmGenerate:
                 "json_schema": ("STRING", {"default": "", "multiline": True}),
                 "max_retries": ("INT", {"default": 1, "min": 0, "max": 5}),
                 "temperature": ("FLOAT", {"default": 0.7, "min": 0.0, "step": 0.1}),
+                "response_budget": (list(SUPPORTED_RESPONSE_BUDGETS),),
                 "max_tokens": ("INT", {"default": 512, "min": 1, "max": 262144}),
             },
         }
@@ -1074,6 +1166,7 @@ class PhotopainterTransformersLlmGenerate:
         json_schema,
         max_retries,
         temperature,
+        response_budget,
         max_tokens,
     ):
         config = _build_transformers_llm_config(
@@ -1086,6 +1179,7 @@ class PhotopainterTransformersLlmGenerate:
             json_schema=json_schema,
             max_retries=max_retries,
             temperature=temperature,
+            response_budget=response_budget,
             max_tokens=max_tokens,
         )
         output_text, raw_text, debug_info = _generate_llm_output(config)
@@ -1107,6 +1201,7 @@ class PhotopainterLlamaCppLlmGenerate:
                 "json_schema": ("STRING", {"default": "", "multiline": True}),
                 "max_retries": ("INT", {"default": 1, "min": 0, "max": 5}),
                 "temperature": ("FLOAT", {"default": 0.7, "min": 0.0, "step": 0.1}),
+                "response_budget": (list(SUPPORTED_RESPONSE_BUDGETS),),
                 "max_tokens": ("INT", {"default": 512, "min": 1, "max": 262144}),
             },
         }
@@ -1127,6 +1222,7 @@ class PhotopainterLlamaCppLlmGenerate:
         json_schema,
         max_retries,
         temperature,
+        response_budget,
         max_tokens,
     ):
         config = _build_llama_cpp_llm_config(
@@ -1138,6 +1234,7 @@ class PhotopainterLlamaCppLlmGenerate:
             json_schema=json_schema,
             max_retries=max_retries,
             temperature=temperature,
+            response_budget=response_budget,
             max_tokens=max_tokens,
         )
         output_text, raw_text, debug_info = _generate_llm_output(config)

@@ -283,6 +283,7 @@ class NodeLogicTests(unittest.TestCase):
                 json_schema="",
                 max_retries=1,
                 temperature=1.0,
+                response_budget="manual",
                 max_tokens=32,
             )
 
@@ -300,6 +301,7 @@ class NodeLogicTests(unittest.TestCase):
                 json_schema="",
                 max_retries=1,
                 temperature=1.0,
+                response_budget="manual",
                 max_tokens=32,
             )
 
@@ -314,6 +316,7 @@ class NodeLogicTests(unittest.TestCase):
                 json_schema="",
                 max_retries=1,
                 temperature=1.0,
+                response_budget="manual",
                 max_tokens=32,
             )
 
@@ -331,6 +334,7 @@ class NodeLogicTests(unittest.TestCase):
                 '{"type":"array"}',
                 1,
                 1.0,
+                "manual",
                 32,
             )
 
@@ -358,6 +362,9 @@ class NodeLogicTests(unittest.TestCase):
                     retry_count=1,
                     retry_reason="json_parse_error",
                     context_window=4096,
+                    prompt_tokens=120,
+                    response_budget="auto",
+                    resolved_max_tokens=768,
                     model_file=None,
                 ),
             )
@@ -374,6 +381,7 @@ class NodeLogicTests(unittest.TestCase):
             "",
             1,
             1.0,
+            "manual",
             32,
         )
 
@@ -384,7 +392,10 @@ class NodeLogicTests(unittest.TestCase):
         self.assertEqual(debug_json["quantization_mode"], "bnb_4bit")
         self.assertFalse(debug_json["requested_enable_thinking"])
         self.assertEqual(debug_json["retry_reason"], "json_parse_error")
+        self.assertEqual(debug_json["response_budget"], "auto")
+        self.assertEqual(debug_json["resolved_max_tokens"], 768)
         self.assertEqual(observed["config"].backend, "transformers")
+        self.assertEqual(observed["config"].response_budget, "manual")
         self.assertIn("quantization_mode=bnb_4bit", result["ui"]["text"][0])
 
     def test_llama_cpp_node_returns_split_output_contract(self):
@@ -408,6 +419,9 @@ class NodeLogicTests(unittest.TestCase):
                 retry_count=0,
                 retry_reason=None,
                 context_window=8192,
+                prompt_tokens=96,
+                response_budget="auto",
+                resolved_max_tokens=1024,
                 model_file="model.gguf",
             ),
         )
@@ -421,6 +435,7 @@ class NodeLogicTests(unittest.TestCase):
             '{"type":"object","properties":{"prompt":{"type":"string"}}}',
             1,
             1.0,
+            "manual",
             32,
         )
 
@@ -429,6 +444,9 @@ class NodeLogicTests(unittest.TestCase):
         self.assertEqual(debug_json["backend"], "llama-cpp")
         self.assertEqual(debug_json["model_file"], "model.gguf")
         self.assertEqual(debug_json["context_window"], 8192)
+        self.assertEqual(debug_json["prompt_tokens"], 96)
+        self.assertEqual(debug_json["response_budget"], "auto")
+        self.assertEqual(debug_json["resolved_max_tokens"], 1024)
         self.assertIn("llama-cpp", result["ui"]["text"][0])
 
     def test_qwen_off_uses_documented_thinking_disable_control(self):
@@ -442,6 +460,7 @@ class NodeLogicTests(unittest.TestCase):
             json_schema="",
             max_retries=1,
             temperature=1.0,
+            response_budget="manual",
             max_tokens=32,
         )
         plan = self.module._resolve_think_control(config)
@@ -460,6 +479,7 @@ class NodeLogicTests(unittest.TestCase):
             json_schema="",
             max_retries=1,
             temperature=1.0,
+            response_budget="manual",
             max_tokens=32,
         )
         with self.assertRaisesRegex(RuntimeError, r"think_mode_error: qwen think_mode requires a Qwen family model"):
@@ -476,6 +496,7 @@ class NodeLogicTests(unittest.TestCase):
             json_schema="",
             max_retries=1,
             temperature=1.0,
+            response_budget="manual",
             max_tokens=32,
         )
         plan = self.module._resolve_think_control(config)
@@ -494,6 +515,7 @@ class NodeLogicTests(unittest.TestCase):
             json_schema="",
             max_retries=1,
             temperature=1.0,
+            response_budget="manual",
             max_tokens=32,
         )
         plan = self.module._resolve_think_control(config)
@@ -503,7 +525,7 @@ class NodeLogicTests(unittest.TestCase):
 
     def test_json_parse_retry_then_success(self):
         self.module._load_jsonschema_module = lambda: FakeJsonSchemaModule
-        attempts = iter([("not-json", 4096), ('{"positive_prompt":"ok"}', 4096)])
+        attempts = iter([("not-json", 4096, 120, 256), ('{"positive_prompt":"ok"}', 4096, 120, 256)])
 
         def fake_attempt(config, retry_feedback=None):
             return next(attempts)
@@ -519,6 +541,7 @@ class NodeLogicTests(unittest.TestCase):
             json_schema='{"type":"object","required":["positive_prompt"],"properties":{"positive_prompt":{"type":"string"}}}',
             max_retries=1,
             temperature=1.0,
+            response_budget="manual",
             max_tokens=32,
         )
 
@@ -532,7 +555,7 @@ class NodeLogicTests(unittest.TestCase):
 
     def test_schema_retry_exhaustion_raises_schema_error(self):
         self.module._load_jsonschema_module = lambda: FakeJsonSchemaModule
-        self.module._run_generation_attempt = lambda config, retry_feedback=None: ("{}", 4096)
+        self.module._run_generation_attempt = lambda config, retry_feedback=None: ("{}", 4096, 120, 256)
         config = self.module._build_transformers_llm_config(
             system_prompt="system",
             user_prompt="user",
@@ -543,6 +566,7 @@ class NodeLogicTests(unittest.TestCase):
             json_schema='{"type":"object","required":["positive_prompt"],"properties":{"positive_prompt":{"type":"string"}}}',
             max_retries=1,
             temperature=1.0,
+            response_budget="manual",
             max_tokens=32,
         )
 
@@ -563,6 +587,7 @@ class NodeLogicTests(unittest.TestCase):
             json_schema="",
             max_retries=3,
             temperature=1.0,
+            response_budget="manual",
             max_tokens=32,
         )
 
@@ -580,6 +605,7 @@ class NodeLogicTests(unittest.TestCase):
             json_schema="",
             max_retries=0,
             temperature=1.0,
+            response_budget="manual",
             max_tokens=32,
         )
         sanitized, debug = self.module._validate_generation_output(
@@ -601,6 +627,7 @@ class NodeLogicTests(unittest.TestCase):
             json_schema="",
             max_retries=0,
             temperature=1.0,
+            response_budget="manual",
             max_tokens=32,
         )
         with self.assertRaisesRegex(RuntimeError, r"backend_error: generation returned an incomplete qwen think block"):
@@ -623,12 +650,13 @@ class NodeLogicTests(unittest.TestCase):
             json_schema="",
             max_retries=0,
             temperature=1.0,
+            response_budget="manual",
             max_tokens=16,
         )
         plan = self.module._resolve_think_control(config)
         messages = self.module._build_messages(config, plan)
 
-        output, context_window = self.module._run_transformers_generation(
+        output, context_window, prompt_tokens, resolved_max_tokens = self.module._run_transformers_generation(
             config,
             plan,
             self.module._build_structured_output_plan(config),
@@ -637,6 +665,8 @@ class NodeLogicTests(unittest.TestCase):
 
         self.assertEqual(output, "hello world")
         self.assertEqual(context_window, 4096)
+        self.assertEqual(prompt_tokens, 3)
+        self.assertEqual(resolved_max_tokens, 16)
         kwargs = FakeAutoTokenizer.last_instance.chat_template_calls[-1]
         self.assertEqual(kwargs["chat_template_kwargs"]["enable_thinking"], False)
 
@@ -660,12 +690,13 @@ class NodeLogicTests(unittest.TestCase):
             json_schema='{"type":"object","properties":{"prompt":{"type":"string"}}}',
             max_retries=0,
             temperature=1.0,
+            response_budget="manual",
             max_tokens=16,
         )
         plan = self.module._resolve_think_control(config)
         messages = self.module._build_messages(config, plan)
 
-        output, _ = self.module._run_transformers_generation(
+        output, _, _, resolved_max_tokens = self.module._run_transformers_generation(
             config,
             plan,
             self.module._build_structured_output_plan(config),
@@ -673,6 +704,7 @@ class NodeLogicTests(unittest.TestCase):
         )
 
         self.assertEqual(output, '{"prompt":"ok"}')
+        self.assertEqual(resolved_max_tokens, 16)
         generate_kwargs = FakeAutoModel.last_instance.generate_calls[-1]
         self.assertEqual(generate_kwargs["prefix_allowed_tokens_fn"], "prefix-fn")
 
@@ -693,12 +725,13 @@ class NodeLogicTests(unittest.TestCase):
             json_schema="",
             max_retries=0,
             temperature=1.0,
+            response_budget="manual",
             max_tokens=16,
         )
         plan = self.module._resolve_think_control(config)
         messages = self.module._build_messages(config, plan)
 
-        output, _ = self.module._run_transformers_generation(
+        output, _, _, _ = self.module._run_transformers_generation(
             config,
             plan,
             self.module._build_structured_output_plan(config),
@@ -735,6 +768,7 @@ class NodeLogicTests(unittest.TestCase):
             json_schema='{"type":"object","properties":{"prompt":{"type":"string"}}}',
             max_retries=0,
             temperature=1.0,
+            response_budget="manual",
             max_tokens=16,
         )
         plan = self.module._resolve_think_control(config)
@@ -762,12 +796,13 @@ class NodeLogicTests(unittest.TestCase):
             json_schema='{"type":"object","properties":{"prompt":{"type":"string"}}}',
             max_retries=0,
             temperature=1.0,
+            response_budget="manual",
             max_tokens=16,
         )
         plan = self.module._resolve_think_control(config)
         messages = self.module._build_messages(config, plan)
 
-        output, context_window = self.module._run_llama_cpp_generation(
+        output, context_window, prompt_tokens, resolved_max_tokens = self.module._run_llama_cpp_generation(
             config,
             plan,
             self.module._build_structured_output_plan(config),
@@ -776,6 +811,8 @@ class NodeLogicTests(unittest.TestCase):
 
         self.assertEqual(output, '{"prompt":"ok"}')
         self.assertEqual(context_window, 4096)
+        self.assertEqual(prompt_tokens, 3)
+        self.assertEqual(resolved_max_tokens, 16)
         self.assertEqual(FakeLlama.last_kwargs["filename"], "model.gguf")
         self.assertEqual(FakeLlama.last_instance.calls[-1]["logits_processor"], ["logits-processor"])
 
@@ -797,14 +834,38 @@ class NodeLogicTests(unittest.TestCase):
                 retry_count=0,
                 retry_reason=None,
                 context_window=8192,
+                prompt_tokens=200,
+                response_budget="auto",
+                resolved_max_tokens=1024,
                 model_file="model.gguf",
             )
         )
         parsed = json.loads(debug_json)
         self.assertEqual(parsed["backend"], "llama-cpp")
         self.assertEqual(parsed["context_window"], 8192)
+        self.assertEqual(parsed["prompt_tokens"], 200)
+        self.assertEqual(parsed["response_budget"], "auto")
+        self.assertEqual(parsed["resolved_max_tokens"], 1024)
         self.assertEqual(parsed["model_file"], "model.gguf")
         self.assertIn("retry_reason", parsed)
+
+    def test_auto_response_budget_resolves_from_prompt_tokens_and_think_mode(self):
+        config = self.module._build_transformers_llm_config(
+            system_prompt="system",
+            user_prompt="user",
+            model_id="Qwen/Qwen3.5-4B",
+            quantization_mode="none",
+            think_mode="qwen",
+            json_output=False,
+            json_schema="",
+            max_retries=0,
+            temperature=0.7,
+            response_budget="auto",
+            max_tokens=512,
+        )
+        resolved, preset = self.module._resolve_max_new_tokens(config, prompt_tokens=300, context_window=4096)
+        self.assertEqual(preset, "large")
+        self.assertGreaterEqual(resolved, 512)
 
 
 if __name__ == "__main__":

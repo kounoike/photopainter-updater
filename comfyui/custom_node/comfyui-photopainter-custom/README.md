@@ -44,6 +44,7 @@ LLM node は 2 つへ分離しています。
 - `json_schema`
 - `max_retries`
 - `temperature`
+- `response_budget`: `auto` / `small` / `medium` / `large` / `manual`
 - `max_tokens`
 
 ### backend 固有仕様
@@ -53,7 +54,7 @@ LLM node は 2 つへ分離しています。
 - Qwen/Gemma 系では documented think 制御を優先します
 - `debug_json` には少なくとも `quantization_mode`、`requested_enable_thinking`、
   `control_kind`、`retry_reason`、`raw_had_think_block`、`sanitized_output` を含みます
-- default は `temperature=0.7`、`max_tokens=512` です。長い prompt planner 用途では必要に応じて `max_tokens` を増やします
+- default は `temperature=0.7`、`response_budget=auto`、`max_tokens=512` です。`manual` を選ばない限り `max_tokens` は token 数と think 設定から内部で解決します
 
 ## `PhotoPainter LLM Generate (llama-cpp)`
 
@@ -69,6 +70,7 @@ LLM node は 2 つへ分離しています。
 - `json_schema`
 - `max_retries`
 - `temperature`
+- `response_budget`: `auto` / `small` / `medium` / `large` / `manual`
 - `max_tokens`
 
 ### backend 固有仕様
@@ -77,7 +79,7 @@ LLM node は 2 つへ分離しています。
 - `quantization_mode` は存在しません
 - `model_file` は必須です
 - `debug_json` には少なくとも `model_file`、`context_window`、`retry_reason` を含みます
-- default は `temperature=0.7`、`max_tokens=512` です。長い生成が必要なときだけ上げます
+- default は `temperature=0.7`、`response_budget=auto`、`max_tokens=512` です。`manual` を選ばない限り `max_tokens` は token 数から内部で解決します
 
 ## 共通仕様
 
@@ -92,6 +94,13 @@ LLM node は 2 つへ分離しています。
 - retry は `json_parse_error` または `schema_error` の場合に限ります
 - `backend_error` や `think_mode_error` では retry しません
 - `debug_json` で `retry_count` と `retry_reason` を確認できます
+
+### Response Budget
+
+- `response_budget=manual` のときだけ `max_tokens` をそのまま使います
+- `auto` は実 token 数から `small` / `medium` / `large` を自動選択します
+- `think_mode != off` のときは同じ prompt 長でも少し大きめの budget を選びます
+- `debug_json` で `prompt_tokens`、`response_budget`、`resolved_max_tokens` を確認できます
 
 ### Output
 

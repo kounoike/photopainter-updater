@@ -105,7 +105,9 @@ class ContractTests(unittest.TestCase):
         self.assertNotIn("model_file", required)
         self.assertEqual(required["quantization_mode"][0], list(self.module.SUPPORTED_QUANTIZATION_MODES))
         self.assertEqual(required["think_mode"][0], list(self.module.SUPPORTED_THINK_MODES))
+        self.assertEqual(required["response_budget"][0], list(self.module.SUPPORTED_RESPONSE_BUDGETS))
         self.assertEqual(required["temperature"][1]["default"], 0.7)
+        self.assertEqual(required["response_budget"][0][0], "auto")
         self.assertEqual(required["max_tokens"][1]["default"], 512)
         self.assertEqual(required["max_tokens"][1]["max"], 262144)
 
@@ -126,7 +128,9 @@ class ContractTests(unittest.TestCase):
         self.assertIn("model_file", required)
         self.assertNotIn("quantization_mode", required)
         self.assertNotIn("think_mode", required)
+        self.assertEqual(required["response_budget"][0], list(self.module.SUPPORTED_RESPONSE_BUDGETS))
         self.assertEqual(required["temperature"][1]["default"], 0.7)
+        self.assertEqual(required["response_budget"][0][0], "auto")
         self.assertEqual(required["max_tokens"][1]["default"], 512)
         self.assertEqual(required["max_tokens"][1]["max"], 262144)
 
