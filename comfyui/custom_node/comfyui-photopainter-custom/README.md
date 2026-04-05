@@ -153,7 +153,7 @@ cd comfyui/custom_node/comfyui-photopainter-custom
 python -m venv .venv
 source .venv/bin/activate
 pip install --extra-index-url https://download.pytorch.org/whl/cu128 torch torchvision torchaudio
-pip install "transformers<5" jsonschema lm-format-enforcer
+pip install transformers jsonschema lm-format-enforcer
 python - <<'PY'
 import torch
 print(torch.cuda.is_available())

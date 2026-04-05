@@ -58,7 +58,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
       --torch-backend "${UV_TORCH_BACKEND}" && \
     uv pip install --system -r requirements.txt && \
     uv pip install --system -r manager_requirements.txt && \
-    uv pip install --system "transformers<5" jsonschema lm-format-enforcer && \
+    uv pip install --system transformers jsonschema lm-format-enforcer && \
     uv pip install --system \
       --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu125 \
       llama-cpp-python && \
