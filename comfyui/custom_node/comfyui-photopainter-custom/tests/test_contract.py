@@ -105,6 +105,8 @@ class ContractTests(unittest.TestCase):
         self.assertNotIn("model_file", required)
         self.assertEqual(required["quantization_mode"][0], list(self.module.SUPPORTED_QUANTIZATION_MODES))
         self.assertEqual(required["think_mode"][0], list(self.module.SUPPORTED_THINK_MODES))
+        self.assertEqual(required["temperature"][1]["default"], 0.7)
+        self.assertEqual(required["max_tokens"][1]["default"], 512)
         self.assertEqual(required["max_tokens"][1]["max"], 262144)
 
     def test_llama_cpp_llm_node_metadata_contract(self):
@@ -124,6 +126,8 @@ class ContractTests(unittest.TestCase):
         self.assertIn("model_file", required)
         self.assertNotIn("quantization_mode", required)
         self.assertNotIn("think_mode", required)
+        self.assertEqual(required["temperature"][1]["default"], 0.7)
+        self.assertEqual(required["max_tokens"][1]["default"], 512)
         self.assertEqual(required["max_tokens"][1]["max"], 262144)
 
     def test_node_mappings_only_expose_split_llm_nodes(self):

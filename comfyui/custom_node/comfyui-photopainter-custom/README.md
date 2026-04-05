@@ -53,6 +53,7 @@ LLM node は 2 つへ分離しています。
 - Qwen/Gemma 系では documented think 制御を優先します
 - `debug_json` には少なくとも `quantization_mode`、`requested_enable_thinking`、
   `control_kind`、`retry_reason`、`raw_had_think_block`、`sanitized_output` を含みます
+- default は `temperature=0.7`、`max_tokens=512` です。長い prompt planner 用途では必要に応じて `max_tokens` を増やします
 
 ## `PhotoPainter LLM Generate (llama-cpp)`
 
@@ -76,6 +77,7 @@ LLM node は 2 つへ分離しています。
 - `quantization_mode` は存在しません
 - `model_file` は必須です
 - `debug_json` には少なくとも `model_file`、`context_window`、`retry_reason` を含みます
+- default は `temperature=0.7`、`max_tokens=512` です。長い生成が必要なときだけ上げます
 
 ## 共通仕様
 

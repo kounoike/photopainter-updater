@@ -1052,8 +1052,8 @@ class PhotopainterTransformersLlmGenerate:
                 "json_output": ("BOOLEAN", {"default": False}),
                 "json_schema": ("STRING", {"default": "", "multiline": True}),
                 "max_retries": ("INT", {"default": 1, "min": 0, "max": 5}),
-                "temperature": ("FLOAT", {"default": 1.0, "min": 0.0, "step": 0.1}),
-                "max_tokens": ("INT", {"default": 2048, "min": 1, "max": 262144}),
+                "temperature": ("FLOAT", {"default": 0.7, "min": 0.0, "step": 0.1}),
+                "max_tokens": ("INT", {"default": 512, "min": 1, "max": 262144}),
             },
         }
 
@@ -1106,8 +1106,8 @@ class PhotopainterLlamaCppLlmGenerate:
                 "json_output": ("BOOLEAN", {"default": False}),
                 "json_schema": ("STRING", {"default": "", "multiline": True}),
                 "max_retries": ("INT", {"default": 1, "min": 0, "max": 5}),
-                "temperature": ("FLOAT", {"default": 1.0, "min": 0.0, "step": 0.1}),
-                "max_tokens": ("INT", {"default": 2048, "min": 1, "max": 262144}),
+                "temperature": ("FLOAT", {"default": 0.7, "min": 0.0, "step": 0.1}),
+                "max_tokens": ("INT", {"default": 512, "min": 1, "max": 262144}),
             },
         }
 
