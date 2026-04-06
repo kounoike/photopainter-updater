@@ -9,6 +9,7 @@ Dockerfile*
 .env*
 comfyui-data/
 ollama-data/
+runpod-volume/
 ai-toolkit-data/
 coverage/
 __pycache__/

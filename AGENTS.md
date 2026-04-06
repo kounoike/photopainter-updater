@@ -161,6 +161,8 @@ Use slash commands:
 - N/A（runtime 内メモリのみ。既存 local model cache は継続利用） (042-continue-long-answers)
 - Dockerfile syntax、Bash、Python 3.x runtime（upstream `worker-comfyui` 同梱環境） + RunPod `worker-comfyui` upstream image / `/start.sh`、RunPod customization / network volume / development docs、Ollama Linux installer / `ollama serve` / `ollama pull`、既存 repo の `comfyui/Dockerfile` と `compose.yml` (043-runpod-ollama-sidecar)
 - RunPod Network Volume (`/runpod-volume`)、Ollama model directory（`OLLAMA_MODELS` で指定）、Network Volume 未接続時のコンテナ内一時領域、repo 内の RunPod 用 Docker build assets と文書 (043-runpod-ollama-sidecar)
+- Dockerfile syntax、Docker Compose v2 YAML、Bash、Markdown、Python 3.x runtime（upstream `worker-comfyui` 同梱環境） + RunPod `worker-comfyui` base image / `/start.sh`、既存 `comfyui/runpod/Dockerfile` と `start-ollama-worker.sh`、Docker Compose v2、RunPod Network Volume 前提の `/runpod-volume` path、`comfyui-ollama` custom node (044-local-runpod-image)
+- host bind mount による `/runpod-volume`、その配下の `/runpod-volume/models` と `/runpod-volume/ollama/models`、repo 内の compose / Dockerfile / Markdown 成果物 (044-local-runpod-image)
 
 ## Recent Changes
 - 002-add-run-script: Added Bash (POSIX shell) / Python 3 (実行環境) + Python 標準の HTTP 配信機能

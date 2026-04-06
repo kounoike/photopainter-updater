@@ -134,7 +134,7 @@ LLM node は 2 つへ分離しています。
 custom node はプロセス環境変数として参照します。未設定時は backend 既定保存先を使います。
 
 ```text
-COMFYUI_LLM_MODEL_CACHE_DIR=./comfyui-data/llm-models
+COMFYUI_LLM_MODEL_CACHE_DIR=./runpod-volume/llm-models
 ```
 
 ## 旧単一ノードからの移行
@@ -186,9 +186,10 @@ http://192.168.1.10:8000/upload
 ## runtime への配置
 
 repo 管理ソースは `comfyui/custom_node/comfyui-photopainter-custom/` にあります。
-`comfyui/Dockerfile` がこのディレクトリを ComfyUI image の
-`/root/ComfyUI/custom_nodes/comfyui-photopainter-custom` に copy するため、
-container 起動時の追加 mount や copy は不要です。third-party custom node の clone と依存導入は `comfyui/install-custom-nodes.sh` にまとめています。
+`comfyui/runpod/Dockerfile` がこのディレクトリを共通 ComfyUI image の
+`/comfyui/custom_nodes/comfyui-photopainter-custom` に copy するため、
+container 起動時の追加 mount や copy は不要です。`comfyui-ollama` は同じ Dockerfile
+内で導入します。
 
 ```bash
 docker compose build comfyui

@@ -1,33 +1,38 @@
-# RunPod ComfyUI + Ollama
+# 共通 RunPod ComfyUI + Ollama runtime
 
-このディレクトリには、RunPod Serverless 向け `worker-comfyui` イメージを
-Ollama 同居構成へ拡張する assets を置きます。
+このディレクトリには、local と RunPod Serverless が共有する
+`worker-comfyui` ベース runtime assets を置きます。
 
 ## 目的
 
 - `worker-comfyui` の起動前に Ollama を自動起動する
 - Ollama API を `127.0.0.1:11434` の localhost 限定で使う
+- local Compose でも RunPod と同じ image を使う
 - RunPod Network Volume がある場合は model を永続化する
 - Network Volume がない場合も一時領域で起動継続する
 - 事前 pull model を単一 env 値のカンマ区切りで指定できるようにする
-- RunPod docs 推奨の `comfy-node-install` で必要最小限の custom node を導入する
+- repo 管理 custom node と `comfyui-ollama` を同じ image に同梱する
 
-この構成は RunPod serverless 専用です。既存のローカル Compose 用
-[`comfyui/Dockerfile`](/workspaces/photopainter-updater/comfyui/Dockerfile) と
-[`compose.yml`](/workspaces/photopainter-updater/compose.yml) は変更前提にしません。
+現行の local Compose `comfyui` service も
+[`compose.yml`](/workspaces/photopainter-updater/compose.yml) から
+この Dockerfile を build します。
 
 ## ファイル
 
 - [Dockerfile](/workspaces/photopainter-updater/comfyui/runpod/Dockerfile): upstream `worker-comfyui` base を継承して Ollama と必要最小限の custom node を追加する
 - [start-ollama-worker.sh](/workspaces/photopainter-updater/comfyui/runpod/start-ollama-worker.sh): Ollama 起動、readiness wait、model pull、upstream `/start.sh` への委譲を担当する
 
-RunPod 用 image では repo 管理の `comfyui-photopainter-custom` は `COPY` で同梱し、third-party node は `comfy-node-install comfyui-ollama` を使って導入する。local Compose 用の `install-custom-nodes.sh` は RunPod image build では使わない。
+repo 管理の `comfyui-photopainter-custom` は `COPY` で同梱し、third-party node は
+`ComfyUI-Easy-Use`、`comfyui-ollama`、`ComfyUI-basic_data_handling` を
+既定値として `comfy-node-install` で導入します。必要なら build arg
+`COMFYUI_CUSTOM_NODES` でカンマ区切りの URL 一覧へ差し替えられます。
 
 ## 環境変数
 
 | 変数 | 用途 | 既定値 |
 |------|------|--------|
-| `RUNPOD_WORKER_COMFYUI_IMAGE` | 継承元 `worker-comfyui` base image | `runpod/worker-comfyui:5.7.1-base-cuda12.8.1` |
+| `RUNPOD_WORKER_COMFYUI_IMAGE` | 継承元 `worker-comfyui` base image（必要時のみ build arg で上書き） | `runpod/worker-comfyui:5.8.5-base-cuda12.8.1` |
+| `COMFYUI_CUSTOM_NODES` | `comfy-node-install` へ渡す custom node URL 一覧（build arg） | `ComfyUI-Easy-Use`、`comfyui-ollama`、`ComfyUI-basic_data_handling` |
 | `OLLAMA_HOST` | Ollama bind 先 | `127.0.0.1:11434` |
 | `RUNPOD_OLLAMA_MODELS_DIR` | 永続利用時の model 保存先 | `/runpod-volume/ollama/models` |
 | `EPHEMERAL_OLLAMA_MODELS_DIR` | fallback 時の一時保存先 | `/tmp/ollama/models` |
@@ -45,11 +50,27 @@ RunPod 用 image では repo 管理の `comfyui-photopainter-custom` は `COPY` 
 5. pull 失敗は warning として残し、worker 起動は継続する
 6. 最後に upstream `/start.sh` へ `exec` で委譲する
 
+## local Compose
+
+local では `compose.yml` の `comfyui` service がこの Dockerfile を build し、
+host 側 `RUNPOD_VOLUME_DIR` を `/runpod-volume` へ bind mount します。
+このとき `LOCAL_COMFYUI_ONLY=true` を使い、RunPod handler ではなく ComfyUI 本体だけを起動します。
+
+```bash
+mkdir -p ./runpod-volume/{models,ollama/models,input,output,user,dot-cache,dot-local}
+cp .env.example .env
+docker compose build comfyui
+docker compose up -d comfyui
+docker compose exec comfyui curl -fsS http://127.0.0.1:11434/api/version
+```
+
+local の成功導線では `/runpod-volume` bind mount を省略しません。
+
 ## Network Volume
 
 RunPod serverless では Docker Compose の `volumes:` を自前定義する前提ではありません。
-Endpoint の Advanced 設定で Network Volume を接続すると、container 内では
-`/runpod-volume` として見えます。
+Endpoint の Advanced 設定で Network Volume を接続すると、
+container 内では `/runpod-volume` として見えます。
 
 - `/runpod-volume` が存在し書き込み可能: `persistent`
 - `/runpod-volume` が使えない: `ephemeral`
@@ -104,17 +125,17 @@ docker run --rm --gpus all \
 - `curl http://127.0.0.1:11434/api/version` が成功する
 - ログに `runtime_mode=persistent` または `runtime_mode=ephemeral` が出る
 - `model_result ... result=pulled|reused|failed` を追える
+- repo 管理 custom node と `comfyui-ollama` が同じ image 前提で利用できる
 - upstream `worker-comfyui` development docs に沿って payload を `http://localhost:3000/run` へ送れる
 
 ## スコープ境界
 
 Allowed Scope:
-- RunPod 用 image customization
+- local / RunPod 共通 image customization
 - Ollama sidecar の起動と model 保存先切り替え
 - RunPod / ローカル検証手順の文書化
 
 Forbidden Scope:
-- 既存 `compose.yml` の RunPod 向け改造
 - Ollama API の外部公開
 - `KEEP_ALIVE` の image 側固定
 - `transformers` node から Ollama への全面移植
