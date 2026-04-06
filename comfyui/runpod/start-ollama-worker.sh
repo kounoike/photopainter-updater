@@ -5,6 +5,7 @@ readonly DEFAULT_OLLAMA_HOST="127.0.0.1:11434"
 readonly DEFAULT_PERSISTENT_MODELS_DIR="/runpod-volume/ollama/models"
 readonly DEFAULT_EPHEMERAL_MODELS_DIR="/tmp/ollama/models"
 readonly DEFAULT_START_SCRIPT="/start.sh"
+readonly DEFAULT_COMFYUI_MAIN="/comfyui/main.py"
 readonly DEFAULT_HEALTHCHECK_URL="http://127.0.0.1:11434/api/version"
 readonly DEFAULT_MAX_WAIT_SECONDS="60"
 
@@ -110,9 +111,12 @@ pull_models() {
 
 main() {
   local start_script="${RUNPOD_START_SCRIPT:-$DEFAULT_START_SCRIPT}"
+  local comfyui_main="${COMFYUI_MAIN_SCRIPT:-$DEFAULT_COMFYUI_MAIN}"
   local ollama_host="${OLLAMA_HOST:-$DEFAULT_OLLAMA_HOST}"
+  local local_mode="${LOCAL_COMFYUI_ONLY:-false}"
+  local cli_args="${CLI_ARGS:---listen 0.0.0.0 --fast --enable-manager}"
 
-  if [ ! -x "$start_script" ]; then
+  if [ "$local_mode" != "true" ] && [ ! -x "$start_script" ]; then
     log_warn "upstream start script is not executable: ${start_script}"
     return 1
   fi
@@ -126,6 +130,18 @@ main() {
 
   wait_for_ollama
   pull_models
+
+  if [ "$local_mode" = "true" ]; then
+    if [ ! -f "$comfyui_main" ]; then
+      log_warn "ComfyUI main script is missing: ${comfyui_main}"
+      return 1
+    fi
+
+    log_info "starting local ComfyUI only mode: ${comfyui_main}"
+    trap - EXIT
+    # shellcheck disable=SC2086
+    exec python "$comfyui_main" ${cli_args}
+  fi
 
   log_info "delegating to upstream start script: ${start_script}"
   trap - EXIT

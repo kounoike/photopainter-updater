@@ -20,8 +20,8 @@ description: "Local RunPod image 統一の実装タスクリスト"
 
 **Purpose**: 共通 runtime へ切り替える前提と作業境界を固定する
 
-- [ ] T001 現行 runtime 契約と作業対象を `specs/044-local-runpod-image/plan.md`、`specs/044-local-runpod-image/spec.md`、`specs/044-local-runpod-image/contracts/local-runpod-runtime-contract.md` で再確認する
-- [ ] T002 [P] local / RunPod 共通 runtime で更新対象になる実ファイルを `compose.yml`、`.env.example`、`README.md`、`comfyui/runpod/README.md`、`specs/044-local-runpod-image/quickstart.md` で棚卸しする
+- [X] T001 現行 runtime 契約と作業対象を `specs/044-local-runpod-image/plan.md`、`specs/044-local-runpod-image/spec.md`、`specs/044-local-runpod-image/contracts/local-runpod-runtime-contract.md` で再確認する
+- [X] T002 [P] local / RunPod 共通 runtime で更新対象になる実ファイルを `compose.yml`、`.env.example`、`README.md`、`comfyui/runpod/README.md`、`specs/044-local-runpod-image/quickstart.md` で棚卸しする
 
 ---
 
@@ -31,10 +31,10 @@ description: "Local RunPod image 統一の実装タスクリスト"
 
 **CRITICAL**: この phase 完了まで user story 実装を開始しない
 
-- [ ] T003 `compose.yml` の `comfyui` service を `comfyui/runpod/Dockerfile` ベースへ切り替えるための build / env / volume 差分を `compose.yml` に整理する
-- [ ] T004 `.env.example` の local 永続化設定を `/runpod-volume` 前提へ寄せるため、旧 `COMFYUI_DATA_DIR` / `OLLAMA_DATA_DIR` 導線の扱いを `.env.example` に整理する
-- [ ] T005 [P] 旧 local 専用 runtime 資産の廃止方針を `comfyui/Dockerfile`、`comfyui/entrypoint.sh`、`comfyui/install-custom-nodes.sh`、`README.md` で明示できる状態に整理する
-- [ ] T006 Allowed Scope / Forbidden Scope を逸脱していないことを `specs/044-local-runpod-image/spec.md` と実装対象ファイルで確認する
+- [X] T003 `compose.yml` の `comfyui` service を `comfyui/runpod/Dockerfile` ベースへ切り替えるための build / env / volume 差分を `compose.yml` に整理する
+- [X] T004 `.env.example` の local 永続化設定を `/runpod-volume` 前提へ寄せるため、旧 `COMFYUI_DATA_DIR` / `OLLAMA_DATA_DIR` 導線の扱いを `.env.example` に整理する
+- [X] T005 [P] 旧 local 専用 runtime 資産の廃止方針を `comfyui/Dockerfile`、`comfyui/entrypoint.sh`、`comfyui/install-custom-nodes.sh`、`README.md` で明示できる状態に整理する
+- [X] T006 Allowed Scope / Forbidden Scope を逸脱していないことを `specs/044-local-runpod-image/spec.md` と実装対象ファイルで確認する
 
 **Checkpoint**: compose 定義、env 前提、旧 runtime 資産の扱いが user story 実装の前提として固まっている
 
@@ -48,13 +48,13 @@ description: "Local RunPod image 統一の実装タスクリスト"
 
 ### Verification for User Story 1
 
-- [ ] T007 [US1] local の共通 image 起動確認手順と期待ログを `specs/044-local-runpod-image/quickstart.md` に明記する
+- [X] T007 [US1] local の共通 image 起動確認手順と期待ログを `specs/044-local-runpod-image/quickstart.md` に明記する
 
 ### Implementation for User Story 1
 
-- [ ] T008 [US1] `compose.yml` の `comfyui` service を `comfyui/runpod/Dockerfile` と `comfyui/runpod/start-ollama-worker.sh` 前提の定義へ更新する
-- [ ] T009 [US1] local の Ollama 同居起動と `curl http://127.0.0.1:11434/api/version` 確認を `README.md` に反映する
-- [ ] T010 [US1] local / RunPod 共通 runtime の起動 contract と upstream 委譲方式を `comfyui/runpod/README.md` に反映する
+- [X] T008 [US1] `compose.yml` の `comfyui` service を `comfyui/runpod/Dockerfile` と `comfyui/runpod/start-ollama-worker.sh` 前提の定義へ更新する
+- [X] T009 [US1] local の Ollama 同居起動と `curl http://127.0.0.1:11434/api/version` 確認を `README.md` に反映する
+- [X] T010 [US1] local / RunPod 共通 runtime の起動 contract と upstream 委譲方式を `comfyui/runpod/README.md` に反映する
 
 **Checkpoint**: `comfyui` service 名を維持したまま、local / RunPod が同じ image 前提で説明・起動できる
 
@@ -68,13 +68,13 @@ description: "Local RunPod image 統一の実装タスクリスト"
 
 ### Verification for User Story 2
 
-- [ ] T011 [US2] `/runpod-volume` bind mount 必須、ComfyUI model root、Ollama model storage の確認手順を `specs/044-local-runpod-image/quickstart.md` に明記する
+- [X] T011 [US2] `/runpod-volume` bind mount 必須、ComfyUI model root、Ollama model storage の確認手順を `specs/044-local-runpod-image/quickstart.md` に明記する
 
 ### Implementation for User Story 2
 
-- [ ] T012 [US2] local bind mount と model path 契約を `compose.yml` に反映し、独立 `ollama` service 依存なしで `/runpod-volume` を渡す
-- [ ] T013 [US2] `/runpod-volume` 前提の host directory 準備と `.env` 設定例を `.env.example` に反映する
-- [ ] T014 [US2] local / RunPod で共通の storage layout と model path の役割を `README.md` と `comfyui/runpod/README.md` に反映する
+- [X] T012 [US2] local bind mount と model path 契約を `compose.yml` に反映し、独立 `ollama` service 依存なしで `/runpod-volume` を渡す
+- [X] T013 [US2] `/runpod-volume` 前提の host directory 準備と `.env` 設定例を `.env.example` に反映する
+- [X] T014 [US2] local / RunPod で共通の storage layout と model path の役割を `README.md` と `comfyui/runpod/README.md` に反映する
 
 **Checkpoint**: local でも `/runpod-volume/models` と `/runpod-volume/ollama/models` を混同せず運用できる
 
@@ -88,13 +88,13 @@ description: "Local RunPod image 統一の実装タスクリスト"
 
 ### Verification for User Story 3
 
-- [ ] T015 [US3] 旧 local 専用導線の廃止、移行先、非推奨事項を `specs/044-local-runpod-image/quickstart.md` に明記する
+- [X] T015 [US3] 旧 local 専用導線の廃止、移行先、非推奨事項を `specs/044-local-runpod-image/quickstart.md` に明記する
 
 ### Implementation for User Story 3
 
-- [ ] T016 [US3] 独立 `ollama` service 廃止と新しい local 導線への移行説明を `README.md` に反映する
-- [ ] T017 [US3] local 専用 runtime 資産の扱いを `comfyui/Dockerfile`、`comfyui/entrypoint.sh`、`comfyui/install-custom-nodes.sh` の削除または非推奨化で整理する
-- [ ] T018 [US3] 共通 runtime の唯一の一次情報としての役割を `comfyui/runpod/README.md` に反映する
+- [X] T016 [US3] 独立 `ollama` service 廃止と新しい local 導線への移行説明を `README.md` に反映する
+- [X] T017 [US3] local 専用 runtime 資産の扱いを `comfyui/Dockerfile`、`comfyui/entrypoint.sh`、`comfyui/install-custom-nodes.sh` の削除または非推奨化で整理する
+- [X] T018 [US3] 共通 runtime の唯一の一次情報としての役割を `comfyui/runpod/README.md` に反映する
 
 **Checkpoint**: 現行導線の一次情報が `compose.yml`、`README.md`、`comfyui/runpod/README.md` に集約されている
 
@@ -104,9 +104,9 @@ description: "Local RunPod image 統一の実装タスクリスト"
 
 **Purpose**: 全 story を横断して整合性と手順の実行可能性を仕上げる
 
-- [ ] T019 [P] `specs/044-local-runpod-image/contracts/local-runpod-runtime-contract.md` を実装後の compose / docs と照合し、必要な文言差分を解消する
-- [ ] T020 [P] `compose.yml`、`comfyui/runpod/Dockerfile`、`comfyui/runpod/README.md` を照合し、既存 custom node と `comfyui-ollama` 利用前提が維持されていることを確認する
-- [ ] T021 `specs/044-local-runpod-image/quickstart.md` の手順に沿って `docker compose config`、`docker compose up -d comfyui`、`docker compose exec comfyui curl -fsS http://127.0.0.1:11434/api/version`、`OLLAMA_PULL_MODELS` 指定時の `model_result` ログ確認結果を記録する
+- [X] T019 [P] `specs/044-local-runpod-image/contracts/local-runpod-runtime-contract.md` を実装後の compose / docs と照合し、必要な文言差分を解消する
+- [X] T020 [P] `compose.yml`、`comfyui/runpod/Dockerfile`、`comfyui/runpod/README.md` を照合し、既存 custom node と `comfyui-ollama` 利用前提が維持されていることを確認する
+- [X] T021 `specs/044-local-runpod-image/quickstart.md` の手順に沿って `docker compose config`、`docker compose up -d comfyui`、`docker compose exec comfyui curl -fsS http://127.0.0.1:11434/api/version`、`OLLAMA_PULL_MODELS` 指定時の `model_result` ログ確認結果を記録する
 
 ---
 
@@ -138,7 +138,6 @@ description: "Local RunPod image 統一の実装タスクリスト"
 - T002 と T005 は並列実行可能
 - User Story 1 完了後、T013 と T014 は並列実行可能
 - User Story 3 では T016 と T018 は並列実行可能
-- Polish では契約照合の T019 と手順検証の T020 を並列で進められる
 - Polish では契約照合の T019 と依存維持確認の T020 を並列で進められる
 
 ---

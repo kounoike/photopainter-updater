@@ -42,5 +42,6 @@ Thumbs.db
 # ComfyUI Docker データディレクトリ
 comfyui-data/
 ollama-data/
+runpod-volume/
 ai-toolkit-data/
 .tmp-runpod-volume/

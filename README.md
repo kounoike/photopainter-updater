@@ -48,53 +48,70 @@ Docker 利用可能な環境で行ってください。
 
 ## ComfyUI（画像生成）
 
-NVIDIA GPU 搭載の環境で ComfyUI を Docker Compose から self-build して起動できます。
-この構成は CUDA 対応 Python base image から ComfyUI を組み立て、依存は `uv` で導入します。PyTorch backend は Docker build 時に `cu128` へ固定し、`auto` 判定には依存しません。repo 管理 custom node と pinned third-party custom node は image に焼き込まれます。
+NVIDIA GPU 搭載の環境では、local でも RunPod と同じ `worker-comfyui` ベース image を
+Docker Compose から起動します。`compose.yml` の `comfyui` service は
+[`comfyui/runpod/Dockerfile`](/workspaces/photopainter-updater/comfyui/runpod/Dockerfile) を build し、
+Ollama は同じ `comfyui` コンテナ内で自動起動します。local Compose では
+RunPod handler は起動せず、ComfyUI Web UI と Ollama 確認に集中します。
+
+最初に `/runpod-volume` 用の host directory を作成します。
 
 ```bash
-cp .env.example .env   # 必要に応じてポート・データパス・ref を編集
+mkdir -p ./runpod-volume/{models,ollama/models,input,output,user,dot-cache,dot-local}
+cp .env.example .env
+```
+
+```bash
 docker compose build comfyui
 docker compose up -d comfyui
 docker compose logs --tail=200 comfyui
 ```
 
-ブラウザで `http://localhost:18188` にアクセスすると ComfyUI Web UI が開きます。既定の起動フラグには `--listen 0.0.0.0` を含め、host 側公開ポートから到達できる前提にしています。
-再起動確認は `docker compose restart comfyui`、再作成確認は `docker compose down && docker compose up -d comfyui` です。
-ローカルでは `COMFYUI_DATA_DIR/models` をそのまま使い、RunPod Serverless を意識する場合は `.env` で `COMFYUI_MODEL_ROOT` を `/runpod-volume/models` のような永続領域へ向けられます。
+ブラウザで `http://127.0.0.1:18188` にアクセスすると ComfyUI Web UI が開きます。
+Ollama は host へ公開せず、コンテナ内 localhost で確認します。
 
-詳細な手順（build、起動、再起動、再作成、troubleshooting、GPU 確認等）は
-[specs/030-build-comfyui-image/quickstart.md](specs/030-build-comfyui-image/quickstart.md) を参照してください。
+```bash
+docker compose exec comfyui curl -fsS http://127.0.0.1:11434/api/version
+```
+
+local の model path は RunPod と同じです。
+
+- ComfyUI model root: `/runpod-volume/models`
+- Ollama model storage: `/runpod-volume/ollama/models`
+
+詳細な local 手順は
+[specs/044-local-runpod-image/quickstart.md](/workspaces/photopainter-updater/specs/044-local-runpod-image/quickstart.md)
+を参照してください。
 
 repo 管理の custom node は [`comfyui/custom_node/`](./comfyui/custom_node/) 配下に置き、
-`docker compose build comfyui` 時に ComfyUI image へ焼き込まれます。third-party custom node の導入処理は [install-custom-nodes.sh](/home/kounoike/ghq/github.com/kounoike/photopainter-updater/comfyui/install-custom-nodes.sh) にまとめてあり、既定では `ComfyUI-Manager@4.1`、`ComfyUI-Easy-Use@v1.3.6`、`comfyui-ollama@6db7560576e5a59488708e6be13e07b5aba2432a`、`ComfyUI-Xz3r0-Nodes@v1.7.0` を同梱します。repo 側 custom node や pinned ref を更新した場合は再 build が必要です。追加 custom node を手元で試すことはできても、再作成後の維持は保証しません。
+`docker compose build comfyui` 時に共有 runtime image へ焼き込まれます。
+third-party custom node は `ComfyUI-Easy-Use`、`comfyui-ollama`、
+`ComfyUI-basic_data_handling` を既定値として、
+`worker-comfyui` の `customization.md` に沿って `comfy-node-install` で導入します。
+必要なら `.env` の `COMFYUI_CUSTOM_NODES` で build 時の一覧を差し替えられます。
+repo 側 custom node を更新したあとは再 build が必要です。
 PhotoPainter 用の PNG POST ノードの導入と HTTP サーバとの接続例は
 [specs/027-comfyui-post-node/quickstart.md](specs/027-comfyui-post-node/quickstart.md) を参照してください。
 
 ## RunPod Serverless（ComfyUI + Ollama）
 
-RunPod Serverless 向けには、既存の local Compose 導線とは別に `worker-comfyui` base を継承した custom image 用 assets を
-[`comfyui/runpod/`](/workspaces/photopainter-updater/comfyui/runpod/) へ置いています。wrapper start script が `ollama serve` を前置起動し、localhost の `127.0.0.1:11434` で疎通確認してから upstream `/start.sh` へ委譲します。
+RunPod Serverless でも local と同じ
+[`comfyui/runpod/`](/workspaces/photopainter-updater/comfyui/runpod/) の image を使います。
+wrapper start script が `ollama serve` を前置起動し、localhost の `127.0.0.1:11434`
+で疎通確認してから upstream `/start.sh` へ委譲します。
 
 ```bash
 docker build -t photopainter-runpod-comfyui-ollama -f comfyui/runpod/Dockerfile comfyui
 ```
 
-RunPod の Network Volume を endpoint 側で接続すると container 内では `/runpod-volume` に見え、Ollama model はそこへ永続化されます。未接続時は一時領域へフォールバックします。事前 pull model は `OLLAMA_PULL_MODELS=qwen3.5:4b,llama3.2:3b` のような単一 env 値のカンマ区切りで指定します。`keep_alive` は Dockerfile 側で固定せず、ComfyUI node 側で `0` を指定する前提です。
+RunPod の Network Volume を endpoint 側で接続すると container 内では `/runpod-volume`
+に見えます。local は bind mount、RunPod は Network Volume という違いだけで、
+runtime 自体は同じです。事前 pull model は
+`OLLAMA_PULL_MODELS=qwen3.5:4b,llama3.2:3b` のような単一 env 値のカンマ区切りで指定します。
 
-ローカル擬似検証では `/runpod-volume` bind mount あり・なしの両方を `docker run` で再現できます。詳細は [comfyui/runpod/README.md](/workspaces/photopainter-updater/comfyui/runpod/README.md) と [specs/043-runpod-ollama-sidecar/quickstart.md](/workspaces/photopainter-updater/specs/043-runpod-ollama-sidecar/quickstart.md) を参照してください。
-
-## Ollama（LLM 推論）
-
-ComfyUI と同じ compose プロジェクト内で Ollama を起動できます。Ollama はホストへ公開せず、Compose 内ネットワーク（`http://ollama:11434`）からのみアクセス可能です。
-
-```bash
-cp .env.example .env   # 必要に応じて OLLAMA_DATA_DIR を編集
-docker compose up -d ollama
-docker compose exec ollama ollama list
-```
-
-詳細な手順（モデルの取得・永続化確認・ComfyUI との共存）は
-[specs/023-add-ollama-compose/quickstart.md](specs/023-add-ollama-compose/quickstart.md) を参照してください。
+詳細は [comfyui/runpod/README.md](/workspaces/photopainter-updater/comfyui/runpod/README.md) と
+[specs/044-local-runpod-image/quickstart.md](/workspaces/photopainter-updater/specs/044-local-runpod-image/quickstart.md)
+を参照してください。
 
 ## AI Toolkit 試用環境
 

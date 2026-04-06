@@ -18,6 +18,7 @@ local と RunPod が同じ `worker-comfyui` ベース image を共有し、Comfy
 - `api/version` readiness 確認後に upstream worker が起動する
 - `OLLAMA_PULL_MODELS` 指定時は起動時 pull を順次実行する
 - model pull 失敗は warning ログで残し、worker 起動は継続する
+- local Compose では RunPod handler を起動せず、ComfyUI 本体を直接起動する
 
 ## Local Compose Contract
 
@@ -37,6 +38,7 @@ docker compose exec comfyui curl -fsS http://127.0.0.1:11434/api/version
 - `/runpod-volume` bind mount を省略しない
 - ComfyUI Web UI は host 側 `COMFYUI_PORT` から到達できる
 - Ollama API は host へ公開しない
+- local Compose では `LOCAL_COMFYUI_ONLY=true` で RunPod handler を無効化する
 
 ## Storage Layout Contract
 
@@ -60,5 +62,6 @@ docker compose exec comfyui curl -fsS http://127.0.0.1:11434/api/version
 1. `docker compose config` で `comfyui` service が `runpod/Dockerfile` を使う
 2. `docker compose up -d comfyui` 後に ComfyUI Web UI が到達可能
 3. `docker compose exec comfyui curl -fsS http://127.0.0.1:11434/api/version` が成功
-4. 起動ログに `ollama_api_ready` と `delegating to upstream start script` が出る
-5. 文書から独立 `ollama` service 前提を読み取れない
+4. local 起動ログに `ollama_api_ready` と `starting local ComfyUI only mode` が出る
+5. RunPod 起動時は `delegating to upstream start script` が出る
+6. 文書から独立 `ollama` service 前提を読み取れない
