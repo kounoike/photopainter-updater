@@ -16,9 +16,9 @@
 
 **Purpose**: RunPod 用 assets の配置先と文書の入口を整える
 
-- [ ] T001 `comfyui/runpod/` 配下の RunPod 用構成方針を [plan.md](/workspaces/photopainter-updater/specs/043-runpod-ollama-sidecar/plan.md) に合わせて確認する
-- [ ] T002 `comfyui/runpod/README.md` の初期骨子を作成し RunPod 用 assets の責務を記述する
-- [ ] T003 [P] `README.md` の ComfyUI / RunPod 記述を確認し既存ローカル Compose 導線を壊さない更新ポイントを整理する
+- [X] T001 `comfyui/runpod/` 配下の RunPod 用構成方針を [plan.md](/workspaces/photopainter-updater/specs/043-runpod-ollama-sidecar/plan.md) に合わせて確認する
+- [X] T002 `comfyui/runpod/README.md` の初期骨子を作成し RunPod 用 assets の責務を記述する
+- [X] T003 [P] `README.md` の ComfyUI / RunPod 記述を確認し既存ローカル Compose 導線を壊さない更新ポイントを整理する
 
 ---
 
@@ -28,11 +28,11 @@
 
 **CRITICAL**: この phase 完了まで user story 実装を開始しない
 
-- [ ] T004 `comfyui/runpod/Dockerfile` を作成し upstream `worker-comfyui` base 継承と Ollama 導入の骨組みを追加する
-- [ ] T005 [P] `comfyui/runpod/start-ollama-worker.sh` を作成し wrapper start script の基本フローを実装する
-- [ ] T006 [P] `comfyui/runpod/README.md` に必要な env 変数、localhost 制約、Network Volume 前提の共通定義を追加する
-- [ ] T007 `specs/043-runpod-ollama-sidecar/contracts/runpod-ollama-runtime-contract.md` と整合するよう `comfyui/runpod/README.md` の用語を統一する
-- [ ] T008 Allowed Scope / Forbidden Scope の実装境界を `comfyui/runpod/README.md` に明記し既存 `comfyui/Dockerfile` と `compose.yml` を不変更前提に固定する
+- [X] T004 `comfyui/runpod/Dockerfile` を作成し upstream `worker-comfyui` base 継承と Ollama 導入の骨組みを追加する
+- [X] T005 [P] `comfyui/runpod/start-ollama-worker.sh` を作成し wrapper start script の基本フローを実装する
+- [X] T006 [P] `comfyui/runpod/README.md` に必要な env 変数、localhost 制約、Network Volume 前提の共通定義を追加する
+- [X] T007 `specs/043-runpod-ollama-sidecar/contracts/runpod-ollama-runtime-contract.md` と整合するよう `comfyui/runpod/README.md` の用語を統一する
+- [X] T008 Allowed Scope / Forbidden Scope の実装境界を `comfyui/runpod/README.md` に明記し既存 `comfyui/Dockerfile` と `compose.yml` を不変更前提に固定する
 
 **Checkpoint**: RunPod 用 assets の共通基盤完了後に user story 実装へ進む
 
@@ -46,15 +46,15 @@
 
 ### Verification for User Story 1
 
-- [ ] T009 [US1] [quickstart.md](/workspaces/photopainter-updater/specs/043-runpod-ollama-sidecar/quickstart.md) に localhost readiness 確認手順を具体化する
-- [ ] T010 [US1] `comfyui/runpod/README.md` に upstream `/start.sh` へ委譲する確認手順を記述する
+- [X] T009 [US1] [quickstart.md](/workspaces/photopainter-updater/specs/043-runpod-ollama-sidecar/quickstart.md) に localhost readiness 確認手順を具体化する
+- [X] T010 [US1] `comfyui/runpod/README.md` に upstream `/start.sh` へ委譲する確認手順を記述する
 
 ### Implementation for User Story 1
 
-- [ ] T011 [US1] `comfyui/runpod/Dockerfile` に wrapper script 配置と起動入口を追加する
-- [ ] T012 [US1] `comfyui/runpod/start-ollama-worker.sh` に `ollama serve` の background 起動と readiness wait を実装する
-- [ ] T013 [US1] `comfyui/runpod/start-ollama-worker.sh` に localhost bind 前提と upstream `/start.sh` への `exec` 委譲を実装する
-- [ ] T014 [US1] `comfyui/runpod/README.md` に localhost 限定利用と外部公開しない前提を追記する
+- [X] T011 [US1] `comfyui/runpod/Dockerfile` に wrapper script 配置と起動入口を追加する
+- [X] T012 [US1] `comfyui/runpod/start-ollama-worker.sh` に `ollama serve` の background 起動と readiness wait を実装する
+- [X] T013 [US1] `comfyui/runpod/start-ollama-worker.sh` に localhost bind 前提と upstream `/start.sh` への `exec` 委譲を実装する
+- [X] T014 [US1] `comfyui/runpod/README.md` に localhost 限定利用と外部公開しない前提を追記する
 
 **Checkpoint**: User Story 1 が独立して検証可能であること
 
@@ -68,14 +68,14 @@
 
 ### Verification for User Story 2
 
-- [ ] T015 [US2] [quickstart.md](/workspaces/photopainter-updater/specs/043-runpod-ollama-sidecar/quickstart.md) に `/runpod-volume` あり・なし両ケースの確認手順を記述する
-- [ ] T016 [US2] `comfyui/runpod/README.md` に RunPod Endpoint 側で Network Volume を接続する前提と fallback 動作を追記する
+- [X] T015 [US2] [quickstart.md](/workspaces/photopainter-updater/specs/043-runpod-ollama-sidecar/quickstart.md) に `/runpod-volume` あり・なし両ケースの確認手順を記述する
+- [X] T016 [US2] `comfyui/runpod/README.md` に RunPod Endpoint 側で Network Volume を接続する前提と fallback 動作を追記する
 
 ### Implementation for User Story 2
 
-- [ ] T017 [US2] `comfyui/runpod/start-ollama-worker.sh` に `/runpod-volume` 可用性判定と `OLLAMA_MODELS` 解決処理を実装する
-- [ ] T018 [US2] `comfyui/runpod/start-ollama-worker.sh` に persistent / ephemeral モードをログへ出力する処理を実装する
-- [ ] T019 [US2] `comfyui/runpod/README.md` に永続領域再利用と一時領域フォールバックの運用差分を記載する
+- [X] T017 [US2] `comfyui/runpod/start-ollama-worker.sh` に `/runpod-volume` 可用性判定と `OLLAMA_MODELS` 解決処理を実装する
+- [X] T018 [US2] `comfyui/runpod/start-ollama-worker.sh` に persistent / ephemeral モードをログへ出力する処理を実装する
+- [X] T019 [US2] `comfyui/runpod/README.md` に永続領域再利用と一時領域フォールバックの運用差分を記載する
 
 **Checkpoint**: User Story 2 が独立して検証可能であること
 
@@ -89,14 +89,14 @@
 
 ### Verification for User Story 3
 
-- [ ] T020 [US3] [quickstart.md](/workspaces/photopainter-updater/specs/043-runpod-ollama-sidecar/quickstart.md) に `OLLAMA_PULL_MODELS` 設定例と failure 確認手順を追加する
-- [ ] T021 [US3] `comfyui/runpod/README.md` にカンマ区切り一覧、空一覧、warning 継続の契約を記述する
+- [X] T020 [US3] [quickstart.md](/workspaces/photopainter-updater/specs/043-runpod-ollama-sidecar/quickstart.md) に `OLLAMA_PULL_MODELS` 設定例と failure 確認手順を追加する
+- [X] T021 [US3] `comfyui/runpod/README.md` にカンマ区切り一覧、空一覧、warning 継続の契約を記述する
 
 ### Implementation for User Story 3
 
-- [ ] T022 [US3] `comfyui/runpod/start-ollama-worker.sh` に model 一覧の trim / split / 重複除去処理を実装する
-- [ ] T023 [US3] `comfyui/runpod/start-ollama-worker.sh` に `ollama pull` 実行と reused / pulled / failed のログ出力を実装する
-- [ ] T024 [US3] `comfyui/runpod/start-ollama-worker.sh` に pull failure 時も worker 起動継続する制御を実装する
+- [X] T022 [US3] `comfyui/runpod/start-ollama-worker.sh` に model 一覧の trim / split / 重複除去処理を実装する
+- [X] T023 [US3] `comfyui/runpod/start-ollama-worker.sh` に `ollama pull` 実行と reused / pulled / failed のログ出力を実装する
+- [X] T024 [US3] `comfyui/runpod/start-ollama-worker.sh` に pull failure 時も worker 起動継続する制御を実装する
 
 **Checkpoint**: User Story 3 が独立して検証可能であること
 
@@ -110,14 +110,14 @@
 
 ### Verification for User Story 4
 
-- [ ] T025 [US4] [quickstart.md](/workspaces/photopainter-updater/specs/043-runpod-ollama-sidecar/quickstart.md) にローカル build / run / payload 送信手順を具体化する
-- [ ] T026 [US4] `comfyui/runpod/README.md` に upstream `worker-comfyui` development docs ベースのローカル確認フローを記述する
+- [X] T025 [US4] [quickstart.md](/workspaces/photopainter-updater/specs/043-runpod-ollama-sidecar/quickstart.md) にローカル build / run / payload 送信手順を具体化する
+- [X] T026 [US4] `comfyui/runpod/README.md` に upstream `worker-comfyui` development docs ベースのローカル確認フローを記述する
 
 ### Implementation for User Story 4
 
-- [ ] T027 [US4] `comfyui/runpod/README.md` に `/runpod-volume` bind mount あり・なしの `docker run` 例を追加する
-- [ ] T028 [US4] `README.md` に RunPod 用 image build とローカル擬似検証への導線を追加する
-- [ ] T029 [US4] `specs/043-runpod-ollama-sidecar/quickstart.md` を最終実装に合わせて更新し本番確認とローカル確認の境界を明確化する
+- [X] T027 [US4] `comfyui/runpod/README.md` に `/runpod-volume` bind mount あり・なしの `docker run` 例を追加する
+- [X] T028 [US4] `README.md` に RunPod 用 image build とローカル擬似検証への導線を追加する
+- [X] T029 [US4] `specs/043-runpod-ollama-sidecar/quickstart.md` を最終実装に合わせて更新し本番確認とローカル確認の境界を明確化する
 
 **Checkpoint**: User Story 4 が独立して検証可能であること
 
@@ -127,9 +127,9 @@
 
 **Purpose**: story 横断の整合確認と仕上げ
 
-- [ ] T030 [P] `specs/043-runpod-ollama-sidecar/quickstart.md` と `comfyui/runpod/README.md` と `README.md` の用語・env 名・手順順序を同期する
-- [ ] T031 `comfyui/runpod/start-ollama-worker.sh` と `comfyui/runpod/Dockerfile` の shellcheck / 実行性観点を見直す
-- [ ] T032 `specs/043-runpod-ollama-sidecar/quickstart.md` の手順を使った手動検証結果を feature 文書へ反映する
+- [X] T030 [P] `specs/043-runpod-ollama-sidecar/quickstart.md` と `comfyui/runpod/README.md` と `README.md` の用語・env 名・手順順序を同期する
+- [X] T031 `comfyui/runpod/start-ollama-worker.sh` と `comfyui/runpod/Dockerfile` の shellcheck / 実行性観点を見直す
+- [X] T032 `specs/043-runpod-ollama-sidecar/quickstart.md` の手順を使った手動検証結果を feature 文書へ反映する
 
 ---
 
