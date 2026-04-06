@@ -28,7 +28,7 @@ HF_REPO_ID_PATTERN = re.compile(r"^[A-Za-z0-9][\w.-]*/[\w.-]+$")
 GENERIC_THINK_PROMPT = "Think carefully before answering, but return only the final answer."
 DEEPSEEK_R1_THINK_PROMPT = "Use a DeepSeek-R1-style reasoning pass internally, then return only the final answer."
 FINAL_ONLY_PROMPT = "Return only the final answer. Do not output any reasoning or thinking content."
-DEFAULT_MAX_CONTINUATIONS = 3
+DEFAULT_MAX_CONTINUATIONS = 12
 
 
 @dataclass(frozen=True)

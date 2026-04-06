@@ -163,7 +163,7 @@ COMFYUI_LLM_MODEL_CACHE_DIR=./comfyui-data/llm-models
 
 - 1 回目の generation が token 予算いっぱいで本文途中までしか返していないと判断した場合、node は continuation を試みます
 - continuation 成功時は `output_text` と `raw_text` に連結済み本文を返します
-- continuation は無限に続かず、回数上限または進展なしで停止します
+- continuation は無限に続かず、既定では最大 12 回の追加 generation までで、回数上限または進展なしで停止します
 - `debug_json.continuation_used`、`debug_json.continuation_count`、`debug_json.continuation_stop_reason` で状況を確認できます
 - 現在は `transformers` backend の text mode が対象で、`think_mode=off` と `json_output=true` は continuation 対象外です
 
