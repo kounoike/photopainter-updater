@@ -6,3 +6,10 @@ venv/
 .mypy_cache/
 .ruff_cache/
 workflows/
+**/__pycache__/
+**/*.pyc
+**/.venv/
+**/venv/
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
