@@ -17,8 +17,10 @@
 
 - workflow 側で `release` の `published` のみが trigger になっている
 - publish target 定義側で `server` と `comfyui` が enabled になっている
+- `server` と `comfyui` が同じ target schema で定義されている
 - `comfyui` target の build context が `./comfyui` である
 - `comfyui` target の Dockerfile が `./comfyui/runpod/Dockerfile` である
+- `comfyui` target の image repository が `photopainter-comfyui` である
 
 ## 2. draft release を正式 publish する
 
@@ -40,6 +42,7 @@
 - Actions で release image publish workflow が 1 回起動している
 - `server` target の build と push が成功している
 - `comfyui` target の build と push が成功している
+- `Generate image metadata` と `Build and push image` の結果から、両 target が同じ matrix publish 導線で処理されている
 - 失敗時は対象 target 名と失敗ステップを特定できる
 
 期待結果:
@@ -53,6 +56,7 @@
 - `server` image が GHCR に存在する
 - `comfyui` image が GHCR に存在する
 - それぞれ release version に対応する tag が付いている
+- `photopainter-comfyui` package に release version と一致する tag が見える
 - package が repository と関連付いて見える
 
 期待結果:
@@ -68,6 +72,7 @@
 
 - root README の `Release Images` 節に ComfyUI image が追記されている
 - 公開契機、公開先、確認場所を README から追える
+- `ghcr.io/<repository_owner>/photopainter-comfyui:<release-version>` を README から判断できる
 
 期待結果:
 
@@ -80,6 +85,7 @@
 - `.github/workflows/release-image-publish.yml` の YAML 構文確認
 - `.github/release-image-publish.yml` の YAML 構文確認
 - `git diff --check` で差分体裁確認
+- release publish 後の live 確認項目が README と quickstart で矛盾しない
 
 期待結果:
 

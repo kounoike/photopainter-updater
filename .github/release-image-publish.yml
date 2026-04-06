@@ -10,3 +10,10 @@ targets:
     image_repository: photopainter-server
     default_labels:
       org.opencontainers.image.title: photopainter-server
+  - name: comfyui
+    enabled: true
+    build_context: ./comfyui
+    dockerfile: ./comfyui/runpod/Dockerfile
+    image_repository: photopainter-comfyui
+    default_labels:
+      org.opencontainers.image.title: photopainter-comfyui

@@ -15,8 +15,8 @@
 
 **Purpose**: 既存 release publish 導線と文書の更新対象を確定する
 
-- [ ] T001 既存 release publish target schema を `.github/workflows/release-image-publish.yml` と `.github/release-image-publish.yml` で確認する
-- [ ] T002 [P] root README の `Release Images` 更新箇所を `README.md` で確認する
+- [X] T001 既存 release publish target schema を `.github/workflows/release-image-publish.yml` と `.github/release-image-publish.yml` で確認する
+- [X] T002 [P] root README の `Release Images` 更新箇所を `README.md` で確認する
 
 ---
 
@@ -26,8 +26,8 @@
 
 **CRITICAL**: この phase 完了まで user story 実装を開始しない
 
-- [ ] T003 `.github/release-image-publish.yml` の target schema を `specs/046-comfyui-ghcr-publish/contracts/release-image-publish-contract.md` と整合する形で確認する
-- [ ] T004 [P] `specs/046-comfyui-ghcr-publish/quickstart.md` の手動検証手順を `.github/workflows/release-image-publish.yml` と `.github/release-image-publish.yml` の現行導線に合わせて補正する
+- [X] T003 `.github/release-image-publish.yml` の target schema を `specs/046-comfyui-ghcr-publish/contracts/release-image-publish-contract.md` と整合する形で確認する
+- [X] T004 [P] `specs/046-comfyui-ghcr-publish/quickstart.md` の手動検証手順を `.github/workflows/release-image-publish.yml` と `.github/release-image-publish.yml` の現行導線に合わせて補正する
 
 **Checkpoint**: publish target schema と検証導線が固まり、story 実装へ進める
 
@@ -41,13 +41,13 @@
 
 ### Verification for User Story 1
 
-- [ ] T005 [US1] `comfyui` target の build context / Dockerfile / image repository を `specs/046-comfyui-ghcr-publish/quickstart.md` に明記する
+- [X] T005 [US1] `comfyui` target の build context / Dockerfile / image repository を `specs/046-comfyui-ghcr-publish/quickstart.md` に明記する
 
 ### Implementation for User Story 1
 
-- [ ] T006 [US1] ComfyUI publish target を `.github/release-image-publish.yml` に追加する
-- [ ] T007 [US1] `comfyui` target の image title label を `.github/release-image-publish.yml` に追加して `photopainter-comfyui` に揃える
-- [ ] T008 [US1] `release` published event で matrix publish が継続することを `.github/workflows/release-image-publish.yml` で確認し、必要な最小調整のみを反映する
+- [X] T006 [US1] ComfyUI publish target を `.github/release-image-publish.yml` に追加する
+- [X] T007 [US1] `comfyui` target の image title label を `.github/release-image-publish.yml` に追加して `photopainter-comfyui` に揃える
+- [X] T008 [US1] `release` published event で matrix publish が継続することを `.github/workflows/release-image-publish.yml` で確認し、変更が必要な場合のみ target 汎用性を保つ最小調整を反映する
 
 **Checkpoint**: ComfyUI image が release publish の公開対象として独立確認できる
 
@@ -61,12 +61,12 @@
 
 ### Verification for User Story 2
 
-- [ ] T009 [US2] target 一覧方式の確認観点を `specs/046-comfyui-ghcr-publish/quickstart.md` に追加する
+- [X] T009 [US2] target 一覧方式の確認観点を `specs/046-comfyui-ghcr-publish/quickstart.md` に追加する
 
 ### Implementation for User Story 2
 
-- [ ] T010 [US2] `server` と `comfyui` が同一 schema で並ぶよう `.github/release-image-publish.yml` の target 定義順と項目構造を整理する
-- [ ] T011 [US2] ComfyUI 専用分岐を追加していないことを `.github/workflows/release-image-publish.yml` で確認し、必要なら target 汎用性を保つ最小修正を反映する
+- [X] T010 [US2] `server` と `comfyui` が同一 schema で並ぶよう `.github/release-image-publish.yml` の target 定義順と項目構造を整理する
+- [X] T011 [US2] ComfyUI 専用分岐を追加していないことを `.github/workflows/release-image-publish.yml` で確認し、変更が必要な場合のみ target 汎用性を保つ最小修正を反映する
 
 **Checkpoint**: workflow 本体を大きく変えずに target 一覧方式の保守性を維持できる
 
@@ -80,12 +80,12 @@
 
 ### Verification for User Story 3
 
-- [ ] T012 [US3] ComfyUI image の公開契機と確認手順を `specs/046-comfyui-ghcr-publish/quickstart.md` に整理する
+- [X] T012 [US3] ComfyUI image の公開契機と確認手順を `specs/046-comfyui-ghcr-publish/quickstart.md` に整理する
 
 ### Implementation for User Story 3
 
-- [ ] T013 [US3] `Release Images` 節へ ComfyUI image の公開先と tag 規則を `README.md` に追加する
-- [ ] T014 [US3] release publish 後に確認する GHCR package 名と Actions 導線を `README.md` に追記する
+- [X] T013 [US3] `Release Images` 節へ ComfyUI image の公開先と tag 規則を `README.md` に追加する
+- [X] T014 [US3] release publish 後に確認する GHCR package 名と Actions 導線を `README.md` に追記する
 
 **Checkpoint**: 文書だけで ComfyUI image の公開導線を追える
 
@@ -95,8 +95,9 @@
 
 **Purpose**: 横断確認と最終整合
 
-- [ ] T015 [P] `.github/workflows/release-image-publish.yml` と `.github/release-image-publish.yml` の YAML 体裁を確認する
-- [ ] T016 `git diff --check` と `specs/046-comfyui-ghcr-publish/quickstart.md` の手順見直しで最終差分を確認する
+- [X] T015 [P] `.github/workflows/release-image-publish.yml` と `.github/release-image-publish.yml` の YAML 体裁を確認する
+- [X] T016 release publish 後の GitHub Actions 実行結果と GHCR package / tag 確認手順を `specs/046-comfyui-ghcr-publish/quickstart.md` と `README.md` で最終確認する
+- [X] T017 `git diff --check` と `specs/046-comfyui-ghcr-publish/quickstart.md` の手順見直しで最終差分を確認する
 
 ---
 
