@@ -6,6 +6,7 @@ set -euo pipefail
 : "${COMFYUI_EASY_USE_REF:?COMFYUI_EASY_USE_REF is required}"
 : "${COMFYUI_OLLAMA_NODE_REF:?COMFYUI_OLLAMA_NODE_REF is required}"
 : "${COMFYUI_XZ3R0_NODES_REF:?COMFYUI_XZ3R0_NODES_REF is required}"
+: "${COMFYUI_QWEN_REF:?COMFYUI_QWEN_REF is required}"
 
 CUSTOM_NODES_DIR="${COMFYUI_HOME}/custom_nodes"
 
@@ -58,3 +59,6 @@ install_requirements_if_present "${CUSTOM_NODES_DIR}/comfyui-ollama"
 
 download_node_archive "Xz3r0-M/ComfyUI-Xz3r0-Nodes" "tag" "${COMFYUI_XZ3R0_NODES_REF}" "${CUSTOM_NODES_DIR}/ComfyUI-Xz3r0-Nodes"
 install_requirements_if_present "${CUSTOM_NODES_DIR}/ComfyUI-Xz3r0-Nodes"
+
+download_node_archive "DanielBartolic/ComfyUI-Qwen3.5" "commit" "${COMFYUI_QWEN_REF}" "${CUSTOM_NODES_DIR}/ComfyUI-Qwen3.5"
+install_requirements_if_present "${CUSTOM_NODES_DIR}/ComfyUI-Qwen3.5"
