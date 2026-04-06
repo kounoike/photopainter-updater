@@ -43,3 +43,4 @@ Thumbs.db
 comfyui-data/
 ollama-data/
 ai-toolkit-data/
+.tmp-runpod-volume/

@@ -70,6 +70,19 @@ repo 管理の custom node は [`comfyui/custom_node/`](./comfyui/custom_node/) 
 PhotoPainter 用の PNG POST ノードの導入と HTTP サーバとの接続例は
 [specs/027-comfyui-post-node/quickstart.md](specs/027-comfyui-post-node/quickstart.md) を参照してください。
 
+## RunPod Serverless（ComfyUI + Ollama）
+
+RunPod Serverless 向けには、既存の local Compose 導線とは別に `worker-comfyui` base を継承した custom image 用 assets を
+[`comfyui/runpod/`](/workspaces/photopainter-updater/comfyui/runpod/) へ置いています。wrapper start script が `ollama serve` を前置起動し、localhost の `127.0.0.1:11434` で疎通確認してから upstream `/start.sh` へ委譲します。
+
+```bash
+docker build -t photopainter-runpod-comfyui-ollama -f comfyui/runpod/Dockerfile comfyui
+```
+
+RunPod の Network Volume を endpoint 側で接続すると container 内では `/runpod-volume` に見え、Ollama model はそこへ永続化されます。未接続時は一時領域へフォールバックします。事前 pull model は `OLLAMA_PULL_MODELS=qwen3.5:4b,llama3.2:3b` のような単一 env 値のカンマ区切りで指定します。`keep_alive` は Dockerfile 側で固定せず、ComfyUI node 側で `0` を指定する前提です。
+
+ローカル擬似検証では `/runpod-volume` bind mount あり・なしの両方を `docker run` で再現できます。詳細は [comfyui/runpod/README.md](/workspaces/photopainter-updater/comfyui/runpod/README.md) と [specs/043-runpod-ollama-sidecar/quickstart.md](/workspaces/photopainter-updater/specs/043-runpod-ollama-sidecar/quickstart.md) を参照してください。
+
 ## Ollama（LLM 推論）
 
 ComfyUI と同じ compose プロジェクト内で Ollama を起動できます。Ollama はホストへ公開せず、Compose 内ネットワーク（`http://ollama:11434`）からのみアクセス可能です。
