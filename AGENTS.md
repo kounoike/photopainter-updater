@@ -163,6 +163,8 @@ Use slash commands:
 - RunPod Network Volume (`/runpod-volume`)、Ollama model directory（`OLLAMA_MODELS` で指定）、Network Volume 未接続時のコンテナ内一時領域、repo 内の RunPod 用 Docker build assets と文書 (043-runpod-ollama-sidecar)
 - Dockerfile syntax、Docker Compose v2 YAML、Bash、Markdown、Python 3.x runtime（upstream `worker-comfyui` 同梱環境） + RunPod `worker-comfyui` base image / `/start.sh`、既存 `comfyui/runpod/Dockerfile` と `start-ollama-worker.sh`、Docker Compose v2、RunPod Network Volume 前提の `/runpod-volume` path、`comfyui-ollama` custom node (044-local-runpod-image)
 - host bind mount による `/runpod-volume`、その配下の `/runpod-volume/models` と `/runpod-volume/ollama/models`、repo 内の compose / Dockerfile / Markdown 成果物 (044-local-runpod-image)
+- YAML（GitHub Actions workflow / publish target 定義）、Markdown、既存 Dockerfile syntax + GitHub Actions、GitHub Releases event、GHCR、Docker Buildx、`docker/login-action`、`docker/metadata-action`、`docker/build-push-action`、既存 `.github/workflows/release-image-publish.yml`、既存 `.github/release-image-publish.yml` (046-comfyui-ghcr-publish)
+- GitHub repository 内 workflow / target 定義 / 文書、GHCR 上の container image (046-comfyui-ghcr-publish)
 
 ## Recent Changes
 - 002-add-run-script: Added Bash (POSIX shell) / Python 3 (実行環境) + Python 標準の HTTP 配信機能
