@@ -66,6 +66,21 @@ RunPod serverless の運用者として、どの Ollama モデルを事前取得
 
 ---
 
+### User Story 4 - ローカルで擬似検証する (Priority: P3)
+
+RunPod serverless へ出す前の開発者として、同じ worker イメージをローカル Docker で起動し、Ollama 同居起動とモデル保存先切り替えを事前に確認したい。これにより、本番 endpoint 設定へ進む前に起動シーケンスと設定不備を早めに検出できる。
+
+**Why this priority**: RunPod 本番だけで初回確認すると切り分けコストが高くなるため、ローカル再現手順があると実装と運用の両方で安全になる。
+
+**Independent Test**: ローカル Docker で worker イメージを起動し、`/runpod-volume` 相当の bind mount あり・なし両方で Ollama API 疎通とモデル取得導線を確認できれば完了。
+
+**Acceptance Scenarios**:
+
+1. **Given** 開発者がローカル Docker 環境を持っている, **When** worker イメージを `/runpod-volume` 相当の bind mount 付きで起動する, **Then** RunPod Network Volume を模した永続領域ありの挙動を事前確認できる。
+2. **Given** `/runpod-volume` 相当を bind mount しない状態, **When** worker イメージを起動する, **Then** 一時領域へ切り替わる挙動を事前確認できる。
+
+---
+
 ### Edge Cases
 
 - Ollama サーバの起動が ComfyUI より遅い場合でも、最初の推論要求が即失敗扱いにならず、疎通確認の成否を判断できること。
@@ -95,6 +110,7 @@ RunPod serverless の運用者として、どの Ollama モデルを事前取得
 - **FR-008**: System MUST KEEP_ALIVE の制御をコンテナ起動設定へ固定埋め込みせず、ノード側で `0` を指定する現行運用と競合しないようにしなければならない。
 - **FR-009**: System MUST RunPod serverless 向けのカスタマイズ手順書に、永続領域前提、モデル取得設定、起動時の確認方法を記載しなければならない。
 - **FR-010**: System MUST 既存の ComfyUI serverless 起動導線を壊さず、Ollama 同居に伴う追加前提だけを利用者が判断できるようにしなければならない。
+- **FR-011**: System MUST RunPod 本番投入前にローカル Docker で worker イメージを擬似検証する手順を提供し、`/runpod-volume` 相当の bind mount あり・なしの両方を確認できるようにしなければならない。
 
 ### Key Entities *(include if feature involves data)*
 
@@ -132,6 +148,7 @@ RunPod serverless の運用者として、どの Ollama モデルを事前取得
 - **SC-002**: 利用者は一度取得したモデルを永続領域から再利用し、コンテナ再作成後も同じモデルで推論を再開できる。
 - **SC-003**: 利用者は運用設定を変更するだけで、事前取得するモデル一覧を切り替えられる。
 - **SC-004**: 運用者は起動ログまたは手順書から、Ollama 起動失敗、API 未到達、モデル取得失敗、永続領域未接続を切り分けて判断できる。
+- **SC-005**: 開発者はローカル Docker 環境で、永続領域ありと一時領域フォールバックの両ケースを RunPod 本番前に再現確認できる。
 
 ## Assumptions
 
@@ -152,3 +169,4 @@ RunPod serverless の運用者として、どの Ollama モデルを事前取得
 - 起動時に一部モデル pull が失敗しても継続起動することと、その警告確認方法を手順へ追加する必要がある。
 - Ollama API が localhost 限定であることと、ComfyUI からの接続先前提を文書へ追加する必要がある。
 - RunPod Network Volume 未接続時は一時領域へ切り替わることと、再利用されないことを手順へ追加する必要がある。
+- `worker-comfyui` の development 手順を踏まえたローカル擬似検証方法を文書へ追加する必要がある。
